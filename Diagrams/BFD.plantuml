@@ -1,0 +1,49 @@
+@startmindmap BFD
+title Sơ đồ phân rã chức năng (BFD) - Hệ thống nghe nhạc trực tuyến
+
+*[#lightgreen] **Hệ thống Nghe nhạc Trực tuyến**
+** Lắng nghe & Khám phá
+*** Xem danh sách và tìm kiếm bài hát
+*** Nghe nhạc
+** Quản lý Tài khoản
+*** Đăng ký
+*** Đăng nhập
+*** Đăng xuất
+*** Quên mật khẩu
+** Chức năng Người dùng
+*** Quản lý hồ sơ cá nhân
+**** Xem hồ sơ cá nhân
+**** Sửa hồ sơ cá nhân
+**** Xem danh sách và tìm kiếm bài hát yêu thích
+*** Quản lý Playlist cá nhân
+**** Xem danh sách và tìm kiếm Playlist cá nhân
+**** Tạo Playlist cá nhân
+**** Xóa Playlist cá nhân
+**** Sửa Playlist cá nhân
+***** Xem danh sách và tìm kiếm bài hát trong Playlist
+***** Sửa thông tin Playlist
+***** Thêm bài hát
+***** Xóa bài hát
+*** Tương tác xã hội
+**** Thích bài hát
+**** Bình luận bài hát
+**** Chia sẻ bài hát
+*** Theo dõi Nghệ sĩ
+**** Xem và tìm kiếm danh sách nghệ sĩ
+*** Báo cáo vi phạm
+** Chức năng Nghệ sĩ
+*** Quản lý bài hát cá nhân nghệ sĩ
+**** Xem danh sách bài hát đã tải lên
+**** Tải lên bài hát
+**** Sửa thông tin bài hát
+**** Ẩn bài hát
+** Chức năng Quản trị
+*** Quản lý tài khoản người dùng
+**** Xem & tìm kiếm tài khoản người dùng
+**** Khoá tài khoản người dùng
+*** Xử lý báo cáo vi phạm
+**** Ẩn bài hát vi phạm
+**** Gửi cảnh cáo người dùng
+**** Bỏ qua báo cáo
+
+@endmindmap
