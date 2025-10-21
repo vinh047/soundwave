@@ -1,0 +1,80 @@
+@startuml Sơ Đồ Usecase Chi Tiết User
+left to right direction
+
+' Actor
+actor "Người dùng" as User
+
+rectangle "Chức năng người dùng" {
+    ' Use Case cho mọi người (chưa đăng nhập)
+    (Xem danh sách và tìm kiếm bài hát) as UC_ViewSearchSongs
+    (Nghe nhạc) as UC_Play
+    (Đăng ký tài khoản) as UC_Register
+    (Đăng nhập tài khoản) as UC_Login
+    (Quên mật khẩu) as UC_ForgetPassword
+
+    ' Use case cần đăng nhập (cho User và Artist)
+    (Xem và tìm kiếm danh sách nghệ sĩ) as UC_ViewSearchArtist
+    (Quản lý hồ sơ cá nhân) as UC_ManageProfile
+    (Xem hồ sơ cá nhân) as UC_ViewProfile
+    (Sửa hồ sơ cá nhân) as UC_EditProfile
+    (Xem danh sách và tìm kiếm bài hát yêu thích) as UC_LikedSongs
+    (Quản lý playlist cá nhân) as UC_ManagePlaylist
+    (Xem danh sách và tìm kiếm playlist cá nhân) as UC_ViewSearchPlaylist
+    (Thêm playlist cá nhân) as UC_AddPlaylist
+    (Xoá playlist cá nhân) as UC_DeletePlaylist
+    (Sửa playlist cá nhân) as UC_EditPlaylist
+    (Sửa thông tin playlist) as UC_EditPlaylistInformation
+    (Xem danh sách và tìm kiếm bài hát trong playlist) as UC_ViewSearchSongsInPlaylist
+    (Thêm bài hát vào playlist) as UC_AddSongsToPlaylist
+    (Xoá bài hát khỏi playlist) as UC_RemoveSongsFromPlaylist
+    (Quản lý tương tác bài hát) as UC_ManageInteract
+    (Thích bài hát) as UC_Like
+    (Bình luận bài hát) as UC_Comment
+    (Chia sẻ bài hát) as UC_Share
+    (Theo dõi nghệ sĩ) as UC_Follow
+    (Báo cáo vi phạm) as UC_Report
+
+    ' Use case cho tất cả Actor
+    (Đăng xuất) as UC_Logout
+
+    ' -- Mối quan hệ --
+    ' Quan hệ <<extend>>
+    UC_ForgetPassword --> UC_Login : <<extend>>
+    UC_ViewSearchPlaylist --> UC_ManagePlaylist: <<extend>>
+    UC_AddPlaylist --> UC_ManagePlaylist: <<extend>>
+    UC_DeletePlaylist --> UC_ManagePlaylist: <<extend>>
+    UC_EditPlaylist --> UC_ManagePlaylist: <<extend>>
+    UC_Like --> UC_ManageInteract: <<extend>>
+    UC_Comment --> UC_ManageInteract: <<extend>>
+    UC_Share --> UC_ManageInteract: <<extend>>
+    UC_ViewSearchSongsInPlaylist --> UC_EditPlaylist: <<extend>>
+    UC_AddSongsToPlaylist --> UC_EditPlaylist: <<extend>>
+    UC_RemoveSongsFromPlaylist --> UC_EditPlaylist: <<extend>>
+    UC_EditPlaylistInformation --> UC_EditPlaylist: <<extend>>
+    UC_ViewSearchArtist --> UC_Follow: <<extend>>
+    UC_ViewProfile --> UC_ManageProfile: <<extend>>
+    UC_EditProfile --> UC_ManageProfile: <<extend>>
+    UC_LikedSongs --> UC_ManageProfile: <<extend>>
+
+    ' Quan hệ <<include>> (các chức năng cần đăng nhập)
+    UC_ManageProfile --> UC_Login : <<include>>
+    UC_ManagePlaylist --> UC_Login: <<include>>
+    UC_ManageInteract --> UC_Login: <<include>>
+    UC_Follow --> UC_Login : <<include>>
+    UC_Report --> UC_Login : <<include>>
+
+    ' -- Gán các actor --
+    ' Actor chưa đăng nhập cũng có thể xem và nghe
+    User --> UC_ViewSearchSongs
+    User --> UC_Play
+    User --> UC_Register
+    User --> UC_Login
+
+    ' User đã đăng nhập
+    User --> UC_ManageProfile
+    User --> UC_ManagePlaylist
+    User --> UC_ManageInteract
+    User --> UC_Follow
+    User --> UC_Report
+    User --> UC_Logout
+}

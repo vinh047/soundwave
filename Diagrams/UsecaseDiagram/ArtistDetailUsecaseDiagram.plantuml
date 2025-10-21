@@ -1,0 +1,35 @@
+@startuml Sơ Đồ Usecase Chi Tiết Artist
+left to right direction
+
+' Actor
+actor "Người dùng" as User
+actor "Nghệ sĩ" as Artist
+
+' Sử dụng kế thừa cho Actor: Nghệ sĩ LÀ MỘT Người dùng
+Artist --|> User
+
+rectangle "Chức năng nghệ sĩ" {
+    ' Use Case cho mọi người (chưa đăng nhập)
+    (Đăng nhập tài khoản) as UC_Login
+
+    ' Use case chỉ dành cho Artist
+    (Quản lý bài hát cá nhân nghệ sĩ) as UC_ManageSongs
+    (Xem danh sách và tìm kiếm bài hát đã tải lên) as UC_ViewSearchUploadedSongs
+    (Tải lên bài hát) as UC_AddSongs
+    (Sửa thông tin bài hát) as UC_EditSongs
+    (Ẩn bài hát) as UC_HideSongs
+
+    ' -- Mối quan hệ --
+    ' Quan hệ <<extend>>
+    UC_AddSongs --> UC_ManageSongs: <<extend>>
+    UC_HideSongs --> UC_ManageSongs: <<extend>>
+    UC_EditSongs --> UC_ManageSongs: <<extend>>
+    UC_ViewSearchUploadedSongs --> UC_ManageSongs: <<extend>>
+
+    ' Quan hệ <<include>> (các chức năng cần đăng nhập)
+    UC_ManageSongs --> UC_Login : <<include>>
+
+    ' Artist (chức năng riêng)
+    Artist --> UC_Login
+    Artist --> UC_ManageSongs
+}

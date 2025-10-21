@@ -1,0 +1,47 @@
+@startuml Sơ Đồ Usecase Chi Tiết Admin
+left to right direction
+
+' Actor
+actor "Quản trị viên" as Admin
+
+rectangle "Quản trị hệ thống" {
+    ' Use Case cho mọi người (chưa đăng nhập)
+    (Xem danh sách và tìm kiếm bài hát) as UC_ViewSearchSongs
+    (Nghe nhạc) as UC_Play
+    (Đăng nhập tài khoản) as UC_Login
+
+    ' Use case của Admin
+    (Xử lý báo cáo vi phạm) as UC_HandleReport
+    (Ẩn bài hát vi phạm) as UC_HideReportedSongs
+    (Cảnh cáo người dùng) as UC_WarnUser
+    (Bỏ qua vi phạm) as UC_DismissReport
+    (Quản lý tài khoản người dùng) as UC_ManageUserAccount
+    (Xem danh sách và tìm kiếm tài khoản người dùng) as UC_ViewSearchUserAccount
+    (Khoá tài khoản người dùng) as UC_LockUserAccount
+
+    ' Use case cho tất cả Actor
+    (Đăng xuất) as UC_Logout
+
+    ' -- Mối quan hệ --
+    ' Quan hệ <<extend>>
+    ' Xử lý báo cáo vi phạm
+    UC_HideReportedSongs --> UC_HandleReport: <<extend>>
+    UC_WarnUser --> UC_HandleReport: <<extend>>
+    UC_DismissReport --> UC_HandleReport: <<extend>>
+    ' Quản lý tài khoản người dùng
+    UC_ViewSearchUserAccount --> UC_ManageUserAccount: <<extend>>
+    UC_LockUserAccount --> UC_ManageUserAccount: <<extend>>
+
+    ' Quan hệ <<include>> (các chức năng cần đăng nhập)
+    UC_HandleReport --> UC_Login : <<include>>
+    UC_ManageUserAccount --> UC_Login: <<include>>
+
+    ' Artist (chức năng riêng)
+    ' Admin
+    Admin --> UC_Play
+    Admin --> UC_Login
+    Admin --> UC_HandleReport
+    Admin --> UC_ManageUserAccount
+    Admin --> UC_ViewSearchSongs
+    Admin --> UC_Logout
+}
