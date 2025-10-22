@@ -20,7 +20,7 @@ rectangle "Hệ thống nghe nhạc trực tuyến" {
 
   ' Use case cần đăng nhập (cho User và Artist)
   (Quản lý hồ sơ cá nhân) as UC_ManageProfile
-  (Quản lý playlist cá nhân) as UC_ManagePlaylist
+  (Quản lý Playlist cá nhân) as UC_ManagePlaylist
   (Quản lý tương tác bài hát) as UC_ManageInteract
   (Theo dõi nghệ sĩ) as UC_Follow
   (Báo cáo vi phạm) as UC_Report

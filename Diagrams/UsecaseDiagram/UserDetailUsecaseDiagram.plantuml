@@ -18,19 +18,20 @@ rectangle "Chức năng người dùng" {
     (Xem hồ sơ cá nhân) as UC_ViewProfile
     (Sửa hồ sơ cá nhân) as UC_EditProfile
     (Xem danh sách và tìm kiếm bài hát yêu thích) as UC_LikedSongs
-    (Quản lý playlist cá nhân) as UC_ManagePlaylist
-    (Xem danh sách và tìm kiếm playlist cá nhân) as UC_ViewSearchPlaylist
-    (Thêm playlist cá nhân) as UC_AddPlaylist
-    (Xoá playlist cá nhân) as UC_DeletePlaylist
-    (Sửa playlist cá nhân) as UC_EditPlaylist
-    (Sửa thông tin playlist) as UC_EditPlaylistInformation
-    (Xem danh sách và tìm kiếm bài hát trong playlist) as UC_ViewSearchSongsInPlaylist
-    (Thêm bài hát vào playlist) as UC_AddSongsToPlaylist
-    (Xoá bài hát khỏi playlist) as UC_RemoveSongsFromPlaylist
+    (Quản lý Playlist cá nhân) as UC_ManagePlaylist
+    (Xem danh sách Playlist cá nhân) as UC_ViewPlaylist
+    (Thêm Playlist cá nhân) as UC_AddPlaylist
+    (Xoá Playlist cá nhân) as UC_DeletePlaylist
+    (Sửa Playlist cá nhân) as UC_EditPlaylist
+    (Sửa thông tin Playlist) as UC_EditPlaylistInformation
+    (Xem danh sách bài hát trong Playlist) as UC_ViewSongsInPlaylist
+    (Thêm bài hát vào Playlist) as UC_AddSongsToPlaylist
+    (Xoá bài hát khỏi Playlist) as UC_RemoveSongsFromPlaylist
     (Quản lý tương tác bài hát) as UC_ManageInteract
     (Thích bài hát) as UC_Like
     (Bình luận bài hát) as UC_Comment
     (Chia sẻ bài hát) as UC_Share
+    (Đăng lại bài hát) as UC_Repost
     (Theo dõi nghệ sĩ) as UC_Follow
     (Báo cáo vi phạm) as UC_Report
 
@@ -40,14 +41,15 @@ rectangle "Chức năng người dùng" {
     ' -- Mối quan hệ --
     ' Quan hệ <<extend>>
     UC_ForgetPassword --> UC_Login : <<extend>>
-    UC_ViewSearchPlaylist --> UC_ManagePlaylist: <<extend>>
+    UC_ViewPlaylist --> UC_ManagePlaylist: <<extend>>
     UC_AddPlaylist --> UC_ManagePlaylist: <<extend>>
     UC_DeletePlaylist --> UC_ManagePlaylist: <<extend>>
     UC_EditPlaylist --> UC_ManagePlaylist: <<extend>>
     UC_Like --> UC_ManageInteract: <<extend>>
     UC_Comment --> UC_ManageInteract: <<extend>>
     UC_Share --> UC_ManageInteract: <<extend>>
-    UC_ViewSearchSongsInPlaylist --> UC_EditPlaylist: <<extend>>
+    UC_Repost --> UC_ManageInteract: <<extend>>
+    UC_ViewSongsInPlaylist --> UC_EditPlaylist: <<extend>>
     UC_AddSongsToPlaylist --> UC_EditPlaylist: <<extend>>
     UC_RemoveSongsFromPlaylist --> UC_EditPlaylist: <<extend>>
     UC_EditPlaylistInformation --> UC_EditPlaylist: <<extend>>

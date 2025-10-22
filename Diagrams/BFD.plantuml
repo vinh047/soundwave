@@ -16,11 +16,11 @@ title Sơ đồ phân rã chức năng (BFD) - Hệ thống nghe nhạc trực t
 **** Sửa hồ sơ cá nhân
 **** Xem danh sách và tìm kiếm bài hát yêu thích
 *** Quản lý Playlist cá nhân
-**** Xem danh sách và tìm kiếm Playlist cá nhân
+**** Xem danh sách Playlist cá nhân
 **** Tạo Playlist cá nhân
 **** Xóa Playlist cá nhân
 **** Sửa Playlist cá nhân
-***** Xem danh sách và tìm kiếm bài hát trong Playlist
+***** Xem danh sách bài hát trong Playlist
 ***** Sửa thông tin Playlist
 ***** Thêm bài hát
 ***** Xóa bài hát
@@ -28,6 +28,7 @@ title Sơ đồ phân rã chức năng (BFD) - Hệ thống nghe nhạc trực t
 **** Thích bài hát
 **** Bình luận bài hát
 **** Chia sẻ bài hát
+**** Đăng lại bài hát
 *** Theo dõi Nghệ sĩ
 **** Xem và tìm kiếm danh sách nghệ sĩ
 *** Báo cáo vi phạm
