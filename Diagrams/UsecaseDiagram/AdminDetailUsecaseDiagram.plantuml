@@ -11,7 +11,7 @@ rectangle "Quản trị hệ thống" {
     (Đăng nhập tài khoản) as UC_Login
 
     ' Use case của Admin
-    (Xử lý báo cáo vi phạm) as UC_HandleReport
+    (Quản lý báo cáo vi phạm) as UC_HandleReport
     (Ẩn bài hát vi phạm) as UC_HideReportedSongs
     (Cảnh cáo người dùng) as UC_WarnUser
     (Bỏ qua vi phạm) as UC_DismissReport

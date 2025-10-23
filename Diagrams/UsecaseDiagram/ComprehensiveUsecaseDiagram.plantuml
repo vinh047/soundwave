@@ -12,7 +12,7 @@ Artist --|> User
 rectangle "Hệ thống nghe nhạc trực tuyến" {
   ' Use Case cho mọi người (chưa đăng nhập)
   (Xem danh sách và tìm kiếm bài hát) as UC_ViewSearchSongs
-  (Xem và tìm kiếm danh sách nghệ sĩ) as UC_ViewSearchArtist
+  (Xem danh sách và tìm kiếm nghệ sĩ) as UC_ViewSearchArtist
   (Nghe nhạc) as UC_Play
   (Đăng ký tài khoản) as UC_Register
   (Đăng nhập tài khoản) as UC_Login
@@ -29,7 +29,7 @@ rectangle "Hệ thống nghe nhạc trực tuyến" {
   (Quản lý bài hát cá nhân nghệ sĩ) as UC_ManageSongs
 
   ' Use case của Admin
-  (Xử lý báo cáo vi phạm) as UC_HandleReport
+  (Quản lý báo cáo vi phạm) as UC_HandleReport
   (Quản lý tài khoản người dùng) as UC_ManageUserAccount
 
   ' Use case cho tất cả Actor
