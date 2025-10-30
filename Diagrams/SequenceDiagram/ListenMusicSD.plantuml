@@ -1,0 +1,86 @@
+@startuml Sequence Diagram - Nghe Nhạc
+
+title Sơ Đồ Tuần Tự - Chức Năng Nghe Nhạc
+
+actor "Người dùng" as User
+participant ":GiaoDienPhatNhac" as UI
+participant ":PlayerController" as Controller
+participant ":PlayerService" as Service
+participant ":FileStorage" as Storage
+
+autonumber
+
+' === Dòng sự kiện chính (bắt đầu) ===
+User -> UI: Chọn 1 bài hát (songId) để nghe
+activate UI
+UI -> Controller: Yêu cầu phát nhạc(songId)
+activate Controller
+Controller -> Service: getSongStream(songId)
+activate Service
+
+' === Dòng sự kiện phụ (1) ===
+alt Dòng sự kiện phụ (1) - Phát nhạc thất bại
+    Service -> Storage: getFile(songId)
+    activate Storage
+    Storage --> Service: Lỗi! (File not found / Error)
+    deactivate Storage
+    Service --> Controller: {error: "Phát nhạc thất bại"}
+    deactivate Service
+    Controller --> UI: {status: 500, error: "Lỗi file"}
+    deactivate Controller
+    
+    UI --> User: Thông báo "Phát nhạc thất bại, vui lòng thử lại"
+    deactivate UI
+
+' === Dòng sự kiện chính (bước 1) ===
+else Phát nhạc thành công (Bước 1)
+    Service -> Storage: getFile(songId)
+    activate Storage
+    Storage --> Service: (streamData)
+    deactivate Storage
+    Service --> Controller: {success: true, stream: ...}
+    deactivate Service
+    Controller --> UI: {status: 200, stream: ...}
+    deactivate Controller
+    
+    UI --> User: Hiển thị giao diện & Bắt đầu phát bài hát
+end
+deactivate UI
+
+' === Dòng sự kiện chính (bước 2) - Các tương tác ===
+group Dòng sự kiện chính (Bước 2: Tương tác)
+
+    ' === Bước 2.1: Tạm dừng ===
+    User -> UI: Nhấn nút "Tạm dừng"
+    activate UI
+    UI -> Controller: Yêu cầu tạm dừng()
+    activate Controller
+    Controller --> UI: (Ra lệnh cho trình phát nhạc dừng)
+    deactivate Controller
+    UI --> User: (Bài hát đã tạm dừng)
+    deactivate UI
+    
+    ' === Bước 2.2: Tiếp tục ===
+    User -> UI: Nhấn nút "Tiếp tục"
+    activate UI
+    UI -> Controller: Yêu cầu tiếp tục()
+    activate Controller
+    Controller --> UI: (Ra lệnh cho trình phát nhạc tiếp tục)
+    deactivate Controller
+    UI --> User: (Bài hát đang phát trở lại)
+    deactivate UI
+    
+    ' === Bước 2.3: Chuyển bài (Tiến tới) ===
+    User -> UI: Nhấn nút "Bài tiếp theo"
+    activate UI
+    UI -> Controller: Yêu cầu chuyển bài(next)
+    activate Controller
+    ' (Giả định Controller sẽ gọi Service để lấy bài mới,
+    ' ở đây ta đơn giản hóa là ra lệnh cho UI)
+    Controller --> UI: (Ra lệnh cho trình phát nhạc chuyển bài)
+    deactivate Controller
+    UI --> User: (Đang phát bài hát tiếp theo)
+    deactivate UI
+    
+end
+@enduml

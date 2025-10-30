@@ -1,0 +1,114 @@
+@startuml Sequence Diagram - Quản Lý Tương Tác Bài Hát
+
+title Sơ Đồ Tuần Tự - Chức Năng Quản Lý Tương Tác Bài Hát
+
+actor "Người dùng" as User
+participant ":GiaoDienBaiHat" as UI
+participant ":InteractionController" as Controller
+participant ":InteractionService" as Service
+participant ":Database" as DB
+
+autonumber
+
+' === Dòng sự kiện chính (bước 1): Hiển thị giao diện ===
+' (Giả định user đã chọn 1 bài hát, hệ thống hiển thị)
+UI --> User: Hiển thị các nút (Thích, BL, Chia sẻ, Đăng lại)
+
+' === Dòng sự kiện chính (bước 2) - Các tương tác ===
+group Dòng sự kiện (Bước 2: Chọn tương tác)
+
+    ' === Kịch bản 2.1: Thích bài hát ===
+    User -> UI: Nhấn nút "Thích" (songId)
+    activate UI
+    UI -> Controller: Yêu cầu Thích(songId, userId)
+    activate Controller
+    Controller -> Service: likeSong(songId, userId)
+    activate Service
+
+    ' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
+    alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
+        Service -> DB: INSERT INTO likes... (Bước 2.1 & 3)
+        activate DB
+        DB --> Service: Lỗi! (Không thể ghi)
+        deactivate DB
+        Service --> Controller: {error: "Lỗi DB"}
+        deactivate Service
+        Controller --> UI: {status: 500, error: "Lỗi"}
+        deactivate Controller
+        UI --> User: Thông báo "Tương tác thất bại, vui lòng thử lại"
+        deactivate UI
+
+    else Ghi nhận thành công (Bước 2.1 & 3)
+        Service -> DB: INSERT INTO likes (songId, userId)
+        activate DB
+        DB --> Service: {success: true}
+        deactivate DB
+        Service --> Controller: {success: true}
+        
+        ' === Dòng sự kiện chính (bước 4): Hiện lại giao diện ===
+        Controller -> Service: getInteractionCount(songId)
+        activate Service
+        Service -> DB: SELECT COUNT(*) FROM likes...
+        activate DB
+        DB --> Service: (số lượt thích mới)
+        deactivate DB
+        Service --> Controller: {count: N}
+        deactivate Service
+        
+        Controller --> UI: {status: 200, newCount: N}
+        deactivate Controller
+        UI --> User: Hiển thị số lượt tương tác sau khi cập nhật
+        deactivate UI
+    end
+    deactivate Service
+
+    ' === Kịch bản 2.2: Bình luận ===
+    User -> UI: Nhấn "Bình luận" (songId, commentText)
+    activate UI
+    UI -> Controller: Yêu cầu Bình luận(songId, commentText)
+    activate Controller
+    Controller -> Service: addComment(songId, commentText, userId)
+    activate Service
+    Service -> DB: INSERT INTO comments... (Bước 3)
+    activate DB
+    DB --> Service: {success: true}
+    deactivate DB
+    ' (Bước 4: Hiện lại danh sách bình luận)
+    Service -> DB: SELECT * FROM comments WHERE songId=...
+    activate DB
+    DB --> Service: [danh sách bình luận mới]
+    deactivate DB
+    Service --> Controller: {success: true, comments: [...]}
+    deactivate Service
+    Controller --> UI: {status: 200, comments: [...]}
+    deactivate Controller
+    UI --> User: Hiển thị lại danh sách bình luận
+    deactivate UI
+
+    ' === Kịch bản 2.3: Chia sẻ ===
+    User -> UI: Nhấn "Chia sẻ"
+    activate UI
+    UI --> UI: (Mở Usecase Chia sẻ bài hát)
+    note right: Chuyển sang Usecase Chia sẻ (theo bước 2.3)
+    deactivate UI
+
+    ' === Kịch bản 2.4: Đăng lại ===
+    User -> UI: Nhấn "Đăng lại" (songId)
+    activate UI
+    UI -> Controller: Yêu cầu Đăng lại(songId, userId)
+    activate Controller
+    Controller -> Service: repostSong(songId, userId)
+    activate Service
+    Service -> DB: INSERT INTO reposts... (Bước 3)
+    activate DB
+    DB --> Service: {success: true}
+    deactivate DB
+    Service --> Controller: {success: true}
+    deactivate Service
+    Controller -> UI: {status: 200, message: "Đăng lại thành công"}
+    deactivate Controller
+    UI --> User: (Hiển thị thông báo, cập nhật số lượt đăng lại) (Bước 4)
+    deactivate UI
+
+end
+@enduml

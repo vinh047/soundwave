@@ -1,0 +1,55 @@
+@startuml Sequence Diagram - Thêm Bài Hát Vào Playlist
+
+title Sơ Đồ Tuần Tự - Chức Năng Thêm Bài Hát Vào Playlist
+
+actor "Người dùng" as User
+participant ":GiaoDienThemBaiHat" as UI
+participant ":PlaylistController" as Controller
+participant ":PlaylistService" as Service
+participant ":Database" as DB
+
+autonumber
+
+' === Dòng sự kiện chính (bước 1): Tải giao diện ===
+' (Giả định user đã ở trang Thêm bài hát)
+UI --> User: Hiển thị giao diện & danh sách bài hát
+
+' === Dòng sự kiện chính (bước 2): Người dùng chọn Thêm ===
+User -> UI: Chọn (songId) & Nhấn "Thêm"
+activate UI
+UI -> Controller: Yêu cầu thêm bài hát(playlistId, songId)
+activate Controller
+
+Controller -> Service: addSongToPlaylist(playlistId, songId)
+activate Service
+
+' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
+alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
+    Service -> DB: INSERT INTO playlist_songs (playlistId, songId)
+    activate DB
+    DB --> Service: Lỗi! (Không thể ghi)
+    deactivate DB
+    Service --> Controller: {error: "Lỗi ghi CSDL"}
+    deactivate Service
+    Controller --> UI: {status: 500, error: "Lỗi DB"}
+    deactivate Controller
+    
+    UI --> User: Thông báo "Thêm bài hát vào Playlist thất bại, vui lòng thử lại"
+    deactivate UI
+
+else Ghi nhận thành công (Bước 3)
+    Service -> DB: INSERT INTO playlist_songs (playlistId, songId)
+    activate DB
+    DB --> Service: {success: true}
+    deactivate DB
+    Service --> Controller: {success: true, message: "Đã thêm thành công"}
+    deactivate Service
+    
+    ' === Dòng sự kiện chính (bước 4): Chuyển giao diện ===
+    Controller --> UI: {status: 201, redirect: '/edit-playlist/playlistId'}
+    deactivate Controller
+    
+    UI --> User: Chuyển sang giao diện Sửa Playlist cá nhân
+    deactivate UI
+end
+@enduml

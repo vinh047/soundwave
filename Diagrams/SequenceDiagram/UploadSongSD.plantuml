@@ -1,0 +1,55 @@
+@startuml Sequence Diagram - Tải Lên Bài Hát
+
+title Sơ Đồ Tuần Tự - Chức Năng Tải Lên Bài Hát
+
+actor "Nghệ sĩ" as Artist
+participant ":GiaoDienTaiLen" as UI
+participant ":SongController" as Controller
+participant ":SongService" as Service
+participant ":Database" as DB
+
+autonumber
+
+' === Dòng sự kiện chính (bước 1): Giao diện đã được hiển thị ===
+' (Giả định nghệ sĩ đã ở trang Tải lên)
+UI --> Artist: Hiển thị form (Ảnh, tên, thể loại, file,...)
+
+' === Dòng sự kiện chính (bước 2): Nghệ sĩ điền thông tin và tải lên ===
+Artist -> UI: Điền thông tin, chọn file & Nhấn "Tải lên"
+activate UI
+UI -> Controller: Yêu cầu tải lên(songData, file)
+activate Controller
+
+Controller -> Service: saveSong(songData, file)
+activate Service
+
+' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
+alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
+    Service -> DB: INSERT INTO songs (data, file_path)
+    activate DB
+    DB --> Service: Lỗi! (Không thể ghi)
+    deactivate DB
+    Service --> Controller: {error: "Lỗi ghi CSDL"}
+    deactivate Service
+    Controller --> UI: {status: 500, error: "Lỗi DB"}
+    deactivate Controller
+    
+    UI --> Artist: Thông báo "Tải lên bài hát thất bại"
+    deactivate UI
+
+else Ghi nhận thành công (Bước 3)
+    Service -> DB: INSERT INTO songs (data, file_path)
+    activate DB
+    DB --> Service: {success: true, newSongId: 123}
+    deactivate DB
+    Service --> Controller: {success: true, message: "Tải lên thành công"}
+    deactivate Service
+    
+    ' === Dòng sự kiện chính (bước 4): Chuyển giao diện ===
+    Controller --> UI: {status: 200, redirect: '/manage-songs'}
+    deactivate Controller
+    
+    UI --> Artist: Chuyển sang giao diện Quản lý bài hát cá nhân
+    deactivate UI
+end
+@enduml

@@ -1,0 +1,94 @@
+@startuml Sequence Diagram - Đăng Ký
+
+title Sơ Đồ Tuần Tự - Chức Năng Đăng Ký
+
+actor "Người dùng" as User
+participant ":GiaoDienDangKy" as UI
+participant ":RegisterController" as Controller
+participant ":RegisterService" as Service
+participant ":Database" as DB
+
+autonumber
+
+' === Dòng sự kiện chính (bước 1): Hiển thị form ===
+User -> UI: Yêu cầu trang Đăng ký
+activate UI
+UI --> User: Hiển thị form (email, pass, vai trò)
+deactivate UI
+
+' === Dòng sự kiện chính (bước 2): Người dùng gửi thông tin ===
+User -> UI: Nhập (email, pass, role) & Nhấn "Đăng ký"
+activate UI
+UI -> Controller: Yêu cầu đăng ký(data)
+activate Controller
+Controller -> Service: register(data)
+activate Service
+
+' === Dòng sự kiện (bước 3) & Các dòng sự kiện phụ ===
+' Service thực hiện các bước kiểm tra
+' 3.1: Kiểm tra email hợp lệ
+alt Dòng sự kiện phụ (3.1) - Email không hợp lệ
+    Service -> Service: validateEmailFormat(data.email)
+    Service --> Controller: {error: "Email không hợp lệ"}
+    deactivate Service
+    Controller --> UI: {status: 400, error: "Email không hợp lệ"}
+    deactivate Controller
+    
+    UI --> User: Thông báo "Email không hợp lệ, vui lòng nhập lại"
+    deactivate UI
+    
+' 3.3: Kiểm tra mật khẩu yếu
+else Dòng sự kiện phụ (3.3) - Mật khẩu quá yếu
+    Service -> Service: validateEmailFormat(data.email) ' (Pass)
+    Service -> Service: validatePasswordStrength(data.password) ' (Fail)
+    Service --> Controller: {error: "Mật khẩu quá yếu"}
+    deactivate Service
+    Controller --> UI: {status: 400, error: "Mật khẩu quá yếu"}
+    deactivate Controller
+    
+    UI --> User: Thông báo "Mật khẩu quá yếu, vui lòng nhập lại"
+    deactivate UI
+    
+' 3.2: Kiểm tra tài khoản tồn tại
+else Dòng sự kiện phụ (3.2) - Tài khoản đã tồn tại
+    Service -> Service: validateEmailFormat(data.Cemail) ' (Pass)
+    Service -> Service: validatePasswordStrength(data.password) ' (Pass)
+    Service -> DB: findByEmail(data.email)
+    activate DB
+    DB --> Service: (Trả về 1 tài khoản đã tồn tại)
+    deactivate DB
+    
+    Service --> Controller: {error: "Tài khoản đã tồn tại"}
+    deactivate Service
+    Controller --> UI: {status: 409, error: "Tài khoản đã tồn tại"}
+    deactivate Controller
+    
+    UI --> User: Thông báo "Tài khoản đã tồn tại, đăng ký thất bại"
+    deactivate UI
+    
+' Dòng sự kiện chính (Bước 4 & 5) - Đăng ký thành công
+else Mọi thứ hợp lệ (Bước 3 thành công)
+    Service -> Service: validateEmailFormat(data.email) ' (Pass)
+    Service -> Service: validatePasswordStrength(data.password) ' (Pass)
+    Service -> DB: findByEmail(data.email)
+    activate DB
+    DB --> Service: (Trả về null)
+    deactivate DB
+
+    ' Bước 4: Ghi nhận tài khoản mới
+    Service -> DB: INSERT INTO accounts (data)
+    activate DB
+    DB --> Service: {success: true, newAccountId: 123}
+    deactivate DB
+    Service --> Controller: {success: true, message: "Đăng ký thành công"}
+    deactivate Service
+    Controller --> UI: {status: 201, ...}
+    deactivate Controller
+    
+    UI --> User: Thông báo "Đăng ký thành công"
+    
+    ' Bước 5: Chuyển giao diện
+    UI --> User: Chuyển sang giao diện Đăng nhập
+    deactivate UI
+end
+@enduml

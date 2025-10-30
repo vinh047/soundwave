@@ -1,0 +1,82 @@
+@startuml Sequence Diagram - QuảnLý Hồ Sơ Cá Nhân
+
+title Sơ Đồ Tuần Tự - Chức Năng Quản Lý Hồ Sơ Cá Nhân
+
+actor "Người dùng" as User
+participant ":GiaoDienHoSo" as UI
+participant ":ProfileController" as Controller
+participant ":InteractionService" as InteractionService
+participant ":Database" as DB
+
+autonumber
+
+' === Dòng sự kiện chính (bước 1 & 2): Tải giao diện ===
+User -> UI: Yêu cầu trang "Hồ sơ cá nhân"
+activate UI
+UI -> Controller: Yêu cầu lấy dữ liệu hồ sơ(userId)
+activate Controller
+Controller -> InteractionService: getProfileData(userId)
+activate InteractionService
+InteractionService -> DB: SELECT * FROM users WHERE id=...
+activate DB
+DB --> InteractionService: (Thông tin người dùng)
+deactivate DB
+InteractionService -> DB: SELECT * FROM reposts WHERE userId=...
+activate DB
+DB --> InteractionService: [Danh sách bài hát đã đăng lại]
+deactivate DB
+InteractionService --> Controller: {profileData, reposts: [...]}
+deactivate InteractionService
+Controller --> UI: {status: 200, data: {...}}
+deactivate Controller
+UI --> User: Hiển thị giao diện hồ sơ & danh sách bài hát
+deactivate UI
+
+' === Dòng sự kiện chính (bước 3.3): Người dùng chọn Hủy Đăng lại ===
+User -> UI: Chọn (songId) & Nhấn nút "Hủy Đăng lại"
+activate UI
+UI -> Controller: Yêu cầu Hủy Đăng lại(songId, userId)
+activate Controller
+Controller -> InteractionService: unRepostSong(songId, userId)
+activate InteractionService
+
+' === Dòng sự kiện (bước 3.3) & Dòng sự kiện phụ (3.3.1) ===
+alt Dòng sự kiện phụ (3.3.1) - Ghi nhận thất bại
+    InteractionService -> DB: DELETE FROM reposts WHERE ...
+    activate DB
+    DB --> InteractionService: Lỗi! (Không thể xóa)
+    deactivate DB
+    InteractionService --> Controller: {error: "Lỗi DB"}
+    deactivate InteractionService
+    Controller --> UI: {status: 500, error: "Lỗi"}
+    deactivate Controller
+    
+    UI --> User: Thông báo "Hành động thất bại, vui lòng thử lại"
+    deactivate UI
+
+else Ghi nhận thành công (Bước 3.3)
+    InteractionService -> DB: DELETE FROM reposts WHERE ...
+    activate DB
+    DB --> InteractionService: {success: true}
+    deactivate DB
+    InteractionService --> Controller: {success: true, message: "Đã hủy đăng lại"}
+    deactivate InteractionService
+
+    ' === Dòng sự kiện chính (bước 4): Hiện lại giao diện ===
+    ' (Hệ thống tự động làm mới giao diện)
+    Controller -> InteractionService: getProfileData(userId) ' Yêu cầu làm mới
+    activate InteractionService
+    InteractionService -> DB: SELECT * FROM reposts WHERE userId=...
+    activate DB
+    DB --> InteractionService: [Danh sách bài hát mới]
+    deactivate DB
+    InteractionService --> Controller: {profileData, reposts: [...]}
+    deactivate InteractionService
+    
+    Controller --> UI: {status: 200, data: {...}}
+    deactivate Controller
+    
+    UI --> User: Hiển thị lại giao diện với hồ sơ cá nhân sau khi cập nhật
+    deactivate UI
+end
+@enduml

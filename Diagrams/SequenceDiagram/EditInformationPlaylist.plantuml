@@ -1,0 +1,55 @@
+@startuml Sequence Diagram - Sửa Thông Tin Playlist
+
+title Sơ Đồ Tuần Tự - Chức Năng Sửa Thông Tin Playlist
+
+actor "Người dùng" as User
+participant ":GiaoDienSuaThongTin" as UI
+participant ":PlaylistController" as Controller
+participant ":PlaylistService" as Service
+participant ":Database" as DB
+
+autonumber
+
+' === Dòng sự kiện chính (bước 1): Hiển thị form ===
+' (Giả định user đã ở trang Sửa thông tin)
+UI --> User: Hiển thị form (Tên, Ảnh,...) với thông tin cũ
+
+' === Dòng sự kiện chính (bước 2): Người dùng nhấn Lưu ===
+User -> UI: Thay đổi thông tin & Nhấn "Lưu"
+activate UI
+UI -> Controller: Yêu cầu cập nhật(playlistId, updatedData)
+activate Controller
+
+Controller -> Service: updatePlaylistInfo(playlistId, updatedData)
+activate Service
+
+' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (1) ===
+alt Dòng sự kiện phụ (1) - Ghi nhận thất bại
+    Service -> DB: UPDATE playlists SET ... WHERE id=playlistId
+    activate DB
+    DB --> Service: Lỗi! (Không thể ghi)
+    deactivate DB
+    Service --> Controller: {error: "Lỗi ghi CSDL"}
+    deactivate Service
+    Controller --> UI: {status: 500, error: "Lỗi DB"}
+    deactivate Controller
+    
+    UI --> User: Thông báo "Sửa thông tin Playlist thất bại, vui lòng thử lại"
+    deactivate UI
+
+else Ghi nhận thành công (Bước 3)
+    Service -> DB: UPDATE playlists SET ... WHERE id=playlistId
+    activate DB
+    DB --> Service: {success: true}
+    deactivate DB
+    Service --> Controller: {success: true, message: "Cập nhật thành công"}
+    deactivate Service
+    
+    ' === Dòng sự kiện chính (bước 4): Chuyển giao diện ===
+    Controller --> UI: {status: 200, redirect: '/edit-playlist/playlistId'}
+    deactivate Controller
+    
+    UI --> User: Chuyển sang giao diện Sửa Playlist cá nhân
+    deactivate UI
+end
+@enduml

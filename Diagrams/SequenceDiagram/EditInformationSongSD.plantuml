@@ -1,0 +1,55 @@
+@startuml Sequence Diagram - Sửa Thông Tin Bài Hát
+
+title Sơ Đồ Tuần Tự - Chức Năng Sửa Thông Tin Bài Hát
+
+actor "Nghệ sĩ" as Artist
+participant ":GiaoDienSuaBaiHat" as UI
+participant ":SongController" as Controller
+participant ":SongService" as Service
+participant ":Database" as DB
+
+autonumber
+
+' === Dòng sự kiện chính (bước 1): Giao diện đã được hiển thị ===
+' (Giả định nghệ sĩ đã chọn 1 bài hát và hệ thống đã tải form)
+UI --> Artist: Hiển thị form với thông tin bài hát hiện tại
+
+' === Dòng sự kiện chính (bước 2): Nghệ sĩ sửa và lưu ===
+Artist -> UI: Thay đổi thông tin & Nhấn "Lưu"
+activate UI
+UI -> Controller: Yêu cầu cập nhật(songId, updatedData)
+activate Controller
+
+Controller -> Service: updateSong(songId, updatedData)
+activate Service
+
+' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
+alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
+    Service -> DB: UPDATE songs SET ... WHERE id=songId
+    activate DB
+    DB --> Service: Lỗi! (Không thể ghi)
+    deactivate DB
+    Service --> Controller: {error: "Lỗi ghi CSDL"}
+    deactivate Service
+    Controller --> UI: {status: 500, error: "Lỗi DB"}
+    deactivate Controller
+    
+    UI --> Artist: Thông báo "Cập nhật thông tin bài hát thất bại"
+    deactivate UI
+
+else Ghi nhận thành công (Bước 3)
+    Service -> DB: UPDATE songs SET ... WHERE id=songId
+    activate DB
+    DB --> Service: {success: true}
+    deactivate DB
+    Service --> Controller: {success: true, message: "Cập nhật thành công"}
+    deactivate Service
+    
+    ' === Dòng sự kiện chính (bước 4): Chuyển giao diện ===
+    Controller --> UI: {status: 200, redirect: '/manage-songs'}
+    deactivate Controller
+    
+    UI --> Artist: Chuyển sang giao diện Quản lý bài hát cá nhân
+    deactivate UI
+end
+@enduml

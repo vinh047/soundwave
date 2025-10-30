@@ -2,73 +2,96 @@
 
 title Sơ Đồ Tuần Tự - Chức Năng Đăng Nhập
 
-actor "User" as User
-participant ":LoginInterface" as UI
+actor "Người dùng" as User
+participant ":GiaoDienDangNhap" as UI
 participant ":LoginController" as Controller
 participant ":AuthService" as Service
 participant ":Database" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1) ===
+' === Dòng sự kiện chính (bước 1): Hiển thị form ===
 User -> UI: Yêu cầu trang Đăng nhập
 activate UI
+UI --> User: Hiển thị form (email, password)
+deactivate UI
 
-alt Dòng sự kiện phụ 1 (vế 1: Hiện giao diện thất bại)
-    UI --> User: Thông báo lỗi "Không thể tải trang"
-    deactivate UI
-else Dòng sự kiện chính 1 (Hiện giao diện thành công)
-    UI --> User: Hiển thị form Đăng nhập (email, password)
-    deactivate UI
-end
-
-' === Dòng sự kiện chính (bước 2) ===
+' === Dòng sự kiện chính (bước 2): Người dùng gửi thông tin ===
 User -> UI: Nhập (email, password) & Nhấn "Đăng nhập"
 activate UI
-
-' === Dòng sự kiện chính (bước 3) - Hệ thống kiểm tra ===
-UI -> Controller: Gửi yêu cầu đăng nhập(data)
+UI -> Controller: Yêu cầu đăng nhập(data)
 activate Controller
 Controller -> Service: login(data)
 activate Service
 
-' Hệ thống kiểm tra xem tài khoản có tồn tại không
-Service -> DB: findByEmail(data.email)
-activate DB
-DB --> Service: Trả về (userData)
-deactivate DB
-
-alt Tài khoản không tồn tại (Dòng sự kiện phụ 1 - vế 3)
+' === Dòng sự kiện (bước 3) & Các dòng sự kiện phụ ===
+' Service thực hiện các bước kiểm tra
+' 3.1: Kiểm tra email hợp lệ
+alt Dòng sự kiện phụ (3.1) - Email không hợp lệ
+    Service -> Service: validateEmailFormat(data.email)
+    ' (Giả sử kiểm tra thấy không hợp lệ)
+    Service --> Controller: {error: "Email không hợp lệ"}
+    deactivate Service
+    Controller --> UI: {status: 400, error: "Email không hợp lệ"}
+    deactivate Controller
+    
+    UI --> User: Thông báo "Email không hợp lệ, vui lòng nhập lại"
+    deactivate UI
+    
+' 3.3: Kiểm tra tài khoản tồn tại
+else Dòng sự kiện phụ (3.3) - Tài khoản không tồn tại
+    Service -> Service: validateEmailFormat(data.email) ' (Pass)
+    Service -> DB: findByEmail(data.email)
+    activate DB
+    DB --> Service: (Trả về null)
+    deactivate DB
+    
     Service --> Controller: {error: "Tài khoản không tồn tại"}
     deactivate Service
     Controller --> UI: {status: 404, error: "Tài khoản không tồn tại"}
     deactivate Controller
     
-    UI --> User: Hiển thị lỗi "Tài khoản không tồn tại, vui lòng đăng ký."
+    UI --> User: Thông báo "Tài khoản không tồn tại, vui lòng đăng ký..."
     deactivate UI
-
-else Tài khoản tồn tại (Tiếp tục kiểm tra khớp)
-    ' Bước 3: Kiểm tra xem email VÀ mật khẩu/vai trò có khớp không
-    Service -> Service: verifyUser(data.email, data.password, userData)
     
-    alt Thông tin không khớp (Dòng sự kiện phụ 1 - vế 2)
-        Service --> Controller: {error: "Sai thông tin đăng nhập"}
-        deactivate Service
-        Controller --> UI: {status: 401, error: "Không khớp"}
-        deactivate Controller
+' 3.2: Kiểm tra mật khẩu không đúng
+else Dòng sự kiện phụ (3.2) - Thông tin không đúng
+    Service -> Service: validateEmailFormat(data.email) ' (Pass)
+    Service -> DB: findByEmail(data.email)
+    activate DB
+    DB --> Service: (Trả về userData)
+    deactivate DB
+    
+    Service -> Service: verifyPassword(data.password, userData.hash)
+    ' (Giả sử kiểm tra thấy mật khẩu không khớp)
+    Service --> Controller: {error: "Sai thông tin đăng nhập"}
+    deactivate Service
+    Controller --> UI: {status: 401, error: "Không khớp"}
+    deactivate Controller
         
-        UI --> User: Hiển thị lỗi "Đăng nhập thất bại. Vui lòng nhập lại."
-        deactivate UI
+    UI --> User: Thông báo "Sai email hoặc mật khẩu, vui lòng nhập lại"
+    deactivate UI
         
-    else Thông tin khớp (Dòng sự kiện chính 4 - Thành công)
-        Service --> Controller: {success: true, user: userData}
-        deactivate Service
-        Controller --> UI: {status: 200, user: userData}
-        deactivate Controller
-        
-        ' Hậu điều kiện 1: Chuyển giao diện
-        UI --> User: Thông báo "Đăng nhập thành công" & Chuyển sang giao diện chính
-        deactivate UI
-    end
+' Dòng sự kiện chính (Bước 4 & 5) - Đăng nhập thành công
+else Mọi thứ hợp lệ (Bước 3 thành công)
+    Service -> Service: validateEmailFormat(data.email) ' (Pass)
+    Service -> DB: findByEmail(data.email)
+    activate DB
+    DB --> Service: (Trả về userData)
+    deactivate DB
+
+    Service -> Service: verifyPassword(data.password, userData.hash) ' (Pass)
+
+    ' Bước 4: Thông báo thành công
+    Service --> Controller: {success: true, user: userData}
+    deactivate Service
+    Controller --> UI: {status: 200, user: userData}
+    deactivate Controller
+    
+    UI --> User: Thông báo "Đăng nhập thành công"
+    
+    ' Bước 5: Chuyển giao diện
+    UI --> User: Chuyển sang giao diện cho người dùng đã đăng nhập
+    deactivate UI
 end
 @enduml

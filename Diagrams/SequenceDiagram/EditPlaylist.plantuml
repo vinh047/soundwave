@@ -1,0 +1,79 @@
+@startuml Sequence Diagram - Sửa Playlist
+
+title Sơ Đồ Tuần Tự - Chức Năng Sửa Playlist Cá Nhân
+
+actor "Người dùng" as User
+participant ":GiaoDienSuaPlaylist" as UI
+participant ":PlaylistController" as Controller
+participant ":PlaylistService" as Service
+participant ":Database" as DB
+
+autonumber
+
+' === Dòng sự kiện chính (bước 1): Tải giao diện ===
+' Tiền điều kiện 1: Người dùng đã đăng nhập
+User -> UI: Yêu cầu trang "Sửa Playlist" (playlistId)
+activate UI
+UI -> Controller: Yêu cầu lấy chi tiết playlist(playlistId)
+activate Controller
+Controller -> Service: getPlaylistDetails(playlistId)
+activate Service
+Service -> DB: SELECT * FROM playlist_songs WHERE playlistId=...
+activate DB
+DB --> Service: [danh sách bài hát]
+deactivate DB
+Service --> Controller: {success: true, songs: [...]}
+deactivate Service
+Controller --> UI: {status: 200, songs: [...]}
+deactivate Controller
+UI --> User: Hiển thị danh sách bài hát & các nút chức năng
+deactivate UI
+
+' === Dòng sự kiện chính (bước 2.3): Người dùng chọn Xóa ===
+User -> UI: Chọn (songId) & Nhấn nút "Xóa bài hát"
+activate UI
+UI -> Controller: Yêu cầu Xóa bài hát(playlistId, songId)
+activate Controller
+Controller -> Service: removeSongFromPlaylist(playlistId, songId)
+activate Service
+
+' === Dòng sự kiện (bước 2.3) & Dòng sự kiện phụ (2.3.1) ===
+alt Dòng sự kiện phụ (2.3.1) - Xóa thất bại
+    Service -> DB: DELETE FROM playlist_songs WHERE playlistId=... AND songId=...
+    activate DB
+    DB --> Service: Lỗi! (Không thể xóa)
+    deactivate DB
+    Service --> Controller: {error: "Lỗi DB"}
+    deactivate Service
+    Controller --> UI: {status: 500, error: "Lỗi"}
+    deactivate Controller
+    
+    UI --> User: Thông báo "Xoá bài hát khỏi Playlist thất bại, vui lòng thử lại"
+    deactivate UI
+
+else Xóa thành công (Bước 2.3)
+    Service -> DB: DELETE FROM playlist_songs WHERE playlistId=... AND songId=...
+    activate DB
+    DB --> Service: {success: true}
+    deactivate DB
+    Service -> Controller: {success: true, message: "Đã xóa"}
+    deactivate Service
+
+    ' === Dòng sự kiện chính (bước 3): Hiện lại danh sách ===
+    ' (Hệ thống tự động làm mới giao diện)
+    Controller -> Service: getPlaylistDetails(playlistId) ' Yêu cầu làm mới
+    activate Service
+    Service -> DB: SELECT * FROM playlist_songs WHERE playlistId=...
+    activate DB
+    DB --> Service: [Danh sách bài hát mới]
+    deactivate DB
+    Service -> Controller: {success: true, songs: [...]}
+    deactivate Service
+    
+    Controller --> UI: {status: 200, songs: [...]}
+    deactivate Controller
+    
+    UI --> User: Hiển thị lại giao diện với danh sách bài hát sau khi cập nhật
+    deactivate UI
+end
+@enduml
