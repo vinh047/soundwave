@@ -99,12 +99,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const appliedVariant = light
       ? "light"
       : dark
-      ? "dark"
-      : outline
-      ? "outline"
-      : ghost 
-      ? "ghost"
-      : "light";
+        ? "dark"
+        : outline
+          ? "outline"
+          : ghost
+            ? "ghost"
+            : "light";
 
     const computedClass = cn(
       base,
