@@ -1,0 +1,106 @@
+@startuml Sequence Diagram - Quản Lý Báo Cáo Vi Phạm
+
+title Sơ Đồ Tuần Tự - Chức Năng Quản Lý Báo Cáo Vi Phạm
+
+actor "Admin" as Admin
+participant ":GiaoDienQuanLy" as UI
+participant ":ReportController" as Controller
+participant ":ReportService" as Service
+participant ":Database" as DB
+participant ":SongService" as SongService
+participant ":NotificationService" as NotifService
+
+autonumber
+
+' === Dòng sự kiện chính (bước 1): Tải giao diện ===
+Admin -> UI: Yêu cầu trang "Quản lý Báo cáo"
+activate UI
+UI -> Controller: Yêu cầu lấy danh sách báo cáo()
+activate Controller
+Controller -> Service: getPendingReports()
+activate Service
+Service -> DB: SELECT * FROM reports WHERE status='chua_xu_ly'
+activate DB
+DB --> Service: [danh sách báo cáo]
+deactivate DB
+Service --> Controller: {success: true, reports: [...]}
+deactivate Service
+Controller --> UI: {status: 200, reports: [...]}
+deactivate Controller
+UI --> Admin: Hiển thị danh sách báo cáo & các nút chức năng
+deactivate UI
+
+' === Dòng sự kiện chính (bước 2 & 3): Admin chọn và đánh giá ===
+Admin -> UI: Chọn 1 báo cáo (reportId)
+Admin -> UI: Đánh giá & Chọn xử lý "Ẩn bài hát"
+
+' === Dòng sự kiện chính (bước 4 & 5): Ghi nhận và cập nhật trạng thái ===
+activate UI
+UI -> Controller: processReport(reportId, 'hide_song')
+activate Controller
+Controller -> Service: processReport(reportId, 'hide_song')
+activate Service
+
+alt Dòng sự kiện phụ (5.1) - Cập nhật trạng thái thất bại
+    Service -> DB: UPDATE reports SET status='da_xu_ly' WHERE id=reportId
+    activate DB
+    DB --> Service: Lỗi! (Không thể cập nhật)
+    deactivate DB
+    Service --> Controller: {error: "Cập nhật trạng thái thất bại"}
+    deactivate Service
+    Controller --> UI: {status: 500, error: "Lỗi DB"}
+    deactivate Controller
+    UI --> Admin: Thông báo "Cập nhật trạng thái của báo cáo thất bại"
+    deactivate UI
+
+else Cập nhật trạng thái thành công (Bước 5)
+    Service -> DB: UPDATE reports SET status='da_xu_ly' WHERE id=reportId
+    activate DB
+    DB --> Service: {success: true}
+    deactivate DB
+
+    ' === Dòng sự kiện chính (bước 6): Thực hiện phương thức xử lý ===
+    alt Dòng sự kiện phụ (6.1) - Thực hiện xử lý thất bại
+        Service -> SongService: hideSong(songId_from_report)
+        activate SongService
+        SongService --> Service: Lỗi! (Không thể ẩn bài hát)
+        deactivate SongService
+        Service --> Controller: {error: "Xử lý báo cáo thất bại"}
+        deactivate Service
+        Controller --> UI: {status: 500, error: "Lỗi xử lý"}
+        deactivate Controller
+        UI --> Admin: Thông báo "Xử lý báo cáo thất bại"
+        deactivate UI
+
+    else Thực hiện xử lý thành công (Bước 6)
+        Service -> SongService: hideSong(songId_from_report)
+        activate SongService
+        ' Giả định SongService sẽ gọi DB để cập nhật bài hát
+        SongService -> DB: UPDATE songs SET status='hidden' WHERE id=songId
+        activate DB
+        DB --> SongService: {success: true}
+        deactivate DB
+        SongService --> Service: {success: true}
+        deactivate SongService
+
+        ' === Dòng sự kiện chính (bước 8): Gửi thông báo ===
+        Service -> NotifService: sendReportNotification(reportId)
+        activate NotifService
+        NotifService --> Admin: (Gửi cho người báo cáo & người vi phạm)
+        deactivate NotifService
+
+        ' === Dòng sự kiện chính (bước 7): Hiện lại danh sách ===
+        ' (Hệ thống tự động làm mới)
+        Service -> DB: SELECT * FROM reports WHERE status='chua_xu_ly'
+        activate DB
+        DB --> Service: [danh sách báo cáo mới]
+        deactivate DB
+        Service --> Controller: {success: true, reports: [...]}
+        deactivate Service
+        Controller --> UI: {status: 200, reports: [...]}
+        deactivate Controller
+        UI --> Admin: Hiển thị danh sách báo cáo đã cập nhật
+        deactivate UI
+    end
+end
+@enduml

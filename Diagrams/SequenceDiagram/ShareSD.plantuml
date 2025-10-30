@@ -1,0 +1,85 @@
+@startuml Sequence Diagram - Chia sẻ bài hát
+
+title Sơ Đồ Tuần Tự - Chức Năng Chia Sẻ Bài Hát
+
+actor "Người dùng" as User
+participant ":GiaoDienBaiHat" as SongUI
+participant ":GiaoDienChiaSe" as ShareUI
+participant ":ShareController" as Controller
+participant ":ShareService" as Service
+participant ":PlatformAPI" as PlatformAPI
+participant ":Database" as DB
+
+autonumber
+
+' === Dòng sự kiện chính (bước 1): Hiển thị form ===
+User -> SongUI: Nhấn nút "Chia sẻ"
+activate SongUI
+SongUI -> ShareUI: Yêu cầu hiển thị(songId)
+activate ShareUI
+ShareUI --> User: Hiển thị danh sách nền tảng
+deactivate SongUI
+
+' === Dòng sự kiện chính (bước 2 & 3): Chọn nền tảng ===
+User -> ShareUI: Chọn 1 nền tảng (platform)
+ShareUI -> Controller: Yêu cầu lấy danh sách tài khoản(platform)
+activate Controller
+Controller -> Service: getAccounts(platform)
+activate Service
+Service -> PlatformAPI: (Gọi API) getFriends/Accounts()
+activate PlatformAPI
+PlatformAPI --> Service: [danh sách tài khoản]
+deactivate PlatformAPI
+Service --> Controller: [danh sách tài khoản]
+deactivate Service
+Controller --> ShareUI: {accounts: [...]}
+deactivate Controller
+ShareUI --> User: Hiển thị danh sách tài khoản (Bước 3)
+
+' === Dòng sự kiện chính (bước 4): Chọn tài khoản & chia sẻ ===
+User -> ShareUI: Chọn (accountId) & Nhấn "Chia sẻ"
+ShareUI -> Controller: share(songId, platform, accountId)
+activate Controller
+Controller -> Service: shareToPlatform(songId, platform, accountId)
+activate Service
+
+' === Dòng sự kiện (bước 5) & Dòng sự kiện phụ (5.1) ===
+alt Dòng sự kiện phụ (5.1) - Chia sẻ thất bại
+    Service -> PlatformAPI: (Gọi API) postShare(link, accountId)
+    activate PlatformAPI
+    PlatformAPI --> Service: Lỗi! (API error)
+    deactivate PlatformAPI
+    Service --> Controller: {error: "Chia sẻ thất bại"}
+    deactivate Service
+    Controller --> ShareUI: {status: 500, error: "Lỗi API"}
+    deactivate Controller
+    
+    ShareUI --> User: Thông báo "Chia sẻ thất bại, vui lòng thử lại"
+    deactivate ShareUI
+
+else Chia sẻ thành công (Bước 5)
+    Service -> PlatformAPI: (Gọi API) postShare(link, accountId)
+    activate PlatformAPI
+    PlatformAPI --> Service: {success: true}
+    deactivate PlatformAPI
+
+    ' === Dòng sự kiện chính (bước 6): Ghi nhận hành động ===
+    Service -> DB: INSERT INTO shares (userId, songId, platform)
+    activate DB
+    DB --> Service: {success: true}
+    deactivate DB
+    Service --> Controller: {success: true}
+    deactivate Service
+    Controller --> ShareUI: {status: 200, success: true}
+    deactivate Controller
+    
+    ' === Dòng sự kiện chính (bước 7): Thông báo thành công ===
+    ShareUI --> User: Thông báo "Đã chia sẻ"
+    
+    ' === Dòng sự kiện chính (bước 8): Trở lại giao diện ===
+    ShareUI --> SongUI: Yêu cầu đóng/quay lại
+    activate SongUI
+    deactivate ShareUI
+    deactivate SongUI
+end
+@enduml

@@ -1,0 +1,53 @@
+@startuml Sequence Diagram - Đăng Xuất
+
+title Sơ Đồ Tuần Tự - Chức Năng Đăng Xuất
+
+' Tiền điều kiện: Người dùng đã đăng nhập
+actor "Người dùng" as User
+participant ":GiaoDienChinh" as UI
+participant ":LogoutController" as Controller
+participant ":AuthService" as Service
+participant ":SessionManager" as Session
+
+autonumber
+
+' === Dòng sự kiện chính (bắt đầu) ===
+User -> UI: Nhấn nút "Đăng xuất"
+activate UI
+UI -> Controller: Yêu cầu đăng xuất()
+activate Controller
+Controller -> Service: logout(sessionId)
+activate Service
+
+' === Dòng sự kiện (bước 1) & Dòng sự kiện phụ (1.1) ===
+alt Dòng sự kiện phụ (1.1) - Đăng xuất thất bại
+    Service -> Session: destroySession(sessionId)
+    activate Session
+    Session --> Service: Lỗi! (Không thể hủy session)
+    deactivate Session
+    Service --> Controller: {error: "Đăng xuất thất bại"}
+    deactivate Service
+    Controller --> UI: {status: 500, error: "Lỗi"}
+    deactivate Controller
+    
+    UI --> User: Thông báo "Đăng xuất thất bại, vui lòng thử lại"
+    deactivate UI
+
+else Đăng xuất thành công (Bước 1 & 2)
+    Service -> Session: destroySession(sessionId)
+    activate Session
+    Session --> Service: {success: true}
+    deactivate Session
+    Service --> Controller: {success: true, message: "Đã đăng xuất"}
+    deactivate Service
+    Controller --> UI: {status: 200, success: true}
+    deactivate Controller
+    
+    ' Bước 1: Thông báo thành công
+    UI --> User: Thông báo "Bạn đã đăng xuất thành công"
+    
+    ' Bước 2: Chuyển sang chế độ Khách
+    UI --> User: Chuyển sang giao diện Khách (trang chủ/đăng nhập)
+    deactivate UI
+end
+@enduml

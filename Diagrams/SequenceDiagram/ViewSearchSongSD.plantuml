@@ -1,0 +1,84 @@
+@startuml Sequence Diagram - Xem Danh Sách & Tìm Kiếm Bài Hát
+
+title Sơ Đồ Tuần Tự - Chức Năng Xem Danh Sách & Tìm Kiếm Bài Hát
+
+actor "Người dùng" as User
+participant ":GiaoDienTimKiem" as UI
+participant ":SearchController" as Controller
+participant ":SearchService" as Service
+participant ":Database" as DB
+
+autonumber
+
+' === Dòng sự kiện chính (bước 1) & Dòng sự kiện phụ (1.1) ===
+User -> UI: Yêu cầu trang "Tìm kiếm" (hoặc trang chủ)
+activate UI
+
+alt Dòng sự kiện phụ (1.1) - Tải danh sách thất bại
+    UI -> Controller: Yêu cầu lấy danh sách bài hát()
+    activate Controller
+    Controller -> Service: getInitialSongList()
+    activate Service
+    Service -> DB: SELECT * FROM songs LIMIT 20
+    activate DB
+    DB --> Service: Lỗi! (Database timeout/error)
+    deactivate DB
+    Service --> Controller: {error: "Lỗi tải dữ liệu"}
+    deactivate Service
+    Controller --> UI: {status: 500, error: "Lỗi DB"}
+    deactivate Controller
+    
+    UI --> User: Thông báo "Hiện danh sách bài hát thất bại, vui lòng thử lại"
+    deactivate UI
+
+else Tải danh sách thành công (Bước 1)
+    UI -> Controller: Yêu cầu lấy danh sách bài hát()
+    activate Controller
+    Controller -> Service: getInitialSongList()
+    activate Service
+    Service -> DB: SELECT * FROM songs LIMIT 20
+    activate DB
+    DB --> Service: [danh sách bài hát]
+    deactivate DB
+    Service --> Controller: {success: true, songs: [...]}
+    deactivate Service
+    Controller --> UI: {status: 200, songs: [...]}
+    deactivate Controller
+    
+    UI --> User: Hiển thị giao diện & danh sách bài hát
+    deactivate UI
+end
+
+' === Dòng sự kiện chính (bước 1 - vế sau): Người dùng tìm kiếm ===
+User -> UI: Nhập (từ khóa) vào ô tìm kiếm
+activate UI
+UI -> Controller: Yêu cầu tìm kiếm(keyword)
+activate Controller
+Controller -> Service: searchSongs(keyword)
+activate Service
+Service -> DB: SELECT * FROM songs WHERE title LIKE ...
+activate DB
+DB --> Service: [kết quả tìm kiếm]
+deactivate DB
+Service --> Controller: {success: true, songs: [...]}
+deactivate Service
+Controller --> UI: {status: 200, songs: [...]}
+deactivate Controller
+
+UI --> User: Hiển thị danh sách kết quả tìm kiếm
+deactivate UI
+
+' === Dòng sự kiện chính (bước 2) ===
+User -> UI: Chọn 1 bài hát (songId) từ danh sách
+activate UI
+UI --> User: (Hiển thị các tùy chọn: Nghe nhạc, Thích, Chia sẻ...)
+deactivate UI
+
+note right of User
+  Hậu điều kiện:
+  Hệ thống sẵn sàng để
+  kích hoạt Usecase 
+  (Nghe nhạc), (Thích),...
+end note
+
+@enduml

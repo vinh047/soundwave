@@ -1,0 +1,77 @@
+@startuml Sequence Diagram - Quản Lý Tài Khoản
+
+title Sơ Đồ Tuần Tự - Chức Năng Quản Lý Tài Khoản
+
+actor "Admin" as Admin
+participant ":GiaoDienQLTaiKhoan" as UI
+participant ":AccountController" as Controller
+participant ":AccountService" as Service
+participant ":Database" as DB
+
+autonumber
+
+' === Dòng sự kiện chính (bước 1 & 2): Tải giao diện ===
+Admin -> UI: Yêu cầu trang "Quản lý tài khoản"
+activate UI
+UI -> Controller: Yêu cầu lấy danh sách tài khoản()
+activate Controller
+Controller -> Service: getAllAccounts()
+activate Service
+Service -> DB: SELECT * FROM accounts
+activate DB
+DB --> Service: [danh sách tài khoản]
+deactivate DB
+Service --> Controller: {success: true, accounts: [...]}
+deactivate Service
+Controller --> UI: {status: 200, accounts: [...]}
+deactivate Controller
+UI --> Admin: Hiển thị danh sách tài khoản & nút "Khóa"
+deactivate UI
+
+' === Dòng sự kiện chính (bước 3): Admin chọn Khóa tài khoản ===
+Admin -> UI: Chọn (accountId) & Nhấn nút "Khóa"
+activate UI
+UI -> Controller: requestLockAccount(accountId, 'lock')
+activate Controller
+Controller -> Service: setAccountStatus(accountId, 'locked')
+activate Service
+
+' === Dòng sự kiện chính (bước 4): Ghi nhận trạng thái ===
+alt Dòng sự kiện phụ (4.1) - Ghi nhận thất bại
+    Service -> DB: UPDATE accounts SET status='locked' WHERE id=accountId
+    activate DB
+    DB --> Service: Lỗi! (Không thể cập nhật)
+    deactivate DB
+    Service --> Controller: {error: "Cập nhật thất bại"}
+    deactivate Service
+    Controller --> UI: {status: 500, error: "Lỗi DB"}
+    deactivate Controller
+    
+    UI --> Admin: Thông báo "Khoá(Mở khoá) tài khoản thất bại"
+    deactivate UI
+
+else Ghi nhận thành công (Bước 4)
+    Service -> DB: UPDATE accounts SET status='locked' WHERE id=accountId
+    activate DB
+    DB --> Service: {success: true}
+    deactivate DB
+    Service --> Controller: {success: true, message: "Đã cập nhật trạng thái"}
+    deactivate Service
+
+    ' === Dòng sự kiện chính (bước 5): Hiện lại danh sách ===
+    ' (Hệ thống tự động làm mới giao diện)
+    Controller -> Service: getAllAccounts() ' Yêu cầu làm mới
+    activate Service
+    Service -> DB: SELECT * FROM accounts
+    activate DB
+    DB --> Service: [danh sách tài khoản mới]
+    deactivate DB
+    Service --> Controller: {success: true, accounts: [...]}
+    deactivate Service
+    Controller --> UI: {status: 200, accounts: [...]}
+    deactivate Controller
+    
+    UI --> Admin: Hiển thị danh sách đã cập nhật (tài khoản A có trạng thái "Đã khóa")
+    deactivate UI
+end
+@enduml

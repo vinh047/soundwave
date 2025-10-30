@@ -1,0 +1,64 @@
+@startuml Sequence Diagram - Báo Cáo Vi Phạm
+
+title Sơ Đồ Tuần Tự - Chức Năng Báo Cáo Vi Phạm
+
+actor "Người dùng" as User
+participant ":GiaoDienBaiHat" as SongUI
+participant ":GiaoDienBaoCao" as ReportUI
+participant ":ReportController" as Controller
+participant ":ReportService" as Service
+participant ":Database" as DB
+
+autonumber
+
+' === Dòng sự kiện chính (bước 1): Hiển thị form ===
+User -> SongUI: Nhấn nút "Báo cáo vi phạm"
+activate SongUI
+SongUI -> ReportUI: Yêu cầu hiển thị(songId)
+activate ReportUI
+ReportUI --> User: Hiển thị form (tên bài hát, ô nhập lý do)
+deactivate SongUI
+
+' === Dòng sự kiện chính (bước 2): Người dùng gửi báo cáo ===
+User -> ReportUI: Điền lý do & Nhấn "Gửi báo cáo"
+ReportUI -> Controller: Yêu cầu gửi báo cáo(songId, reason)
+activate Controller
+
+Controller -> Service: createReport(songId, reason, userId)
+activate Service
+
+' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
+alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
+    Service -> DB: INSERT INTO reports (songId, reason, userId)
+    activate DB
+    DB --> Service: Lỗi! (Không thể ghi)
+    deactivate DB
+    Service --> Controller: {error: "Lỗi ghi CSDL"}
+    deactivate Service
+    Controller --> ReportUI: {status: 500, error: "Lỗi DB"}
+    deactivate Controller
+    
+    ReportUI --> User: Thông báo "Báo cáo thất bại, vui lòng thử lại"
+    deactivate ReportUI
+
+else Ghi nhận thành công (Bước 3)
+    Service -> DB: INSERT INTO reports (songId, reason, userId)
+    activate DB
+    DB --> Service: {success: true, newReportId: 456}
+    deactivate DB
+    Service --> Controller: {success: true, message: "Gửi thành công"}
+    deactivate Service
+    
+    Controller --> ReportUI: {status: 200, success: true}
+    deactivate Controller
+    
+    ' === Dòng sự kiện chính (bước 4): Thông báo thành công ===
+    ReportUI --> User: Thông báo "Đã báo cáo thành công"
+    
+    ' === Dòng sự kiện chính (bước 5): Trở lại giao diện ===
+    ReportUI --> SongUI: Yêu cầu đóng/quay lại
+    activate SongUI
+    deactivate ReportUI
+    deactivate SongUI
+end
+@enduml
