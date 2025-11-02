@@ -21,9 +21,9 @@ Service -> DB: SELECT * FROM artists
 activate DB
 DB --> Service: [danh sách nghệ sĩ]
 deactivate DB
-Service --> Controller: {success: true, artists: [...]}
+Service -> Controller: {success: true, artists: [...]}
 deactivate Service
-Controller --> UI: {status: 200, artists: [...]}
+Controller -> UI: {status: 200, artists: [...]}
 deactivate Controller
 UI --> User: Hiển thị danh sách nghệ sĩ & nút "Theo dõi"
 deactivate UI
@@ -43,7 +43,7 @@ alt Dòng sự kiện phụ (4.1) - Ghi nhận thất bại
     activate DB
     DB --> Service: Lỗi! (Không thể ghi)
     deactivate DB
-    Service --> Controller: {error: "Lỗi ghi CSDL"}
+    Service -> Controller: {error: "Lỗi ghi CSDL"}
     deactivate Service
     Controller --> UI: {status: 500, error: "Lỗi DB"}
     deactivate Controller
@@ -56,7 +56,7 @@ else Ghi nhận thành công (Bước 4 & 5)
     activate DB
     DB --> Service: {success: true}
     deactivate DB
-    Service --> Controller: {success: true, message: "Đã theo dõi"}
+    Service -> Controller: {success: true, message: "Đã theo dõi"}
     deactivate Service
 
     ' === Dòng sự kiện chính (bước 6): Hiện lại danh sách ===
@@ -67,7 +67,7 @@ else Ghi nhận thành công (Bước 4 & 5)
     activate DB
     DB --> Service: [danh sách nghệ sĩ mới]
     deactivate DB
-    Service --> Controller: {success: true, artists: [...]}
+    Service -> Controller: {success: true, artists: [...]}
     deactivate Service
     Controller --> UI: {status: 200, artists: [...]}
     deactivate Controller

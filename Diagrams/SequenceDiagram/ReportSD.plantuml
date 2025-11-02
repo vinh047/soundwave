@@ -21,6 +21,7 @@ deactivate SongUI
 
 ' === Dòng sự kiện chính (bước 2): Người dùng gửi báo cáo ===
 User -> ReportUI: Điền lý do & Nhấn "Gửi báo cáo"
+activate ReportUI
 ReportUI -> Controller: Yêu cầu gửi báo cáo(songId, reason)
 activate Controller
 

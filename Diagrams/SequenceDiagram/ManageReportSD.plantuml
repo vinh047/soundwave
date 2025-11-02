@@ -8,6 +8,7 @@ participant ":ReportController" as Controller
 participant ":ReportService" as Service
 participant ":Database" as DB
 participant ":SongService" as SongService
+participant ":UserService" as UserService
 participant ":NotificationService" as NotifService
 
 autonumber
@@ -30,67 +31,176 @@ deactivate Controller
 UI --> Admin: Hiển thị danh sách báo cáo & các nút chức năng
 deactivate UI
 
-' === Dòng sự kiện chính (bước 2 & 3): Admin chọn và đánh giá ===
+' === Dòng sự kiện chính (bước 2, 3, 4): Admin chọn hành động ===
 Admin -> UI: Chọn 1 báo cáo (reportId)
-Admin -> UI: Đánh giá & Chọn xử lý "Ẩn bài hát"
-
-' === Dòng sự kiện chính (bước 4 & 5): Ghi nhận và cập nhật trạng thái ===
+Admin -> UI: Đánh giá & Chọn một phương thức xử lý (Bước 3 & 4)
 activate UI
-UI -> Controller: processReport(reportId, 'hide_song')
-activate Controller
-Controller -> Service: processReport(reportId, 'hide_song')
-activate Service
 
-alt Dòng sự kiện phụ (5.1) - Cập nhật trạng thái thất bại
-    Service -> DB: UPDATE reports SET status='da_xu_ly' WHERE id=reportId
-    activate DB
-    DB --> Service: Lỗi! (Không thể cập nhật)
-    deactivate DB
-    Service --> Controller: {error: "Cập nhật trạng thái thất bại"}
-    deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi DB"}
-    deactivate Controller
-    UI --> Admin: Thông báo "Cập nhật trạng thái của báo cáo thất bại"
-    deactivate UI
+' === Khối ALT cho 3 kịch bản xử lý ===
+alt Kịch bản 1: Admin chọn "Ẩn bài hát" (Bước 4)
+    UI -> Controller: processReport(reportId, 'hide_song')
+    activate Controller
+    Controller -> Service: processReport(reportId, 'hide_song')
+    activate Service
 
-else Cập nhật trạng thái thành công (Bước 5)
-    Service -> DB: UPDATE reports SET status='da_xu_ly' WHERE id=reportId
-    activate DB
-    DB --> Service: {success: true}
-    deactivate DB
-
-    ' === Dòng sự kiện chính (bước 6): Thực hiện phương thức xử lý ===
-    alt Dòng sự kiện phụ (6.1) - Thực hiện xử lý thất bại
-        Service -> SongService: hideSong(songId_from_report)
-        activate SongService
-        SongService --> Service: Lỗi! (Không thể ẩn bài hát)
-        deactivate SongService
-        Service --> Controller: {error: "Xử lý báo cáo thất bại"}
-        deactivate Service
-        Controller --> UI: {status: 500, error: "Lỗi xử lý"}
-        deactivate Controller
-        UI --> Admin: Thông báo "Xử lý báo cáo thất bại"
-        deactivate UI
-
-    else Thực hiện xử lý thành công (Bước 6)
-        Service -> SongService: hideSong(songId_from_report)
-        activate SongService
-        ' Giả định SongService sẽ gọi DB để cập nhật bài hát
-        SongService -> DB: UPDATE songs SET status='hidden' WHERE id=songId
+    ' === Dòng sự kiện (bước 5) & Dòng sự kiện phụ (5.1) ===
+    alt Dòng sự kiện phụ (5.1) - Cập nhật trạng thái thất bại
+        Service -> DB: UPDATE reports SET status='da_xu_ly' WHERE id=reportId
         activate DB
-        DB --> SongService: {success: true}
+        DB --> Service: Lỗi! (Không thể cập nhật)
         deactivate DB
-        SongService --> Service: {success: true}
-        deactivate SongService
+        Service --> Controller: {error: "Cập nhật trạng thái thất bại"}
+        deactivate Service
+        Controller --> UI: {status: 500, error: "Lỗi DB"}
+        deactivate Controller
+        UI --> Admin: Thông báo "Cập nhật trạng thái của báo cáo thất bại"
+        deactivate UI
+    
+    else Cập nhật trạng thái thành công (Bước 5)
+        Service -> DB: UPDATE reports SET status='da_xu_ly' WHERE id=reportId
+        activate DB
+        DB --> Service: {success: true}
+        deactivate DB
 
-        ' === Dòng sự kiện chính (bước 8): Gửi thông báo ===
+        ' === Dòng sự kiện (bước 6) & Dòng sự kiện phụ (6.1) ===
+        alt Dòng sự kiện phụ (6.1) - Thực hiện xử lý thất bại
+            Service -> SongService: hideSong(songId_from_report)
+            activate SongService
+            SongService --> Service: Lỗi! (Không thể ẩn bài hát)
+            deactivate SongService
+            Service --> Controller: {error: "Xử lý báo cáo thất bại"}
+            deactivate Service
+            Controller --> UI: {status: 500, error: "Lỗi xử lý"}
+            deactivate Controller
+            UI --> Admin: Thông báo "Xử lý báo cáo thất bại"
+            deactivate UI
+        
+        else Thực hiện xử lý thành công (Bước 6)
+            Service -> SongService: hideSong(songId_from_report)
+            activate SongService
+            SongService --> Service: {success: true}
+            deactivate SongService
+
+            ' === Dòng sự kiện chính (bước 8) ===
+            Service -> NotifService: sendReportNotification(reportId)
+            activate NotifService
+            NotifService --> Service: (Gửi thông báo)
+            deactivate NotifService
+
+            ' === Dòng sự kiện chính (bước 7) ===
+            Service -> DB: SELECT * FROM reports WHERE status='chua_xu_ly'
+            activate DB
+            DB --> Service: [danh sách báo cáo mới]
+            deactivate DB
+            Service --> Controller: {success: true, reports: [...]}
+            deactivate Service
+            Controller --> UI: {status: 200, reports: [...]}
+            deactivate Controller
+            UI --> Admin: Hiển thị danh sách báo cáo đã cập nhật
+            deactivate UI
+        end
+    end
+
+else Kịch bản 2: Admin chọn "Gửi cảnh cáo" (Bước 4)
+    UI -> Controller: processReport(reportId, 'warn_user')
+    activate Controller
+    Controller -> Service: processReport(reportId, 'warn_user')
+    activate Service
+
+    ' === Dòng sự kiện (bước 5) & Dòng sự kiện phụ (5.1) ===
+    alt Dòng sự kiện phụ (5.1) - Cập nhật trạng thái thất bại
+        Service -> DB: UPDATE reports SET status='da_xu_ly' WHERE id=reportId
+        activate DB
+        DB --> Service: Lỗi!
+        deactivate DB
+        Service --> Controller: {error: "Cập nhật trạng thái thất bại"}
+        deactivate Service
+        Controller --> UI: {status: 500, error: "Lỗi DB"}
+        deactivate Controller
+        UI --> Admin: Thông báo "Cập nhật trạng thái của báo cáo thất bại"
+        deactivate UI
+    
+    else Cập nhật trạng thái thành công (Bước 5)
+        Service -> DB: UPDATE reports SET status='da_xu_ly' WHERE id=reportId
+        activate DB
+        DB --> Service: {success: true}
+        deactivate DB
+
+        ' === Dòng sự kiện (bước 6) & Dòng sự kiện phụ (6.1) ===
+        alt Dòng sự kiện phụ (6.1) - Thực hiện xử lý thất bại
+            Service -> UserService: warnUser(userId_from_report)
+            activate UserService
+            UserService --> Service: Lỗi! (Không thể gửi cảnh cáo)
+            deactivate UserService
+            Service --> Controller: {error: "Xử lý báo cáo thất bại"}
+            deactivate Service
+            Controller --> UI: {status: 500, error: "Lỗi xử lý"}
+            deactivate Controller
+            UI --> Admin: Thông báo "Xử lý báo cáo thất bại"
+            deactivate UI
+        
+        else Thực hiện xử lý thành công (Bước 6)
+            Service -> UserService: warnUser(userId_from_report)
+            activate UserService
+            UserService --> Service: {success: true}
+            deactivate UserService
+
+            ' === Dòng sự kiện chính (bước 8) ===
+            Service -> NotifService: sendReportNotification(reportId)
+            activate NotifService
+            NotifService --> Service: (Gửi thông báo)
+            deactivate NotifService
+
+            ' === Dòng sự kiện chính (bước 7) ===
+            Service -> DB: SELECT * FROM reports WHERE status='chua_xu_ly'
+            activate DB
+            DB --> Service: [danh sách báo cáo mới]
+            deactivate DB
+            Service --> Controller: {success: true, reports: [...]}
+            deactivate Service
+            Controller --> UI: {status: 200, reports: [...]}
+            deactivate Controller
+            UI --> Admin: Hiển thị danh sách báo cáo đã cập nhật
+            deactivate UI
+        end
+    end
+
+else Kịch bản 3: Admin chọn "Bỏ qua" (Bước 4)
+    UI -> Controller: processReport(reportId, 'dismiss')
+    activate Controller
+    Controller -> Service: processReport(reportId, 'dismiss')
+    activate Service
+
+    ' === Dòng sự kiện (bước 5) & Dòng sự kiện phụ (5.1) ===
+    alt Dòng sự kiện phụ (5.1) - Cập nhật trạng thái thất bại
+        Service -> DB: UPDATE reports SET status='da_xu_ly' WHERE id=reportId
+        activate DB
+        DB --> Service: Lỗi!
+        deactivate DB
+        Service --> Controller: {error: "Cập nhật trạng thái thất bại"}
+        deactivate Service
+        Controller --> UI: {status: 500, error: "Lỗi DB"}
+        deactivate Controller
+        UI --> Admin: Thông báo "Cập nhật trạng thái của báo cáo thất bại"
+        deactivate UI
+    
+    else Cập nhật trạng thái thành công (Bước 5)
+        Service -> DB: UPDATE reports SET status='da_xu_ly' WHERE id=reportId
+        activate DB
+        DB --> Service: {success: true}
+        deactivate DB
+
+        ' === Dòng sự kiện (bước 6): Bỏ qua ===
+        ' (Không có hành động xử lý nào (bước 6), vì là 'bỏ qua')
+        note over Service: Bước 6: Không cần hành động, bỏ qua.
+
+        ' === Dòng sự kiện chính (bước 8) ===
         Service -> NotifService: sendReportNotification(reportId)
         activate NotifService
-        NotifService --> Admin: (Gửi cho người báo cáo & người vi phạm)
+        NotifService --> Service: (Gửi thông báo)
         deactivate NotifService
 
-        ' === Dòng sự kiện chính (bước 7): Hiện lại danh sách ===
-        ' (Hệ thống tự động làm mới)
+        ' === Dòng sự kiện chính (bước 7) ===
         Service -> DB: SELECT * FROM reports WHERE status='chua_xu_ly'
         activate DB
         DB --> Service: [danh sách báo cáo mới]

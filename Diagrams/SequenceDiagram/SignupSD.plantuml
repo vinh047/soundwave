@@ -29,6 +29,7 @@ activate Service
 ' 3.1: Kiểm tra email hợp lệ
 alt Dòng sự kiện phụ (3.1) - Email không hợp lệ
     Service -> Service: validateEmailFormat(data.email)
+    ' (Giả sử kiểm tra thấy không hợp lệ)
     Service --> Controller: {error: "Email không hợp lệ"}
     deactivate Service
     Controller --> UI: {status: 400, error: "Email không hợp lệ"}
@@ -51,7 +52,7 @@ else Dòng sự kiện phụ (3.3) - Mật khẩu quá yếu
     
 ' 3.2: Kiểm tra tài khoản tồn tại
 else Dòng sự kiện phụ (3.2) - Tài khoản đã tồn tại
-    Service -> Service: validateEmailFormat(data.Cemail) ' (Pass)
+    Service -> Service: validateEmailFormat(data.email) ' (Pass)
     Service -> Service: validatePasswordStrength(data.password) ' (Pass)
     Service -> DB: findByEmail(data.email)
     activate DB

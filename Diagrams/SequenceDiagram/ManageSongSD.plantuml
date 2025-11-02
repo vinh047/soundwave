@@ -1,6 +1,6 @@
 @startuml Sequence Diagram - Quản Lý Bài Hát Cá Nhân Nghệ Sĩ
 
-title Sơ Đồ Tuần Tự - Quản lý bài hát cá nhân nghệ sĩ
+title Sơ Đồ Tuần Tự - Chức Năng Quản Lý Bài Hát Cá Nhân Nghệ Sĩ
 
 actor "Nghệ sĩ" as Artist
 participant ":GiaoDienQuanLy" as UI
@@ -11,7 +11,6 @@ participant ":Database" as DB
 autonumber
 
 ' === Dòng sự kiện chính (bước 1 & 2): Tải giao diện ===
-' Tiền điều kiện: Nghệ sĩ đã đăng nhập (bước 1)
 Artist -> UI: Yêu cầu trang "Quản lý bài hát"
 activate UI
 UI -> Controller: Yêu cầu lấy danh sách bài hát (artistId)
@@ -29,50 +28,72 @@ deactivate Controller
 UI --> Artist: Hiển thị danh sách bài hát & các nút chức năng
 deactivate UI
 
-' === Dòng sự kiện chính (bước 3.3): Nghệ sĩ chọn Ẩn/Hiện ===
-Artist -> UI: Chọn (songId) & Nhấn nút "Ẩn/Hiện"
-activate UI
-UI -> Controller: requestToggleSongStatus(songId)
-activate Controller
-Controller -> Service: toggleSongStatus(songId)
-activate Service
+' === Dòng sự kiện chính (bước 3): Nghệ sĩ chọn chức năng ===
+group Dòng sự kiện chính (Bước 3: Chọn 1 trong 3 chức năng)
 
-' === Dòng sự kiện (bước 3.3) & Dòng sự kiện phụ (3.3.1) ===
-alt Dòng sự kiện phụ (3.3.1) - Ghi nhận thất bại
-    Service -> DB: UPDATE songs SET status=... WHERE id=songId
-    activate DB
-    DB --> Service: Lỗi! (Không thể cập nhật)
-    deactivate DB
-    Service --> Controller: {error: "Cập nhật thất bại"}
-    deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi DB"}
-    deactivate Controller
-    
-    UI --> Artist: Thông báo "Cập nhật trạng thái của bài hát thất bại"
-    deactivate UI
+    alt Kịch bản 3.1: Tải lên bài hát
+        Artist -> UI: Nhấn nút "Tải lên"
+        activate UI
+        ' (Chuyển sang usecase Tải lên bài hát)
+        UI --> Artist: Chuyển sang giao diện Usecase "Tải lên bài hát"
+        deactivate UI
+        note right of Artist: (Kết thúc usecase này, bắt đầu usecase "Tải lên")
 
-else Ghi nhận thành công (Bước 3.3)
-    Service -> DB: UPDATE songs SET status=... WHERE id=songId
-    activate DB
-    DB --> Service: {success: true}
-    deactivate DB
-    Service --> Controller: {success: true, message: "Đã cập nhật trạng thái"}
-    deactivate Service
+    else Kịch bản 3.2: Sửa thông tin bài hát
+        Artist -> UI: Chọn (songId) & Nhấn nút "Sửa"
+        activate UI
+        ' (Chuyển sang usecase Sửa thông tin bài hát)
+        UI --> Artist: Chuyển sang giao diện Usecase "Sửa thông tin" (với songId)
+        deactivate UI
+        note right of Artist: (Kết thúc usecase này, bắt đầu usecase "Sửa")
 
-    ' === Dòng sự kiện chính (bước 4): Hiện lại danh sách ===
-    ' (Hệ thống tự động làm mới giao diện)
-    Controller -> Service: getSongsByArtist(artistId) ' Yêu cầu làm mới
-    activate Service
-    Service -> DB: findSongsByArtist(artistId)
-    activate DB
-    DB --> Service: [danh sách bài hát mới]
-    deactivate DB
-    Service --> Controller: {success: true, songs: [...]}
-    deactivate Service
-    Controller --> UI: {status: 200, songs: [...]}
-    deactivate Controller
-    
-    UI --> Artist: Hiển thị danh sách đã cập nhật (bài hát A có trạng thái mới)
-    deactivate UI
+    else Kịch bản 3.3: Ẩn/Hiện bài hát
+        Artist -> UI: Chọn (songId) & Nhấn nút "Ẩn/Hiện"
+        activate UI
+        UI -> Controller: requestToggleSongStatus(songId)
+        activate Controller
+        Controller -> Service: toggleSongStatus(songId)
+        activate Service
+
+        ' === Dòng sự kiện (bước 3.3) & Dòng sự kiện phụ (3.3.1) ===
+        alt Dòng sự kiện phụ (3.3.1) - Ghi nhận thất bại
+            Service -> DB: UPDATE songs SET status=... WHERE id=songId
+            activate DB
+            DB --> Service: Lỗi! (Không thể cập nhật)
+            deactivate DB
+            Service --> Controller: {error: "Cập nhật thất bại"}
+            deactivate Service
+            Controller --> UI: {status: 500, error: "Lỗi DB"}
+            deactivate Controller
+            
+            UI --> Artist: Thông báo "Cập nhật trạng thái của bài hát thất bại"
+            deactivate UI
+
+        else Ghi nhận thành công (Bước 3.3)
+            Service -> DB: UPDATE songs SET status=... WHERE id=songId
+            activate DB
+            DB --> Service: {success: true}
+            deactivate DB
+            Service -> Controller: {success: true, message: "Đã cập nhật trạng thái"}
+            deactivate Service
+
+            ' === Dòng sự kiện chính (bước 4): Hiện lại danh sách ===
+            ' (Hệ thống tự động làm mới giao diện)
+            Controller -> Service: getSongsByArtist(artistId) ' Yêu cầu làm mới
+            activate Service
+            Service -> DB: findSongsByArtist(artistId)
+            activate DB
+            DB --> Service: [danh sách bài hát mới]
+            deactivate DB
+            Service --> Controller: {success: true, songs: [...]}
+            deactivate Service
+            
+            Controller --> UI: {status: 200, songs: [...]}
+            deactivate Controller
+            
+            UI --> Artist: Hiển thị lại danh sách bài hát cá nhân sau khi cập nhật
+            deactivate UI
+        end
+    end
 end
 @enduml

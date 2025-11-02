@@ -46,7 +46,7 @@ else Ghi nhận thành công (Bước 3)
     deactivate Service
     
     ' === Dòng sự kiện chính (bước 4): Chuyển giao diện ===
-    Controller --> UI: {status: 200, redirect: '/manage-songs'}
+    Controller --> UI: {status: 201, redirect: '/manage-songs'}
     deactivate Controller
     
     UI --> Artist: Chuyển sang giao diện Quản lý bài hát cá nhân

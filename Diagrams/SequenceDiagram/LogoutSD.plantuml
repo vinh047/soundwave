@@ -43,10 +43,10 @@ else Đăng xuất thành công (Bước 1 & 2)
     Controller --> UI: {status: 200, success: true}
     deactivate Controller
     
-    ' Bước 1: Thông báo thành công
+    ' Bước 1 (vế 1): Thông báo thành công
     UI --> User: Thông báo "Bạn đã đăng xuất thành công"
     
-    ' Bước 2: Chuyển sang chế độ Khách
+    ' Bước 1 (vế 2): Chuyển sang chế độ Khách
     UI --> User: Chuyển sang giao diện Khách (trang chủ/đăng nhập)
     deactivate UI
 end

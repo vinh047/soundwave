@@ -1,6 +1,6 @@
-@startuml Sequence Diagram - Quản Lý Tài Khoản
+@startuml Sequence Diagram - Quản Lý Tài Khoản Người Dùng
 
-title Sơ Đồ Tuần Tự - Chức Năng Quản Lý Tài Khoản
+title Sơ Đồ Tuần Tự - Chức Năng Quản Lý Tài Khoản Người Dùng
 
 actor "Admin" as Admin
 participant ":GiaoDienQLTaiKhoan" as UI
@@ -36,7 +36,7 @@ activate Controller
 Controller -> Service: setAccountStatus(accountId, 'locked')
 activate Service
 
-' === Dòng sự kiện chính (bước 4): Ghi nhận trạng thái ===
+' === Dòng sự kiện chính (bước 4) & Dòng sự kiện phụ (4.1) ===
 alt Dòng sự kiện phụ (4.1) - Ghi nhận thất bại
     Service -> DB: UPDATE accounts SET status='locked' WHERE id=accountId
     activate DB

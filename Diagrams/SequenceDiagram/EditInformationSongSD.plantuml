@@ -10,11 +10,11 @@ participant ":Database" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1): Giao diện đã được hiển thị ===
-' (Giả định nghệ sĩ đã chọn 1 bài hát và hệ thống đã tải form)
-UI --> Artist: Hiển thị form với thông tin bài hát hiện tại
+' === Dòng sự kiện chính (bước 1): Hiển thị form ===
+' (Giả định user đã ở trang Sửa thông tin)
+UI --> Artist: Hiển thị form (Ảnh, tên,...) với thông tin cũ
 
-' === Dòng sự kiện chính (bước 2): Nghệ sĩ sửa và lưu ===
+' === Dòng sự kiện chính (bước 2): Người dùng nhấn Lưu ===
 Artist -> UI: Thay đổi thông tin & Nhấn "Lưu"
 activate UI
 UI -> Controller: Yêu cầu cập nhật(songId, updatedData)
