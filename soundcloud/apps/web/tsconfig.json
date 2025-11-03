@@ -8,7 +8,9 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@repo/database": ["../../packages/database"],
+      "@/types/common": ["../../packages/types/common"]
     }
   },
   "include": [
