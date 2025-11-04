@@ -2,6 +2,7 @@
 "use client";
 
 import { List } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 
 export default function UpNext() {
@@ -13,75 +14,75 @@ export default function UpNext() {
       title: "Neon Cruise",
       artist: "@synthwavekid",
       duration: "3:42",
-      cover: "/images/cover1.jpg",
+      cover: "/images/istockphoto-161839324-612x612.jpg"
     },
     {
       id: "2",
       title: "Retro Sunset",
       artist: "@kato_synth",
       duration: "4:15",
-      cover: "/images/cover2.jpg",
+      cover: "/images/istockphoto-161839324-612x612.jpg"
     },
     {
       id: "12",
       title: "Retro Sunset",
       artist: "@kato_synth",
       duration: "4:15",
-      cover: "/images/cover2.jpg",
+      cover: "/images/istockphoto-161839324-612x612.jpg"
     },
     {
       id: "72",
       title: "Retro Sunset",
       artist: "@kato_synth",
       duration: "4:15",
-      cover: "/images/cover2.jpg",
+      cover: "/images/istockphoto-161839324-612x612.jpg"
     },
     {
       id: "26",
       title: "Retro Sunset",
       artist: "@kato_synth",
       duration: "4:15",
-      cover: "/images/cover2.jpg",
+      cover: "/images/istockphoto-161839324-612x612.jpg"
     },
     {
       id: "25",
       title: "Retro Sunset",
       artist: "@kato_synth",
       duration: "4:15",
-      cover: "/images/cover2.jpg",
+      cover: "/images/istockphoto-161839324-612x612.jpg"
     },
     {
       id: "24",
       title: "Retro Sunset",
       artist: "@kato_synth",
       duration: "4:15",
-      cover: "/images/cover2.jpg",
+      cover: "/images/istockphoto-161839324-612x612.jpg"
     },
     {
       id: "20",
       title: "Retro Sunset",
       artist: "@kato_synth",
       duration: "4:15",
-      cover: "/images/cover2.jpg",
+      cover: "/images/istockphoto-161839324-612x612.jpg"
     },
     {
       id: "21",
       title: "Retro Sunset",
       artist: "@kato_synth",
       duration: "4:15",
-      cover: "/images/cover2.jpg",
+      cover: "/images/istockphoto-161839324-612x612.jpg"
     },
     {
       id: "22",
       title: "Retro Sunset",
       artist: "@kato_synth",
       duration: "4:15",
-      cover: "/images/cover2.jpg",
+      cover: "/images/istockphoto-161839324-612x612.jpg"
     },
   ];
 
   return (
-    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 h-[88vh] overflow-auto scrollbar-none">
+    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 h-[85vh] overflow-auto scrollbar-none">
       <h3 className="text-lg font-bold flex items-center gap-2 mb-4">
         <List size={20} /> Up Next
       </h3>
@@ -93,7 +94,7 @@ export default function UpNext() {
             className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition"
           >
             <span className="text-gray-500 w-5">{i + 1}</span>
-            <div className="w-10 h-10 rounded bg-gray-700" />
+            <Image src={item.cover} alt="anh" width={10} height={10} className="w-10 h-10" />
             <div className="flex-1">
               <p className="text-sm font-medium">{item.title}</p>
               <p className="text-xs text-gray-400">{item.artist}</p>

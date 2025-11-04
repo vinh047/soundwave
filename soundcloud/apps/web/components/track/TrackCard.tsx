@@ -6,6 +6,7 @@ import { Button } from "../ui2/Button";
 import { formatPlayCount, timeAgo } from "@/lib/format";
 import { usePlayerStore } from "@/store/playerStore";
 import { Prisma } from "@repo/database";
+import Link from "next/link";
 
 interface TrackCardProps {
   track: Prisma.TrackGetPayload<{ include: { user: true } }>;
@@ -14,7 +15,10 @@ interface TrackCardProps {
 export function TrackCard({ track }: TrackCardProps) {
   const { play } = usePlayerStore();
   return (
-    <div className="group cursor-pointer bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-all">
+    <Link
+      href={`/tracks/${track.id}`}
+      className="group cursor-pointer bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-all block"
+    >
       <div className="relative">
         <Image
           src={track.imagePath || "/placeholder.png"}
@@ -26,8 +30,9 @@ export function TrackCard({ track }: TrackCardProps) {
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <Button
             size="lg"
-            className="h-14 w-14 rounded-full p-0"
+            className="h-14 w-14 rounded-full p-0 cursor-pointer "
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               play(track);
             }}
@@ -43,6 +48,6 @@ export function TrackCard({ track }: TrackCardProps) {
         <span>•</span>
         <span>{timeAgo(track.createdAt)}</span>
       </div>
-    </div>
+    </Link>
   );
 }

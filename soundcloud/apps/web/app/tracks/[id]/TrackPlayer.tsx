@@ -98,7 +98,7 @@ export default function TrackPlayer({ track }: { track: Track }) {
 
   // --- GIAO DIỆN HIỂN THỊ (KẾT HỢP) ---
   return (
-    <div className="flex flex-col gap-6 h-[88vh] overflow-auto scrollbar-none">
+    <div className="flex flex-col gap-6 h-[85vh] overflow-auto scrollbar-none">
       <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
         <div
           className="relative h-36 bg-black/30 rounded-xl overflow-hidden cursor-pointer"
@@ -119,7 +119,7 @@ export default function TrackPlayer({ track }: { track: Track }) {
           </button>
           <button
             onClick={togglePlay}
-            className="w-16 h-16 rounded-full bg-linear-to-r from-[#ff6b6b] to-[#4ecdc4] flex items-center justify-center shadow-xl hover:scale-110 transition-transform"
+            className="w-16 h-16 rounded-full bg-linear-to-r from-[#ff6b6b] to-[#4ecdc4] flex items-center justify-center shadow-xl hover:scale-110 transition-transform cursor-pointer"
           >
             {isPlaying ? (
               <Pause size={28} fill="black" color="black" />

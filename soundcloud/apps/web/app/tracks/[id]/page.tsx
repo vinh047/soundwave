@@ -14,11 +14,11 @@ export default async function TrackPage({ params }: TrackPageProps) {
   const track: Prisma.TrackGetPayload<{ include: { user: true } }> = res.data;
 
   return (
-    <article className="max-h-screen bg-linear-to-b from-[#0a0a0f] to-[#0f0f1a] text-white pb-32">
+    <article className="max-h-screen fixed w-screen bg-linear-to-b from-[#0a0a0f] to-[#0f0f1a] text-white pb-32">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr_300px] gap-6 xl:gap-8">
           {/* LEFT: Artwork + Info */}
-          <div className="flex flex-col gap-6 h-[88vh] overflow-auto scrollbar-none">
+          <div className="flex flex-col gap-6 h-[85vh] overflow-auto scrollbar-none">
             <div className="relative group">
               <Image
                 src={track.imagePath || "/images/default-cover.jpg"}
