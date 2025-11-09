@@ -1,63 +1,176 @@
 "use client";
-
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+
 import * as Dialog from "@radix-ui/react-dialog";
-// 1. Thêm icon ArrowLeft, Eye, EyeOff
-import { X, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { X, ArrowLeft } from "lucide-react";
 import { useAuthModal } from "@/hooks/use-auth-modal";
-import { signIn } from "next-auth/react";
+import { Input } from "../ui/Input";
+import { Button } from "../ui/Button";
+import { toast } from "sonner";
 import { FcGoogle } from "react-icons/fc";
 
-// Định nghĩa các "màn hình" (views)
-type View = "select" | "password";
+import authApi from "@/lib/api/authApi";
+import userApi from "@/lib/api/usersApi";
+import { isValidEmail } from "@/lib/utils/validation";
+import { useAuth } from "@/app/contexts/AuthContext";
+import { AxiosError } from "axios";
+
+type View = "select" | "password" | "verification-message";
 
 export const AuthModal = () => {
   const { isOpen, onClose } = useAuthModal();
 
-  // 2. Thêm state để quản lý view, email, password
+  const { login } = useAuth();
+
   const [view, setView] = useState<View>("select");
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  // 1. Thêm state mới để theo dõi focus
+  const [passwordError, setPasswordError] = useState("");
+
   const [isEmailFocused, setIsEmailFocused] = useState(false);
+
+  const [apiError, setApiError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [verificationSentMessage, setVerificationSentMessage] = useState("");
+  const [isExistingUser, setIsExistingUser] = useState<boolean>(true);
+
+  const router = useRouter();
 
   const onChange = (open: boolean) => {
     if (!open) {
       onClose();
-      // 3. Reset về view ban đầu khi modal đóng
       setTimeout(() => {
         setView("select");
         setEmail("");
         setPassword("");
-        setIsEmailFocused(false); // 2. Reset state focus
-      }, 300); // Đợi animation đóng modal
+        setName("");
+        setApiError("");
+        setIsEmailFocused(false);
+      }, 300);
     }
   };
 
   const handleGoogleLogin = () => {
-    signIn("google", {
-      prompt: "select_account",
-    });
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+    window.location.href = `${apiUrl}/auth/google`;
   };
 
   // 4. Hàm xử lý khi nhấn "Continue" với email
-  const handleEmailContinue = () => {
-    // (Bạn có thể thêm validation email ở đây)
-    if (email) {
-      setView("password"); // Chuyển sang view nhập mật khẩu
+  const handleEmailContinue = async () => {
+    // Xóa lỗi cũ trước khi kiểm tra
+    setEmailError("");
+
+    // 1. Kiểm tra trường email có trống không
+    if (!email || email.trim() === "") {
+      setEmailError("Vui lòng nhập địa chỉ email của bạn.");
+      return;
+    }
+
+    // 2. Kiểm tra định dạng email bằng hàm tiện ích
+    if (!isValidEmail(email)) {
+      setEmailError("Địa chỉ email không hợp lệ. Vui lòng kiểm tra lại.");
+      return;
+    }
+
+    try {
+      const { data } = await userApi.checkEmail(email);
+      if (data.method === "GOOGLE") {
+        setEmailError(
+          "Email này đã được đăng ký bằng Google. Vui lòng đăng nhập bằng Google."
+        );
+      } else if (data.method === "NEW_USER") {
+        setIsExistingUser(false);
+        setView("password");
+      } else {
+        setView("password");
+      }
+    } catch (error) {
+      // Xử lý lỗi API
+      setApiError("Không thể kiểm tra email. Vui lòng thử lại.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // 5. Hàm xử lý đăng nhập bằng email/password
-  const handlePasswordLogin = () => {
-    console.log("Đăng nhập với:", email, password);
-    // TODO: Gọi signIn với provider "credentials"
-    // signIn('credentials', {
-    //   email,
-    //   password,
-    //   callbackUrl: '/'
-    // });
+  // Hàm xử lý đăng nhập bằng email/password
+  const handlePasswordLogin = async () => {
+    setPasswordError("");
+    setApiError("");
+
+    // Kiểm tra độ dài mật khẩu (FE Validation)
+    if (!password || password.length < 6) {
+      setPasswordError("Mật khẩu phải có ít nhất 6 ký tự.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Gọi API: Gửi email và mật khẩu lên BE
+      const { data: result } = await authApi.authenticateOrRegister({
+        email,
+        password,
+        name,
+      });
+
+      if (result.action === "LOGIN_SUCCESS") {
+        login(result);
+        toast.success("Đăng nhập thành công!");
+        router.push("/home");
+        onClose();
+      } else if (result.action === "VERIFY_REQUIRED") {
+        const verifyResult = result as { message: string; email: string };
+        setVerificationSentMessage(verifyResult.message);
+        setView("verification-message");
+      } else {
+        // Lỗi logic không mong muốn
+        setApiError("Phản hồi không xác định.");
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+      const axiosError = error as AxiosError<{ message: string | string[] }>;
+
+      const errorMessage = axiosError.response?.data?.message;
+
+      if (errorMessage) {
+        const finalMessage = Array.isArray(errorMessage)
+          ? errorMessage[0]
+          : errorMessage;
+        setApiError(finalMessage || "");
+      } else {
+        setApiError("Đăng nhập thất bại. Vui lòng kiểm tra lại mật khẩu.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    // Dùng toast.promise của sonner để xử lý loading/success/error
+    const promise = () =>
+      new Promise(async (resolve, reject) => {
+        try {
+          // 1. Gọi API mới, chỉ gửi email
+          const response = await authApi.resendVerification({ email });
+          resolve(response.data);
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+    toast.promise(promise, {
+      loading: "Đang gửi lại email...",
+      success: (data: any) => {
+        // 2. Cập nhật lại thông báo nếu muốn
+        setVerificationSentMessage(data.message || "Đã gửi lại link!");
+        return "Đã gửi lại email. Vui lòng kiểm tra hộp thư!";
+      },
+      error: "Gửi lại thất bại. Vui lòng thử lại sau.",
+    });
   };
 
   return (
@@ -89,12 +202,12 @@ export const AuthModal = () => {
             transition-all duration-300
           "
         >
-          {/* 6. Nút "Back" (chỉ hiện ở view password) */}
+          {/* Nút "Back" (chỉ hiện ở view password) */}
           {view === "password" && (
             <button
               onClick={() => {
                 setView("select");
-                setIsEmailFocused(false); // 3. Reset state focus khi "Back"
+                setIsEmailFocused(false); // Reset state focus khi "Back"
               }}
               className="
                 text-gray-400
@@ -141,7 +254,6 @@ export const AuthModal = () => {
               <ArrowLeft size={20} />
             </button>
           )}
-
           {/* Nút đóng (X) */}
           <Dialog.Close asChild>
             <button
@@ -166,8 +278,7 @@ export const AuthModal = () => {
               <X size={20} />
             </button>
           </Dialog.Close>
-
-          {/* ----- 7. Render nội dung dựa trên state 'view' ----- */}
+          {/* ----- Render nội dung dựa trên state 'view' ----- */}
           {view === "select" ? (
             // -------------------------------------
             // VIEW 1: CHỌN PHƯƠNG THỨC ĐĂNG NHẬP
@@ -193,17 +304,15 @@ export const AuthModal = () => {
                     .
                   </Dialog.Description>
                   <div className="w-full space-y-3 mb-6">
-                    <button
-                      className="
-                        w-full flex items-center justify-center py-2.5 px-4
-                        rounded-md bg-white text-gray-700 font-medium
-                        border border-gray-300 hover:bg-gray-50 transition shadow-sm
-                      "
+                    <Button
+                      light
+                      fullWidth
+                      size="lg"
                       onClick={handleGoogleLogin}
                     >
                       <FcGoogle size={22} className="mr-3" />
                       Continue with Google
-                    </button>
+                    </Button>
                   </div>
                   <div className="relative w-full flex items-center justify-center text-xs text-gray-400 mb-6">
                     <hr className="w-full border-gray-200 absolute" />
@@ -214,33 +323,38 @@ export const AuthModal = () => {
 
               {/* Phần email input và button luôn hiển thị */}
               <div className="w-full space-y-4">
-                <input
-                  type="email"
-                  placeholder="Your email address or profile URL"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onFocus={() => setIsEmailFocused(true)}
-                  className="
-                    w-full p-3 rounded-md bg-white text-black
-                    border border-gray-300
-                    focus:border-blue-500 focus:ring-1 focus:ring-blue-500
-                    focus:outline-none placeholder-gray-400
-                  "
-                />
-                <button
-                  className="
-                    w-full py-3 px-4 rounded-md bg-blue-500 text-white
-                    font-semibold hover:bg-blue-600 transition
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                  "
+                <div className="flex flex-col gap-1 w-full max-w-sm">
+                  <label
+                    htmlFor="email-input-id"
+                    className="mb-1 text-sm font-medium text-gray-700"
+                  >
+                    Your email address
+                  </label>
+
+                  <Input
+                    id="email-input-id"
+                    type="email"
+                    placeholder="Your email address or profile URL"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onFocus={() => setIsEmailFocused(true)}
+                    error={emailError}
+                    size="md"
+                    fullWidth
+                  />
+                </div>
+                <Button
+                  dark
+                  fullWidth
                   onClick={handleEmailContinue}
+                  loading={isLoading}
                   disabled={!email}
                 >
                   Continue
-                </button>
+                </Button>
               </div>
             </div>
-          ) : (
+          ) : view === "password" ? (
             // -------------------------------------
             // VIEW 2: NHẬP MẬT KHẨU
             // -------------------------------------
@@ -252,52 +366,51 @@ export const AuthModal = () => {
               {/* Hiển thị email đã nhập */}
               <div className="w-full text-left mb-4">
                 <label className="text-gray-500 text-sm">
-                  Your email address or profile URL
+                  Your email address
                 </label>
                 <p className="text-gray-900 font-medium">{email}</p>
               </div>
 
+              {/* Input Name (Chỉ hiển thị KHI USER CHƯA TỒN TẠI) */}
+              {!isExistingUser ? (
+                <div className="w-full space-y-4 mt-2">
+                  <Input
+                    type="text"
+                    placeholder="Tên của bạn (Tùy chọn cho đăng ký)"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="mb-4"
+                    fullWidth
+                  />
+                </div>
+              ) : (
+                ""
+              )}
+
               {/* Form nhập mật khẩu */}
-              <div className="w-full space-y-4">
-                {/* Input Mật khẩu với icon Mắt */}
+              <div className="w-full space-y-4 mt-2">
                 <div className="relative w-full">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Your Password (min. 6 characters)"
+                  <Input
+                    type="password"
+                    placeholder="Your Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="
-                      w-full p-3 rounded-md bg-white text-black
-                      border border-gray-300
-                      focus:border-blue-500 focus:ring-1 focus:ring-blue-500
-                      focus:outline-none placeholder-gray-400
-                      pr-10
-                    "
+                    error={passwordError}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="
-                      absolute right-3 top-1/2 -translate-y-1/2
-                      text-gray-400 hover:text-gray-600
-                    "
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
                 </div>
 
-                <button
-                  className="
-                    w-full py-3 px-4 rounded-md bg-blue-500 text-white
-                    font-semibold hover:bg-blue-600 transition
-                  "
+                {apiError && (
+                  <p className="text-red-500 text-sm mt-[-10px]">{apiError}</p>
+                )}
+
+                <Button
+                  dark
+                  fullWidth
                   onClick={handlePasswordLogin}
+                  loading={isLoading}
                 >
                   Continue
-                </button>
+                </Button>
               </div>
 
               {/* Quên mật khẩu */}
@@ -307,6 +420,24 @@ export const AuthModal = () => {
               >
                 Forgot your password?
               </a>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center p-4 text-center">
+              <X size={40} className="text-green-500 mb-4" />
+              <Dialog.Title className="text-gray-900 text-2xl font-semibold mb-4">
+                Kiểm tra hộp thư của bạn!
+              </Dialog.Title>
+              <Dialog.Description className="text-gray-600 mb-6">
+                {verificationSentMessage}
+                <br />
+                <span className="font-bold">{email}</span>
+              </Dialog.Description>
+              <Button dark fullWidth onClick={onClose}>
+                Đã hiểu
+              </Button>
+              <Button ghost className="mt-4" onClick={handleResendVerification}>
+                Gửi lại email xác thực
+              </Button>
             </div>
           )}
           {/* ----- Kết thúc nội dung modal ----- */}

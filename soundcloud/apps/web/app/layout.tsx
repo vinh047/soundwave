@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ModalProvider } from "@/providers/modal-provider";
+import { AuthProvider } from "./contexts/AuthContext";
+import { Toaster } from "sonner";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -25,8 +27,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <ModalProvider />
-        {children}
+        <AuthProvider>
+          <Toaster richColors position="top-right" />
+          <ModalProvider />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

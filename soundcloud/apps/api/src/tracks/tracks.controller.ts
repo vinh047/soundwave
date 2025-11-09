@@ -12,6 +12,7 @@ import {
 import { TracksService } from './tracks.service';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
+import { Public } from 'src/decorator/customize';
 // import { JwtAuthGuard } from '../auth/jwt-auth.guard'; // <-- Ví dụ
 // import { AuthUser } from '../auth/auth-user.decorator'; // <-- Ví dụ
 
@@ -32,12 +33,13 @@ export class TracksController {
     return this.tracksService.create(createTrackDto, FAKE_USER_ID);
   }
 
+  @Public()
   @Get()
   findAll() {
-    console.log('oke');
     return this.tracksService.findAll();
   }
 
+  @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {
     // SỬA LỖI 1: Gỡ bỏ dấu '+'

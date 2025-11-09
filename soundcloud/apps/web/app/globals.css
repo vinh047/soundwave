@@ -7,3 +7,33 @@
   -ms-overflow-style: none; 
   scrollbar-width: none; 
 }
+/* Ẩn nút hiện/ẩn mật khẩu mặc định của Edge/IE */
+::-ms-reveal,
+::-ms-clear {
+  display: none;
+}
+
+/* Ẩn nút hiện/ẩn mật khẩu mặc định của Firefox */
+/* Lưu ý: Đây là cách thử nghiệm, Firefox thường khó ghi đè hơn */
+:-moz-ui-valid(input[type="password"]),
+:-moz-ui-invalid(input[type="password"]) {
+  padding-right: 12px !important; /* Đặt lại padding nếu cần */
+}
+
+/* Ẩn nút hiện/ẩn mật khẩu mặc định của Chrome */
+input::-webkit-contacts-auto-fill-button,
+input::-webkit-credentials-auto-fill-button,
+input[type="password"]::-ms-reveal {
+  display: none !important;
+  -webkit-appearance: none !important;
+}
+
+/* Ghi đè cho kiểu Input component của bạn (Nơi bạn dùng padding) */
+/* Cần đặt padding-right đủ lớn để chứa icon tùy chỉnh của bạn */
+.hide-password-default::-webkit-contacts-auto-fill-button,
+.hide-password-default::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute; /* Đặt ra ngoài khu vực nhìn thấy */
+  right: 0;
+}

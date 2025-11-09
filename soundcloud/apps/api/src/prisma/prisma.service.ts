@@ -1,19 +1,23 @@
-// apps/api/src/prisma/prisma.service.ts
-
-import { INestApplication, Injectable, OnModuleInit } from '@nestjs/common';
+import {
+  INestApplication,
+  Injectable,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   constructor() {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     super({
       log: ['warn', 'error'],
     });
   }
 
   async onModuleInit() {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     await this.$connect();
   }
 
@@ -22,5 +26,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     process.on('beforeExit', async () => {
       await app.close();
     });
+  }
+
+  async onModuleDestroy() {
+    await this.$disconnect();
   }
 }

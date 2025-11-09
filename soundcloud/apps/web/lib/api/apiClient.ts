@@ -11,6 +11,7 @@ const axiosClient: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
   paramsSerializer: (params) => {
     return queryString.stringify(params);
   },
@@ -39,6 +40,9 @@ axiosClient.interceptors.response.use(
     return response;
   },
   (error: AxiosError) => {
+    if (error.response && error.response.status === 401) {
+      return Promise.reject(error);
+    }
     if (error.response) {
       console.error("Server error:", error.response.data);
     } else {

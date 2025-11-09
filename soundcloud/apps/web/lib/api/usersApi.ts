@@ -28,6 +28,11 @@ const userApi = {
     axiosClient.patch<User>(`/users/${id}`, data),
 
   deleteUser: (id: string) => axiosClient.delete<void>(`/users/${id}`),
+
+  checkEmail: (email: string) =>
+    axiosClient.get<{ method: string }>("/users/check-email", {
+      params: { email },
+    }),
 };
 
 export default userApi;
