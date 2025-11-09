@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { User } from '@repo/database';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import * as bcrypt from 'bcrypt';
 
 interface PaginatedResult<T> {
   data: T[];
@@ -103,5 +104,38 @@ export class UsersService {
       // }
       throw error;
     }
+  }
+
+  async findOneWithPasswordHashByEmail(email: string): Promise<User | null> {
+    return await this.prisma.user.findUnique({ where: { email } });
+  }
+
+  async findOneWithNoPassByEmail(email: string) {
+    return await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        image: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async updateRefreshTokenHash(userId: string, hashedRefreshToken: string) {
+    return await this.prisma.user.update({
+      where: { id: userId },
+      data: { hashedRefreshToken },
+    });
+  }
+
+  async register(email: string, password: string, name: string) {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    return await this.prisma.user.create({
+      data: { email, hashedPassword, name },
+    });
   }
 }
