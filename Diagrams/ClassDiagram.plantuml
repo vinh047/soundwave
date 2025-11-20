@@ -1,0 +1,237 @@
+@startuml Class Diagram - Hệ thống nghe nhạc trực tuyến
+
+title Class Diagram - Hệ thống nghe nhạc trực tuyến
+
+' --- PACKAGES ---
+
+package "Model (Entities)" {
+    enum Role {
+        USER
+        ARTIST
+        ADMIN
+    }
+
+    enum SongStatus {
+        ACTIVE
+        HIDDEN
+        DELETED
+    }
+
+    enum ReportStatus {
+        PENDING
+        PROCESSED
+        DISMISSED
+    }
+
+    abstract class Account {
+        - id: Long
+        - email: String
+        - passwordHash: String
+        - role: Role
+        - isLocked: Boolean
+        + login(email, password): Boolean
+        + updatePassword(newPass): void
+        + setStatus(status): void
+    }
+
+    class User {
+        - name: String
+        - avatar: String
+        - bio: String
+        + updateProfile(data): void
+    }
+
+    class Artist {
+        - verifiedDate: Date
+        + uploadSong(file): void
+    }
+
+    class Admin {
+        - department: String
+        + lockAccount(accountId): void
+    }
+
+    class Song {
+        - id: Long
+        - title: String
+        - genre: String
+        - description: String
+        - filePath: String
+        - imagePath: String
+        - status: SongStatus
+        - uploadDate: Date
+        - listenCount: Long
+        + updateInfo(data): void
+        + setStatus(status): void
+    }
+
+    class Playlist {
+        - id: Long
+        - name: String
+        - description: String
+        - imagePath: String
+        - createdDate: Date
+        + addSong(song): void
+        + removeSong(song): void
+        + updateInfo(data): void
+    }
+
+    class Report {
+        - id: Long
+        - reason: String
+        - createdDate: Date
+        - status: ReportStatus
+        - solutionNote: String
+        + updateStatus(status): void
+    }
+
+    class Interaction {
+        - id: Long
+        - timestamp: Date
+        - type: String
+    }
+
+    class Comment {
+        - content: String
+    }
+}
+
+package "Controller Layer" {
+    class AuthController {
+        + login(email, password, role): Response
+        + register(data): Response
+        + logout(sessionId): Response
+        + forgotPassword(email): Response
+        + resetPassword(code, newPass): Response
+    }
+
+    class SongController {
+        + uploadSong(data, file): Response
+        + updateSong(id, data): Response
+        + toggleSongStatus(id): Response
+        + getSongsByArtist(artistId): Response
+        + getSongStream(id): Response
+    }
+
+    class PlaylistController {
+        + createPlaylist(data): Response
+        + updatePlaylist(id, data): Response
+        + deletePlaylist(id): Response
+        + addSongToPlaylist(pId, sId): Response
+        + removeSongFromPlaylist(pId, sId): Response
+        + getPlaylists(userId): Response
+    }
+
+    class InteractionController {
+        + likeSong(sId, uId): Response
+        + unlikeSong(sId, uId): Response
+        + comment(sId, content): Response
+        + share(sId, platform): Response
+        + followArtist(artistId, uId): Response
+        + repostSong(sId, uId): Response
+    }
+
+    class ReportController {
+        + createReport(sId, reason): Response
+        + getPendingReports(): Response
+        + processReport(rId, action): Response
+    }
+    
+    class SearchController {
+        + searchSongs(keyword): Response
+        + searchArtists(keyword): Response
+    }
+}
+
+package "Service Layer" {
+    class AuthService {
+        + verifyPassword(pass, hash): Boolean
+        + validateEmail(email): Boolean
+        + generateResetCode(email): String
+    }
+
+    class SongService {
+        + saveSong(data, file): Song
+        + updateSong(id, data): Song
+        + hideSong(id): void
+        + getFile(id): Stream
+    }
+
+    class PlaylistService {
+        + create(data): Playlist
+        + addSong(pId, sId): void
+        + removeSong(pId, sId): void
+    }
+
+    class InteractionService {
+        + like(sId, uId): void
+        + addComment(sId, content): void
+        + follow(artistId, uId): void
+        + repost(sId, uId): void
+    }
+
+    class ReportService {
+        + create(data): Report
+        + process(id, action): void
+    }
+    
+    class SearchService {
+        + search(keyword): List
+    }
+    
+    class EmailService {
+        + sendCode(email, code): void
+    }
+}
+
+' --- RELATIONSHIPS ---
+
+' 1. Inheritance (Kế thừa)
+Account <|-- User
+Account <|-- Admin
+User <|-- Artist
+Interaction <|-- Comment
+
+' 2. Association (Kết hợp) & Aggregation (Tập hợp)
+' User owns Playlist
+User "1" -- "0..*" Playlist : owns >
+
+' Playlist contains Songs (Aggregation - Song exist independently)
+Playlist "0..*" o-- "0..*" Song : contains >
+
+' Artist uploads Songs (Composition - Song belongs to Artist)
+Artist "1" *-- "0..*" Song : uploads >
+
+' User sends Report
+User "1" -- "0..*" Report : sends >
+' Report targets a Song
+Report "0..*" --> "1" Song : targets >
+' Admin processes Report
+Admin "1" -- "0..*" Report : processes >
+
+' User interacts with Song
+User "1" -- "0..*" Interaction : makes >
+Interaction "0..*" --> "1" Song : on >
+
+' User follows Artist
+User "0..*" --> "0..*" Artist : follows >
+
+' 3. Dependency (Phụ thuộc) - Controller uses Service
+AuthController ..> AuthService
+AuthController ..> EmailService
+SongController ..> SongService
+PlaylistController ..> PlaylistService
+InteractionController ..> InteractionService
+ReportController ..> ReportService
+ReportController ..> SongService
+SearchController ..> SearchService
+
+' 4. Dependency - Service uses Entities
+AuthService ..> Account
+SongService ..> Song
+PlaylistService ..> Playlist
+PlaylistService ..> Song
+InteractionService ..> Interaction
+ReportService ..> Report
+
+@enduml
