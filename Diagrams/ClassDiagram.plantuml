@@ -23,25 +23,26 @@ package "Model (Entities)" {
         DISMISSED
     }
 
-    abstract class Account {
+    abstract class User {
         - id: Long
         - email: String
-        - passwordHash: String
+        - emailVerified: Timestamp
+        - hashedPassword: String
         - role: Role
+        - imagePath: String
         - isLocked: Boolean
         + login(email, password): Boolean
         + updatePassword(newPass): void
         + setStatus(status): void
     }
 
-    class User {
-        - name: String
-        - avatar: String
+    class Profile {
+        - id: Long
         - bio: String
         + updateProfile(data): void
     }
 
-    class Artist {
+    class Artist extends User {
         - verifiedDate: Date
         + uploadSong(file): void
     }
@@ -92,6 +93,9 @@ package "Model (Entities)" {
     }
 
     class Comment {
+        - id: Long
+        - songId: Long
+        - userId: Long
         - content: String
     }
 }
@@ -158,16 +162,16 @@ package "Service Layer" {
     }
 
     class PlaylistService {
-        + create(data): Playlist
-        + addSong(pId, sId): void
-        + removeSong(pId, sId): void
+        + createPlaylist(data): Playlist
+        + addSong(playlistId, songId): void
+        + removeSong(playlistId, songId): void
     }
 
     class InteractionService {
-        + like(sId, uId): void
-        + addComment(sId, content): void
-        + follow(artistId, uId): void
-        + repost(sId, uId): void
+        + like(songId, userId): void
+        + addComment(songId, content): void
+        + follow(artistId, userId): void
+        + repost(songId, userId): void
     }
 
     class ReportService {

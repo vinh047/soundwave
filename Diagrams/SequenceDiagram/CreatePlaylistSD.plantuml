@@ -17,15 +17,15 @@ UI --> User: Hiển thị form (Ảnh, tên, mô tả,...)
 ' === Dòng sự kiện chính (bước 2): Người dùng nhấn Tạo ===
 User -> UI: Điền thông tin & Nhấn "Tạo Playlist"
 activate UI
-UI -> Controller: Yêu cầu tạo playlist(playlistData, userId)
+UI -> Controller: createPlaylist(playlistInfo)
 activate Controller
 
-Controller -> Service: createPlaylist(playlistData, userId)
+Controller -> Service: createPlaylist(userId, playlistInfo)
 activate Service
 
 ' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
 alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
-    Service -> DB: INSERT INTO playlists (data, userId)
+    Service -> DB: INSERT INTO playlist (playlistInfo, userId)
     activate DB
     DB --> Service: Lỗi! (Không thể ghi)
     deactivate DB
@@ -38,7 +38,7 @@ alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
     deactivate UI
 
 else Ghi nhận thành công (Bước 3)
-    Service -> DB: INSERT INTO playlists (data, userId)
+    Service -> DB: INSERT INTO playlist (playlistInfo, userId)
     activate DB
     DB --> Service: {success: true, newPlaylistId: 123}
     deactivate DB

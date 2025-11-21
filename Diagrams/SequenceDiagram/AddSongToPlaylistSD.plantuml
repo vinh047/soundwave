@@ -17,15 +17,15 @@ UI --> User: Hiển thị giao diện & danh sách bài hát
 ' === Dòng sự kiện chính (bước 2): Người dùng chọn Thêm ===
 User -> UI: Chọn (songId) & Nhấn "Thêm"
 activate UI
-UI -> Controller: Yêu cầu thêm bài hát(playlistId, songId)
+UI -> Controller: addSongToPlaylist(playlistId, songId)
 activate Controller
 
-Controller -> Service: addSongToPlaylist(playlistId, songId)
+Controller -> Service: addSongToPlaylist(userId, playlistId, songId)
 activate Service
 
 ' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
 alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
-    Service -> DB: INSERT INTO playlist_songs (playlistId, songId)
+    Service -> DB: INSERT INTO playlist_song (playlistId, songId)
     activate DB
     DB --> Service: Lỗi! (Không thể ghi)
     deactivate DB
@@ -33,22 +33,22 @@ alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
     deactivate Service
     Controller --> UI: {status: 500, error: "Lỗi DB"}
     deactivate Controller
-    
+
     UI --> User: Thông báo "Thêm bài hát vào Playlist thất bại, vui lòng thử lại"
     deactivate UI
 
 else Ghi nhận thành công (Bước 3)
-    Service -> DB: INSERT INTO playlist_songs (playlistId, songId)
+    Service -> DB: INSERT INTO playlist_song (playlistId, songId)
     activate DB
     DB --> Service: {success: true}
     deactivate DB
     Service --> Controller: {success: true, message: "Đã thêm thành công"}
     deactivate Service
-    
+
     ' === Dòng sự kiện chính (bước 4): Chuyển giao diện ===
     Controller --> UI: {status: 201, redirect: '/edit-playlist/playlistId'}
     deactivate Controller
-    
+
     UI --> User: Chuyển sang giao diện Sửa Playlist cá nhân
     deactivate UI
 end

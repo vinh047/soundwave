@@ -17,15 +17,15 @@ UI --> User: Hiển thị form (Tên, Ảnh,...) với thông tin cũ
 ' === Dòng sự kiện chính (bước 2): Người dùng nhấn Lưu ===
 User -> UI: Thay đổi thông tin & Nhấn "Lưu"
 activate UI
-UI -> Controller: Yêu cầu cập nhật(playlistId, updatedData)
+UI -> Controller: updatePlaylistInfo(playlistId, updatedPlaylistInfo)
 activate Controller
 
-Controller -> Service: updatePlaylistInfo(playlistId, updatedData)
+Controller -> Service: updatePlaylistInfo(userId, playlistId, updatedPlaylistInfo)
 activate Service
 
 ' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (1) ===
 alt Dòng sự kiện phụ (1) - Ghi nhận thất bại
-    Service -> DB: UPDATE playlists SET ... WHERE id=playlistId
+    Service -> DB: UPDATE playlist SET ... WHERE id = playlistId AND playlist.userId = userId
     activate DB
     DB --> Service: Lỗi! (Không thể ghi)
     deactivate DB
@@ -38,7 +38,7 @@ alt Dòng sự kiện phụ (1) - Ghi nhận thất bại
     deactivate UI
 
 else Ghi nhận thành công (Bước 3)
-    Service -> DB: UPDATE playlists SET ... WHERE id=playlistId
+    Service -> DB: UPDATE playlist SET ... WHERE id = playlistId AND playlist.userId = userId
     activate DB
     DB --> Service: {success: true}
     deactivate DB

@@ -17,15 +17,15 @@ UI --> User: Hiển thị form (Tên, ảnh,...) với thông tin cũ
 ' === Dòng sự kiện chính (bước 2): Người dùng nhấn Lưu ===
 User -> UI: Nhập thông tin mới & Nhấn "Lưu"
 activate UI
-UI -> Controller: Yêu cầu cập nhật(userId, updatedData)
+UI -> Controller: updateProfile(updatedProfileInfo)
 activate Controller
 
-Controller -> Service: updateUserProfile(userId, updatedData)
+Controller -> Service: updateProfile(userId, updatedProfileInfo)
 activate Service
 
 ' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
 alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
-    Service -> DB: UPDATE users SET ... WHERE id=userId
+    Service -> DB: UPDATE profile SET ... WHERE id=userId
     activate DB
     DB --> Service: Lỗi! (Không thể ghi)
     deactivate DB
@@ -38,7 +38,7 @@ alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
     deactivate UI
 
 else Ghi nhận thành công (Bước 3)
-    Service -> DB: UPDATE users SET ... WHERE id=userId
+    Service -> DB: UPDATE profile SET ... WHERE id=userId
     activate DB
     DB --> Service: {success: true}
     deactivate DB

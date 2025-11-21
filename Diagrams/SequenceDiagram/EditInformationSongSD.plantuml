@@ -17,15 +17,15 @@ UI --> Artist: Hiển thị form (Ảnh, tên,...) với thông tin cũ
 ' === Dòng sự kiện chính (bước 2): Người dùng nhấn Lưu ===
 Artist -> UI: Thay đổi thông tin & Nhấn "Lưu"
 activate UI
-UI -> Controller: Yêu cầu cập nhật(songId, updatedData)
+UI -> Controller: updateSongInfo(songId, updatedSongInfo)
 activate Controller
 
-Controller -> Service: updateSong(songId, updatedData)
+Controller -> Service: updateSongInfo(userId, songId, updatedSongInfo)
 activate Service
 
 ' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
 alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
-    Service -> DB: UPDATE songs SET ... WHERE id=songId
+    Service -> DB: UPDATE song SET ... WHERE id=songId AND song.userId = userId
     activate DB
     DB --> Service: Lỗi! (Không thể ghi)
     deactivate DB
@@ -38,7 +38,7 @@ alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
     deactivate UI
 
 else Ghi nhận thành công (Bước 3)
-    Service -> DB: UPDATE songs SET ... WHERE id=songId
+    Service -> DB: UPDATE song SET ... WHERE id=songId AND song.userId = userId
     activate DB
     DB --> Service: {success: true}
     deactivate DB
