@@ -1,97 +1,81 @@
-@startuml Sequence Diagram - Đăng Nhập
+@startuml Sequence Diagram - Đăng Nhập NestJS
 
-title Sơ Đồ Tuần Tự - Chức Năng Đăng Nhập
+title Sơ Đồ Tuần Tự - Chức Năng Đăng Nhập (Kiến trúc NestJS)
 
 actor "Người dùng" as User
-participant ":GiaoDienDangNhap" as UI
-participant ":LoginController" as Controller
-participant ":AuthService" as Service
+participant ":NextJS Client" as UI
+participant ":AuthController" as Controller
+participant ":AuthService" as AuthService
+participant ":UsersService" as UserService
 participant ":Database" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1): Hiển thị form ===
-User -> UI: Yêu cầu trang Đăng nhập
+' === BƯỚC 1 & 2: GỬI YÊU CẦU ===
+User -> UI: Nhập (email, pass) & Nhấn "Đăng nhập"
 activate UI
-UI --> User: Hiển thị form (email, password)
-deactivate UI
 
-' === Dòng sự kiện chính (bước 2): Người dùng gửi thông tin ===
-User -> UI: Nhập (email, password) & Nhấn "Đăng nhập"
-activate UI
-UI -> Controller: Yêu cầu đăng nhập(data)
+' NestJS dùng DTO để hứng dữ liệu
+UI -> Controller: login(loginDto)
 activate Controller
-Controller -> Service: login(data)
-activate Service
 
-' === Dòng sự kiện (bước 3) & Các dòng sự kiện phụ ===
-' Service thực hiện các bước kiểm tra
-' 3.1: Kiểm tra email hợp lệ
-alt Dòng sự kiện phụ (3.1) - Email không hợp lệ
-    Service -> Service: validateEmailFormat(data.email)
-    ' (Giả sử kiểm tra thấy không hợp lệ)
-    Service --> Controller: {error: "Email không hợp lệ"}
-    deactivate Service
-    Controller --> UI: {status: 400, error: "Email không hợp lệ"}
-    deactivate Controller
-    
-    UI --> User: Thông báo "Email không hợp lệ, vui lòng nhập lại"
-    deactivate UI
-    
-' 3.3: Kiểm tra tài khoản tồn tại
-else Dòng sự kiện phụ (3.3) - Tài khoản không tồn tại
-    Service -> Service: validateEmailFormat(data.email) ' (Pass)
-    Service -> DB: findByEmail(data.email)
+' === BƯỚC 3: XỬ LÝ LOGIC ===
+
+' --- CHECK 1: ĐỊNH DẠNG EMAIL (Validation Pipe) ---
+' Trong NestJS, bước này thường tự động ở Controller nhờ class-validator
+' Nhưng vẽ vào đây để khớp với đặc tả use case 3.1
+Controller -> Controller: validate(loginDto)
+alt 3.1: Email không hợp lệ (Validation Failed)
+    Controller --> UI: {status: 400, error: "Bad Request - Invalid Email"}
+    UI --> User: Thông báo "Email không hợp lệ"
+
+else Format OK
+    ' Controller gọi AuthService để xử lý nghiệp vụ
+    Controller -> AuthService: validateUser(email, pass)
+    activate AuthService
+
+    ' --- CHECK 2: TÌM USER (Gọi sang UsersService) ---
+    ' AuthService không chọc thẳng DB, mà nhờ UsersService tìm
+    AuthService -> UserService: findOneByEmail(email)
+    activate UserService
+    UserService -> DB: findOne({ where: { email } })
     activate DB
-    DB --> Service: (Trả về null)
+    DB --> UserService: userEntity
     deactivate DB
+    UserService --> AuthService: userEntity
+    deactivate UserService
     
-    Service --> Controller: {error: "Tài khoản không tồn tại"}
-    deactivate Service
-    Controller --> UI: {status: 404, error: "Tài khoản không tồn tại"}
-    deactivate Controller
-    
-    UI --> User: Thông báo "Tài khoản không tồn tại, vui lòng đăng ký..."
-    deactivate UI
-    
-' 3.2: Kiểm tra mật khẩu không đúng
-else Dòng sự kiện phụ (3.2) - Thông tin không đúng
-    Service -> Service: validateEmailFormat(data.email) ' (Pass)
-    Service -> DB: findByEmail(data.email)
-    activate DB
-    DB --> Service: (Trả về userData)
-    deactivate DB
-    
-    Service -> Service: verifyPassword(data.password, userData.hash)
-    ' (Giả sử kiểm tra thấy mật khẩu không khớp)
-    Service --> Controller: {error: "Sai thông tin đăng nhập"}
-    deactivate Service
-    Controller --> UI: {status: 401, error: "Không khớp"}
-    deactivate Controller
+    alt 3.3: Tài khoản không tồn tại (userEntity == null)
+        AuthService --> Controller: null (hoặc throw NotFoundException)
+        deactivate AuthService
+        Controller --> UI: {status: 404, error: "User Not Found"}
+        UI --> User: Thông báo "Tài khoản không tồn tại"
         
-    UI --> User: Thông báo "Sai email hoặc mật khẩu, vui lòng nhập lại"
-    deactivate UI
+    else User Tồn tại
+        activate AuthService
+        ' --- CHECK 3: MẬT KHẨU ---
+        AuthService -> AuthService: verifyPassword(pass, user.hash)
         
-' Dòng sự kiện chính (Bước 4 & 5) - Đăng nhập thành công
-else Mọi thứ hợp lệ (Bước 3 thành công)
-    Service -> Service: validateEmailFormat(data.email) ' (Pass)
-    Service -> DB: findByEmail(data.email)
-    activate DB
-    DB --> Service: (Trả về userData)
-    deactivate DB
-
-    Service -> Service: verifyPassword(data.password, userData.hash) ' (Pass)
-
-    ' Bước 4: Thông báo thành công
-    Service --> Controller: {success: true, user: userData}
-    deactivate Service
-    Controller --> UI: {status: 200, user: userData}
-    deactivate Controller
-    
-    UI --> User: Thông báo "Đăng nhập thành công"
-    
-    ' Bước 5: Chuyển giao diện
-    UI --> User: Chuyển sang giao diện cho người dùng đã đăng nhập
-    deactivate UI
+        alt 3.2: Sai mật khẩu
+            AuthService --> Controller: null (hoặc throw UnauthorizedException)
+            Controller --> UI: {status: 401, error: "Wrong Password"}
+            UI --> User: Thông báo "Sai mật khẩu"
+            
+        else Đăng nhập thành công
+            ' --- TẠO TOKEN (JWT) ---
+            AuthService -> AuthService: generateJwtToken(user)
+            
+            AuthService --> Controller: { accessToken: "eyJh..." }
+            deactivate AuthService
+            
+            Controller --> UI: {status: 200, accessToken: "..."}
+            deactivate Controller
+            
+            ' NextJS lưu token và chuyển trang
+            UI -> UI: Lưu Token (Cookies/Storage)
+            UI --> User: Thông báo thành công & Chuyển trang
+            deactivate UI
+        end
+    end
 end
 @enduml

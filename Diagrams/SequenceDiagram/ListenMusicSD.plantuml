@@ -1,86 +1,97 @@
 @startuml Sequence Diagram - Nghe Nhạc
-
 title Sơ Đồ Tuần Tự - Chức Năng Nghe Nhạc
 
 actor "Người dùng" as User
 participant ":GiaoDienPhatNhac" as UI
 participant ":PlayerController" as Controller
 participant ":PlayerService" as Service
+participant ":Database" as DB
 participant ":FileStorage" as Storage
 
 autonumber
 
-' === Dòng sự kiện chính (bắt đầu) ===
-User -> UI: Chọn 1 bài hát (songId) để nghe
+' === BƯỚC 1: BẮT ĐẦU PHÁT NHẠC (Giữ nguyên phần đầu của bạn) ===
+User -> UI: Chọn bài hát (songId)
 activate UI
-UI -> Controller: Yêu cầu phát nhạc(songId)
+UI -> Controller: playSong(songId)
 activate Controller
-Controller -> Service: getSongStream(songId)
+Controller -> Service: getSongData(songId)
 activate Service
+Service -> DB: findById(songId)
+activate DB
+DB --> Service: SongMetadata
+deactivate DB
+Service -> Storage: getStreamUrl(songId)
+activate Storage
 
-' === Dòng sự kiện phụ (1) ===
-alt Dòng sự kiện phụ (1) - Phát nhạc thất bại
-    Service -> Storage: getFile(songId)
-    activate Storage
-    Storage --> Service: Lỗi! (File not found / Error)
+alt Lỗi không tìm thấy file
+    Storage --> Service: Error
+    Service --> Controller: Error
+    Controller --> UI: {error: "Lỗi file"}
+else Thành công
+    Storage --> Service: StreamURL
     deactivate Storage
-    Service --> Controller: {error: "Phát nhạc thất bại"}
+    Service --> Controller: {success: true, data: ...}
     deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi file"}
+    Controller --> UI: {status: 200, data: ...}
     deactivate Controller
-    
-    UI --> User: Thông báo "Phát nhạc thất bại, vui lòng thử lại"
-    deactivate UI
-
-' === Dòng sự kiện chính (bước 1) ===
-else Phát nhạc thành công (Bước 1)
-    Service -> Storage: getFile(songId)
-    activate Storage
-    Storage --> Service: (streamData)
-    deactivate Storage
-    Service --> Controller: {success: true, stream: ...}
-    deactivate Service
-    Controller --> UI: {status: 200, stream: ...}
-    deactivate Controller
-    
-    UI --> User: Hiển thị giao diện & Bắt đầu phát bài hát
+    UI -> UI: Tải & Phát nhạc
 end
+
+' === BƯỚC 2: TƯƠNG TÁC (Dùng khối Alt để phân chia các hành động) ===
+group Tương tác Trình phát nhạc
+
+    alt Trường hợp: Tạm dừng / Tiếp tục
+        User -> UI: Nhấn "Tạm dừng/Tiếp tục"
+        UI -> UI: Xử lý Client-side
+        UI -->> Controller: logAction(...)
+
+    else Trường hợp: Chuyển bài (Next/Previous)
+        ' Gom logic Next và Previous vào chung vì cấu trúc giống nhau
+        ' Dùng alt lồng nhau hoặc tách riêng đều được. Ở đây mình tách ra cho dễ nhìn.
+        
+        alt Người dùng chọn Next
+            User -> UI: Nhấn "Bài tiếp theo"
+            UI -> Controller: getNextSong(currentId)
+            activate Controller
+            Controller -> Service: findNextSong(currentId)
+            activate Service
+            Service -> DB: Query Next ID
+            activate DB
+            DB --> Service: nextId
+            deactivate DB
+            Service --> Controller: nextId
+            deactivate Service
+            
+        else Người dùng chọn Previous (Phần bạn thêm vào)
+            User -> UI: Nhấn "Bài phía trước"
+            UI -> Controller: getPreviousSong(currentId)
+            ' Controller đã activate từ lần gọi Next hoặc Previous (chung flow)
+            Controller -> Service: findPreviousSong(currentId)
+            activate Service
+            Service -> DB: Query Previous ID
+            activate DB
+            DB --> Service: prevId
+            deactivate DB
+            Service --> Controller: prevId
+            deactivate Service
+        end
+
+        ' === XỬ LÝ CHUNG SAU KHI CÓ ID MỚI ===
+        note right of Controller: Controller có ID mới (Next hoặc Prev) và gọi lại quy trình lấy dữ liệu
+        
+        Controller -> Service: getSongData(newSongId)
+        activate Service
+        ' (Lược bớt các bước gọi DB/Storage y hệt Bước 1 để sơ đồ đỡ rối)
+        Service --> Controller: {newSongData...}
+        deactivate Service
+        
+        Controller --> UI: {status: 200, song: newSongData}
+        deactivate Controller
+        
+        UI --> User: Hiển thị & Phát bài mới
+    end
+end
+
 deactivate UI
-
-' === Dòng sự kiện chính (bước 2) - Các tương tác ===
-group Dòng sự kiện chính (Bước 2: Tương tác)
-
-    ' === Bước 2.1: Tạm dừng ===
-    User -> UI: Nhấn nút "Tạm dừng"
-    activate UI
-    UI -> Controller: Yêu cầu tạm dừng()
-    activate Controller
-    Controller --> UI: (Ra lệnh cho trình phát nhạc dừng)
-    deactivate Controller
-    UI --> User: (Bài hát đã tạm dừng)
-    deactivate UI
-    
-    ' === Bước 2.2: Tiếp tục ===
-    User -> UI: Nhấn nút "Tiếp tục"
-    activate UI
-    UI -> Controller: Yêu cầu tiếp tục()
-    activate Controller
-    Controller --> UI: (Ra lệnh cho trình phát nhạc tiếp tục)
-    deactivate Controller
-    UI --> User: (Bài hát đang phát trở lại)
-    deactivate UI
-    
-    ' === Bước 2.3: Chuyển bài (Tiến tới) ===
-    User -> UI: Nhấn nút "Bài tiếp theo"
-    activate UI
-    UI -> Controller: Yêu cầu chuyển bài(next)
-    activate Controller
-    ' (Giả định Controller sẽ gọi Service để lấy bài mới,
-    ' ở đây ta đơn giản hóa là ra lệnh cho UI)
-    Controller --> UI: (Ra lệnh cho trình phát nhạc chuyển bài)
-    deactivate Controller
-    UI --> User: (Đang phát bài hát tiếp theo)
-    deactivate UI
-    
-end
 @enduml

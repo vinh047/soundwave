@@ -1,55 +1,61 @@
 @startuml Sequence Diagram - Sửa Thông Tin Bài Hát
 
-title Sơ Đồ Tuần Tự - Chức Năng Sửa Thông Tin Bài Hát
+title Sơ Đồ Tuần Tự - Sửa Thông Tin Bài Hát
 
 actor "Nghệ sĩ" as Artist
 participant ":GiaoDienSuaBaiHat" as UI
 participant ":SongController" as Controller
 participant ":SongService" as Service
+participant ":FileStorage" as Storage
 participant ":Database" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1): Hiển thị form ===
-' (Giả định user đã ở trang Sửa thông tin)
-UI --> Artist: Hiển thị form (Ảnh, tên,...) với thông tin cũ
+' === BƯỚC 1: HIỂN THỊ ===
+UI --> Artist: Hiển thị form thông tin cũ
 
-' === Dòng sự kiện chính (bước 2): Người dùng nhấn Lưu ===
-Artist -> UI: Thay đổi thông tin & Nhấn "Lưu"
+' === BƯỚC 2: GỬI YÊU CẦU ===
+Artist -> UI: Thay đổi thông tin (có thể kèm File nhạc mới) & Nhấn "Lưu"
 activate UI
-UI -> Controller: updateSongInfo(songId, updatedSongInfo)
+UI -> Controller: updateSong(songId, formData)
 activate Controller
-
-Controller -> Service: updateSongInfo(userId, songId, updatedSongInfo)
+Controller -> Service: updateSong(userId, songId, formData)
 activate Service
 
-' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
-alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
-    Service -> DB: UPDATE song SET ... WHERE id=songId AND song.userId = userId
-    activate DB
-    DB --> Service: Lỗi! (Không thể ghi)
-    deactivate DB
-    Service --> Controller: {error: "Lỗi ghi CSDL"}
-    deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi DB"}
-    deactivate Controller
-    
-    UI --> Artist: Thông báo "Cập nhật thông tin bài hát thất bại"
-    deactivate UI
+' === BƯỚC 3: XỬ LÝ LOGIC ===
 
-else Ghi nhận thành công (Bước 3)
-    Service -> DB: UPDATE song SET ... WHERE id=songId AND song.userId = userId
-    activate DB
+' [MỚI] Kiểm tra xem người dùng có up file nhạc mới không?
+alt Người dùng có tải lên file nhạc mới
+    Service -> Storage: storeFile(newMusicFile)
+    activate Storage
+    Storage --> Service: newFileUrl
+    deactivate Storage
+    note right of Service: Cập nhật URL mới vào đối tượng Song
+else Không tải file mới
+    note right of Service: Giữ nguyên URL cũ
+end
+
+' === BƯỚC 4: GHI DB ===
+Service -> DB: UPDATE song SET title=..., fileUrl=... \nWHERE id=songId AND userId=userId
+activate DB
+
+alt Ghi nhận thất bại (Lỗi DB hoặc không đúng chủ sở hữu)
+    DB --> Service: Lỗi
+    deactivate DB
+    Service --> Controller: {error: "Lỗi cập nhật"}
+    Controller --> UI: {status: 500, error: "Failed"}
+    UI --> Artist: Thông báo "Cập nhật thất bại"
+
+else Ghi nhận thành công
     DB --> Service: {success: true}
     deactivate DB
-    Service --> Controller: {success: true, message: "Cập nhật thành công"}
+    Service --> Controller: {success: true}
     deactivate Service
     
-    ' === Dòng sự kiện chính (bước 4): Chuyển giao diện ===
     Controller --> UI: {status: 200, redirect: '/manage-songs'}
     deactivate Controller
     
-    UI --> Artist: Chuyển sang giao diện Quản lý bài hát cá nhân
+    UI --> Artist: Chuyển sang giao diện Quản lý
     deactivate UI
 end
 @enduml

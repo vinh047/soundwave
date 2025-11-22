@@ -3,7 +3,7 @@
 title Sơ Đồ Tuần Tự - Chức Năng Theo Dõi Nghệ Sĩ
 
 actor "Người dùng" as User
-participant ":GiaoDienNheSi" as UI
+participant ":GiaoDienNgheSi" as UI
 participant ":FollowController" as Controller
 participant ":FollowService" as Service
 participant ":Database" as DB

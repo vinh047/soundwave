@@ -1,241 +1,237 @@
-@startuml Class Diagram - Hệ thống nghe nhạc trực tuyến
+@startuml Class Diagram - NestJS Backend Updated
+title Class Diagram - Hệ thống nghe nhạc (NestJS + MySQL)
 
-title Class Diagram - Hệ thống nghe nhạc trực tuyến
+' --- CẤU TRÚC DTO (Data Transfer Objects) ---
+package "DTOs (Input Validation)" {
+    class LoginDto {
+        + email: string
+        + password: string
+    }
+    
+    class CreateSongDto {
+        + title: string
+        + genre: string
+        + description: string
+    }
+    
+    class UpdateProfileDto {
+        + fullName: string
+        + bio: string
+        + avatarUrl: string
+    }
 
-' --- PACKAGES ---
+    class CreatePlaylistDto {
+        + name: string
+        + description: string
+    }
 
-package "Model (Entities)" {
+    class RequestFollowDto {
+        + artistId: number
+    }
+
+    ' [MỚI] DTO cho chức năng Quên mật khẩu
+    class ForgotPasswordDto {
+        + email: string
+    }
+
+    ' [MỚI] DTO cho chức năng Đặt lại mật khẩu
+    class ResetPasswordDto {
+        + code: string
+        + newPassword: string
+    }
+}
+
+' --- CẤU TRÚC MODULES ---
+
+package "AuthModule" {
+    class AuthController {
+        + login(dto: LoginDto): Promise<any>
+        + register(dto: RegisterDto): Promise<any>
+        + logout(req: Request): Promise<void>
+    }
+
+    class AuthService {
+        ' [CẬP NHẬT] Logic Login gọi UsersService
+        + validateUser(email: string, pass: string): Promise<User>
+        + login(user: User): Promise<{ access_token: string }>
+        + register(user: User): Promise<User>
+        ' [CẬP NHẬT] Logout xử lý blacklist token
+        + logout(userId: number, token: string): Promise<void>
+    }
+
+    ' [MỚI] Controller riêng cho Password Reset
+    class PasswordResetController {
+        + forgotPassword(dto: ForgotPasswordDto): Promise<void>
+        + resetPassword(dto: ResetPasswordDto): Promise<void>
+    }
+
+    ' [MỚI] Service xử lý logic quên mật khẩu
+    class PasswordResetService {
+        + generateResetCode(email: string): Promise<void>
+        + verifyAndReset(dto: ResetPasswordDto): Promise<void>
+    }
+    
+    class JwtStrategy {
+        + validate(payload: any): Promise<User>
+    }
+}
+
+package "UserModule" {
+    ' [MỚI] Service chung để thao tác với bảng User (dùng cho Auth)
+    class UsersService {
+        + findOneByEmail(email: string): Promise<User>
+        + create(user: User): Promise<User>
+    }
+
+    class ProfileController {
+        + getProfile(req): Promise<Profile>
+        + updateProfile(req, dto: UpdateProfileDto): Promise<UpdateResult>
+    }
+    
+    class ProfileService {
+        + updateProfile(userId: number, dto: UpdateProfileDto): Promise<void>
+    }
+    
+    class FollowController {
+        + requestFollow(req, dto: RequestFollowDto): Promise<void>
+        + getFollowedArtists(req): Promise<Artist[]>
+    }
+    
+    class FollowService {
+        + followArtist(userId: number, artistId: number): Promise<void>
+        ' [CẬP NHẬT] Cần userId để check trạng thái follow
+        + getArtistList(userId: number): Promise<any[]> 
+    }
+}
+
+package "SongModule" {
+    class SongController {
+        + uploadSong(req, dto: CreateSongDto, file: Express.Multer.File): Promise<Song>
+        + getSongStream(id: number): Promise<StreamableFile>
+        + playSong(id: number): Promise<Song>
+    }
+
+    class SongService {
+        ' [CẬP NHẬT] Luôn truyền userId
+        + create(userId: number, dto: CreateSongDto, fileUrl: string): Promise<Song>
+        + findOne(id: number): Promise<Song>
+        + getStreamUrl(id: number): Promise<string>
+    }
+}
+
+package "PlaylistModule" {
+    class PlaylistController {
+        + create(req, dto: CreatePlaylistDto): Promise<Playlist>
+        + addSong(id: number, songId: number, req): Promise<void>
+        + removeSong(id: number, songId: number, req): Promise<void>
+        + delete(id: number, req): Promise<void>
+    }
+
+    class PlaylistService {
+        ' [CẬP NHẬT] Luôn truyền userId
+        + create(userId: number, dto: CreatePlaylistDto): Promise<Playlist>
+        + addSongToPlaylist(userId: number, playlistId: number, songId: number): Promise<void>
+        + removeSongFromPlaylist(userId: number, playlistId: number, songId: number): Promise<void>
+        + checkOwner(userId: number, playlistId: number): Promise<boolean>
+    }
+}
+
+' --- ENTITIES (TypeORM / MySQL Tables) ---
+package "Database Entities (TypeORM)" {
     enum Role {
         USER
         ARTIST
         ADMIN
     }
 
-    enum SongStatus {
-        ACTIVE
-        HIDDEN
-        DELETED
+    class User {
+        + id: number
+        + email: string
+        + password: string
+        + role: Role
+        + playlists: Playlist[]
+        + songs: Song[]
+        + followedArtists: Artist[]
     }
 
-    enum ReportStatus {
-        PENDING
-        PROCESSED
-        DISMISSED
-    }
-
-    abstract class User {
-        - id: Long
-        - email: String
-        - emailVerified: Timestamp
-        - hashedPassword: String
-        - role: Role
-        - imagePath: String
-        - isLocked: Boolean
-        + login(email, password): Boolean
-        + updatePassword(newPass): void
-        + setStatus(status): void
-    }
-
-    class Profile {
-        - id: Long
-        - bio: String
-        + updateProfile(data): void
+    ' [MỚI] Entity lưu mã xác thực quên mật khẩu
+    class PasswordResetToken {
+        + id: number
+        + code: string
+        + userId: number
+        + expiresAt: Date
     }
 
     class Artist extends User {
-        - verifiedDate: Date
-        + uploadSong(file): void
-    }
-
-    class Admin {
-        - department: String
-        + lockAccount(accountId): void
+        + verifiedAt: Date
     }
 
     class Song {
-        - id: Long
-        - title: String
-        - genre: String
-        - description: String
-        - filePath: String
-        - imagePath: String
-        - status: SongStatus
-        - uploadDate: Date
-        - listenCount: Long
-        + updateInfo(data): void
-        + setStatus(status): void
+        + id: number
+        + title: string
+        + fileUrl: string
+        + userId: number
+        + user: User
+        + playlists: Playlist[]
     }
 
     class Playlist {
-        - id: Long
-        - name: String
-        - description: String
-        - imagePath: String
-        - createdDate: Date
-        + addSong(song): void
-        + removeSong(song): void
-        + updateInfo(data): void
-    }
-
-    class Report {
-        - id: Long
-        - reason: String
-        - createdDate: Date
-        - status: ReportStatus
-        - solutionNote: String
-        + updateStatus(status): void
-    }
-
-    class Interaction {
-        - id: Long
-        - timestamp: Date
-        - type: String
-    }
-
-    class Comment {
-        - id: Long
-        - songId: Long
-        - userId: Long
-        - content: String
+        + id: number
+        + name: string
+        + userId: number
+        + user: User
+        + songs: Song[]
     }
 }
 
-package "Controller Layer" {
-    class AuthController {
-        + login(email, password, role): Response
-        + register(data): Response
-        + logout(sessionId): Response
-        + forgotPassword(email): Response
-        + resetPassword(code, newPass): Response
+' --- EXTERNAL SERVICES ---
+package "Shared / Common" {
+    interface FileStorageService {
+        + upload(file: Buffer): Promise<string>
+        + getUrl(key: string): string
     }
 
-    class SongController {
-        + uploadSong(data, file): Response
-        + updateSong(id, data): Response
-        + toggleSongStatus(id): Response
-        + getSongsByArtist(artistId): Response
-        + getSongStream(id): Response
-    }
-
-    class PlaylistController {
-        + createPlaylist(data): Response
-        + updatePlaylist(id, data): Response
-        + deletePlaylist(id): Response
-        + addSongToPlaylist(pId, sId): Response
-        + removeSongFromPlaylist(pId, sId): Response
-        + getPlaylists(userId): Response
-    }
-
-    class InteractionController {
-        + likeSong(sId, uId): Response
-        + unlikeSong(sId, uId): Response
-        + comment(sId, content): Response
-        + share(sId, platform): Response
-        + followArtist(artistId, uId): Response
-        + repostSong(sId, uId): Response
-    }
-
-    class ReportController {
-        + createReport(sId, reason): Response
-        + getPendingReports(): Response
-        + processReport(rId, action): Response
-    }
-    
-    class SearchController {
-        + searchSongs(keyword): Response
-        + searchArtists(keyword): Response
-    }
-}
-
-package "Service Layer" {
-    class AuthService {
-        + verifyPassword(pass, hash): Boolean
-        + validateEmail(email): Boolean
-        + generateResetCode(email): String
-    }
-
-    class SongService {
-        + saveSong(data, file): Song
-        + updateSong(id, data): Song
-        + hideSong(id): void
-        + getFile(id): Stream
-    }
-
-    class PlaylistService {
-        + createPlaylist(data): Playlist
-        + addSong(playlistId, songId): void
-        + removeSong(playlistId, songId): void
-    }
-
-    class InteractionService {
-        + like(songId, userId): void
-        + addComment(songId, content): void
-        + follow(artistId, userId): void
-        + repost(songId, userId): void
-    }
-
-    class ReportService {
-        + create(data): Report
-        + process(id, action): void
-    }
-    
-    class SearchService {
-        + search(keyword): List
-    }
-    
-    class EmailService {
-        + sendCode(email, code): void
+    ' [MỚI] Service gửi email
+    class MailService {
+        + sendMail(to: string, code: string): Promise<void>
     }
 }
 
 ' --- RELATIONSHIPS ---
 
-' 1. Inheritance (Kế thừa)
-Account <|-- User
-Account <|-- Admin
-User <|-- Artist
-Interaction <|-- Comment
+' Auth Dependency
+AuthController --> AuthService
+AuthService ..> UsersService : [Mới] Use
+AuthService ..> JwtStrategy
 
-' 2. Association (Kết hợp) & Aggregation (Tập hợp)
-' User owns Playlist
-User "1" -- "0..*" Playlist : owns >
+' Password Reset Dependency [Mới]
+PasswordResetController --> PasswordResetService
+PasswordResetService ..> UsersService : Use (Find user)
+PasswordResetService ..> MailService : Use (Send mail)
+PasswordResetService ..> PasswordResetToken : InjectRepository
 
-' Playlist contains Songs (Aggregation - Song exist independently)
-Playlist "0..*" o-- "0..*" Song : contains >
+' Song Dependency
+SongController --> SongService
+SongService ..> FileStorageService
+SongService ..> Song : InjectRepository
 
-' Artist uploads Songs (Composition - Song belongs to Artist)
-Artist "1" *-- "0..*" Song : uploads >
+' Playlist Dependency
+PlaylistController --> PlaylistService
+PlaylistService ..> Playlist : InjectRepository
+PlaylistService ..> Song : InjectRepository
 
-' User sends Report
-User "1" -- "0..*" Report : sends >
-' Report targets a Song
-Report "0..*" --> "1" Song : targets >
-' Admin processes Report
-Admin "1" -- "0..*" Report : processes >
+' User/Profile Dependency
+ProfileController --> ProfileService
+ProfileService ..> User : InjectRepository
 
-' User interacts with Song
-User "1" -- "0..*" Interaction : makes >
-Interaction "0..*" --> "1" Song : on >
+FollowController --> FollowService
+FollowService ..> User : InjectRepository
 
-' User follows Artist
-User "0..*" --> "0..*" Artist : follows >
-
-' 3. Dependency (Phụ thuộc) - Controller uses Service
-AuthController ..> AuthService
-AuthController ..> EmailService
-SongController ..> SongService
-PlaylistController ..> PlaylistService
-InteractionController ..> InteractionService
-ReportController ..> ReportService
-ReportController ..> SongService
-SearchController ..> SearchService
-
-' 4. Dependency - Service uses Entities
-AuthService ..> Account
-SongService ..> Song
-PlaylistService ..> Playlist
-PlaylistService ..> Song
-InteractionService ..> Interaction
-ReportService ..> Report
+' Entity Relationships
+User "1" *-- "0..*" Playlist : OneToMany
+Playlist "0..*" *-- "0..*" Song : ManyToMany
+User "1" *-- "0..*" Song : OneToMany (Artist uploads)
+User "0..*" *-- "0..*" Artist : ManyToMany (Follows)
+User "1" -- "0..*" PasswordResetToken : OneToMany
 
 @enduml

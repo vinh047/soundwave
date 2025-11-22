@@ -1,53 +1,61 @@
-@startuml Sequence Diagram - Đăng Xuất
+@startuml Sequence Diagram - Đăng Xuất NestJS
 
-title Sơ Đồ Tuần Tự - Chức Năng Đăng Xuất
+title Sơ Đồ Tuần Tự - Chức Năng Đăng Xuất (NestJS + JWT)
 
-' Tiền điều kiện: Người dùng đã đăng nhập
 actor "Người dùng" as User
-participant ":GiaoDienChinh" as UI
-participant ":LogoutController" as Controller
+participant ":NextJS Client" as UI
+participant ":AuthController" as Controller
 participant ":AuthService" as Service
-participant ":SessionManager" as Session
+participant ":Redis/Database" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bắt đầu) ===
+' === BƯỚC 1: GỬI YÊU CẦU ===
 User -> UI: Nhấn nút "Đăng xuất"
 activate UI
-UI -> Controller: Yêu cầu đăng xuất()
+UI -> Controller: logout(req)
 activate Controller
-Controller -> Service: logout(sessionId)
+note right of UI: Request Header chứa:\nAuthorization: Bearer <token>
+
+' Controller lấy token từ Header
+Controller -> Service: logout(userId, token)
 activate Service
 
-' === Dòng sự kiện (bước 1) & Dòng sự kiện phụ (1.1) ===
-alt Dòng sự kiện phụ (1.1) - Đăng xuất thất bại
-    Service -> Session: destroySession(sessionId)
-    activate Session
-    Session --> Service: Lỗi! (Không thể hủy session)
-    deactivate Session
-    Service --> Controller: {error: "Đăng xuất thất bại"}
+' === BƯỚC 2: XỬ LÝ SERVER (Blacklist Token) ===
+' Trong NestJS/JWT, để đăng xuất server-side, ta lưu token vào Blacklist
+alt Đăng xuất thất bại (Lỗi kết nối Cache/DB)
+    Service -> DB: blacklistToken(token, expiresIn)
+    activate DB
+    DB --> Service: Lỗi / Exception
+    deactivate DB
+    
+    Service --> Controller: {error: "Lỗi hệ thống"}
     deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi"}
+    Controller --> UI: {status: 500, error: "Logout Failed"}
     deactivate Controller
     
+    ' Theo đúng đặc tả Use case: Báo lỗi
     UI --> User: Thông báo "Đăng xuất thất bại, vui lòng thử lại"
-    deactivate UI
 
-else Đăng xuất thành công (Bước 1 & 2)
-    Service -> Session: destroySession(sessionId)
-    activate Session
-    Session --> Service: {success: true}
-    deactivate Session
-    Service --> Controller: {success: true, message: "Đã đăng xuất"}
+else Đăng xuất thành công
+    Service -> DB: blacklistToken(token, expiresIn)
+    activate DB
+    DB --> Service: {success: true}
+    deactivate DB
+    
+    Service --> Controller: {success: true}
     deactivate Service
     Controller --> UI: {status: 200, success: true}
     deactivate Controller
     
-    ' Bước 1 (vế 1): Thông báo thành công
+    ' === BƯỚC 3: XỬ LÝ CLIENT (Quan trọng nhất với NextJS) ===
+    ' NextJS xóa Token lưu ở Client để người dùng không truy cập được nữa
+    UI -> UI: removeToken(LocalStorage / Cookies)
+    
     UI --> User: Thông báo "Bạn đã đăng xuất thành công"
     
-    ' Bước 1 (vế 2): Chuyển sang chế độ Khách
-    UI --> User: Chuyển sang giao diện Khách (trang chủ/đăng nhập)
+    ' Chuyển hướng
+    UI --> User: Chuyển về trang Login / Trang chủ (Khách)
     deactivate UI
 end
 @enduml
