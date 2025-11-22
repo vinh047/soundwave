@@ -1,95 +1,110 @@
-@startuml Sequence Diagram - Nghe Nhạc
-title Sơ Đồ Tuần Tự - Chức Năng Nghe Nhạc
+@startuml Sequence Diagram - Nghe Nhạc 
+
+title Sơ Đồ Tuần Tự - Nghe Nhạc 
 
 actor "Người dùng" as User
-participant ":GiaoDienPhatNhac" as UI
+participant ":NextJS Client" as UI
 participant ":PlayerController" as Controller
 participant ":PlayerService" as Service
-participant ":Database" as DB
-participant ":FileStorage" as Storage
+participant ":SongRepository" as DB
+participant ":FileStorageService" as Storage
 
 autonumber
 
-' === BƯỚC 1: BẮT ĐẦU PHÁT NHẠC (Giữ nguyên phần đầu của bạn) ===
+' === BƯỚC 1: BẮT ĐẦU PHÁT NHẠC ===
 User -> UI: Chọn bài hát (songId)
 activate UI
 UI -> Controller: playSong(songId)
 activate Controller
+
+' Controller gọi Service xử lý trọn gói
 Controller -> Service: getSongData(songId)
 activate Service
-Service -> DB: findById(songId)
+
+' 1. Lấy Metadata từ DB
+Service -> DB: findOne({ where: { id: songId } })
 activate DB
-DB --> Service: SongMetadata
+DB --> Service: songEntity
 deactivate DB
-Service -> Storage: getStreamUrl(songId)
+
+' 2. Lấy Stream URL từ Storage
+Service -> Storage: getStreamUrl(songEntity.fileKey)
 activate Storage
 
-alt Lỗi không tìm thấy file
-    Storage --> Service: Error
-    Service --> Controller: Error
-    Controller --> UI: {error: "Lỗi file"}
-else Thành công
-    Storage --> Service: StreamURL
+alt File không tồn tại / Lỗi Storage
+    Storage --> Service: null / Error
     deactivate Storage
-    Service --> Controller: {success: true, data: ...}
+    Service --> Controller: Throw NotFoundException
+    Controller --> UI: {status: 404, error: "Song File Not Found"}
+    UI --> User: Thông báo lỗi
+else Thành công
+    Storage --> Service: streamUrl
+    deactivate Storage
+    
+    Service --> Controller: {data: songEntity, streamUrl}
     deactivate Service
+    
     Controller --> UI: {status: 200, data: ...}
     deactivate Controller
-    UI -> UI: Tải & Phát nhạc
+    
+    UI -> UI: Load Audio & Play
 end
 
-' === BƯỚC 2: TƯƠNG TÁC (Dùng khối Alt để phân chia các hành động) ===
-group Tương tác Trình phát nhạc
+' === BƯỚC 2: TƯƠNG TÁC NGƯỜI DÙNG ===
+group Tương tác Player
 
-    alt Trường hợp: Tạm dừng / Tiếp tục
-        User -> UI: Nhấn "Tạm dừng/Tiếp tục"
-        UI -> UI: Xử lý Client-side
-        UI -->> Controller: logAction(...)
-
-    else Trường hợp: Chuyển bài (Next/Previous)
-        ' Gom logic Next và Previous vào chung vì cấu trúc giống nhau
-        ' Dùng alt lồng nhau hoặc tách riêng đều được. Ở đây mình tách ra cho dễ nhìn.
+    ' === KỊCH BẢN 2.1: PAUSE / RESUME (Client-side) ===
+    alt Pause/Resume
+        User -> UI: Nhấn "Tạm dừng"
+        UI -> UI: audio.pause() (Xử lý tại trình duyệt)
         
-        alt Người dùng chọn Next
+        ' (Optional) Gửi log thống kê ngầm
+        UI -->> Controller: logAction({ type: 'PAUSE', time: ... })
+    
+    ' === KỊCH BẢN 2.2: CHUYỂN BÀI (Next/Prev) ===
+    else Chuyển bài (Next/Previous)
+        
+        alt Chọn Next
             User -> UI: Nhấn "Bài tiếp theo"
-            UI -> Controller: getNextSong(currentId)
+            UI -> Controller: playNextSong(currentId, playlistId)
             activate Controller
-            Controller -> Service: findNextSong(currentId)
+            Controller -> Service: playNextSong(currentId, playlistId)
             activate Service
-            Service -> DB: Query Next ID
-            activate DB
-            DB --> Service: nextId
-            deactivate DB
-            Service --> Controller: nextId
-            deactivate Service
             
-        else Người dùng chọn Previous (Phần bạn thêm vào)
-            User -> UI: Nhấn "Bài phía trước"
-            UI -> Controller: getPreviousSong(currentId)
-            ' Controller đã activate từ lần gọi Next hoặc Previous (chung flow)
-            Controller -> Service: findPreviousSong(currentId)
-            activate Service
-            Service -> DB: Query Previous ID
+            ' Logic tìm bài kế tiếp (VD: bài có ID lớn hơn hoặc order lớn hơn)
+            Service -> DB: findOne({ where: { id: MoreThan(currentId) }, order: { id: 'ASC' } })
             activate DB
-            DB --> Service: prevId
+            DB --> Service: nextSongEntity
             deactivate DB
-            Service --> Controller: prevId
-            deactivate Service
+            
+        else Chọn Previous
+            User -> UI: Nhấn "Bài trước"
+            UI -> Controller: playPreviousSong(currentId, playlistId)
+            ' Controller đã activate từ nhánh Next/Prev chung
+            Controller -> Service: playPreviousSong(currentId, playlistId)
+            activate Service
+            
+            ' Logic tìm bài trước đó
+            Service -> DB: findOne({ where: { id: LessThan(currentId) }, order: { id: 'DESC' } })
+            activate DB
+            DB --> Service: nextSongEntity (Là bài trước)
+            deactivate DB
         end
 
-        ' === XỬ LÝ CHUNG SAU KHI CÓ ID MỚI ===
-        note right of Controller: Controller có ID mới (Next hoặc Prev) và gọi lại quy trình lấy dữ liệu
+        ' === XỬ LÝ CHUNG SAU KHI TÌM ĐƯỢC BÀI MỚI ===
+        ' Service tự động lấy Stream URL cho bài mới tìm được (Tái sử dụng code)
+        Service -> Storage: getStreamUrl(nextSongEntity.fileKey)
+        activate Storage
+        Storage --> Service: newStreamUrl
+        deactivate Storage
         
-        Controller -> Service: getSongData(newSongId)
-        activate Service
-        ' (Lược bớt các bước gọi DB/Storage y hệt Bước 1 để sơ đồ đỡ rối)
-        Service --> Controller: {newSongData...}
+        Service --> Controller: {data: nextSongEntity, streamUrl: newStreamUrl}
         deactivate Service
         
-        Controller --> UI: {status: 200, song: newSongData}
+        Controller --> UI: {status: 200, song: nextSongEntity, url: ...}
         deactivate Controller
         
-        UI --> User: Hiển thị & Phát bài mới
+        UI -> UI: Load bài mới & Tự động Play
     end
 end
 

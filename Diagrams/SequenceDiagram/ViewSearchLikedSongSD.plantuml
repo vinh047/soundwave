@@ -1,97 +1,87 @@
-@startuml Sequence Diagram - Xem Danh Sách Bài Hát Yêu Thích
+@startuml Sequence Diagram - Xem Danh Sách Và Tìm Kiếm Bài Hát Yêu Thích 
 
-title Sơ Đồ Tuần Tự - Chức Năng Xem Danh Sách Bài Hát Yêu Thích
+title Sơ Đồ Tuần Tự - Xem Danh Sách Và Tìm Kiếm Bài Hát Yêu Thích 
 
 actor "Người dùng" as User
-participant ":GiaoDienYeuThich" as UI
-participant ":FavoriteSongController" as Controller
+participant ":NextJS Client" as UI
+participant ":InteractionController" as Controller
 participant ":InteractionService" as Service
-participant ":Database" as DB
+participant ":InteractionRepository" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1): Tải giao diện ===
-' Tiền điều kiện 1: Người dùng đã đăng nhập
-User -> UI: Yêu cầu trang "Bài hát yêu thích"
+' === BƯỚC 1: TẢI DANH SÁCH YÊU THÍCH ===
+User -> UI: Vào trang "Bài hát yêu thích"
 activate UI
-UI -> Controller: Yêu cầu lấy danh sách bài hát yêu thích(userId)
+UI -> Controller: getFavoriteSongs(favoriteSongsDto)
 activate Controller
+
+' Lấy userId từ token
 Controller -> Service: getFavoriteSongs(userId)
 activate Service
-Service -> DB: SELECT * FROM songs JOIN likes ON ... WHERE userId=...
+
+' TypeORM: Tìm bảng Likes, Join sang bảng Songs
+Service -> DB: find({ where: { userId }, relations: ['song'] })
 activate DB
-DB --> Service: [danh sách bài hát yêu thích]
+DB --> Service: [LikeEntities + SongData]
 deactivate DB
-Service --> Controller: {success: true, songs: [...]}
+
+Service --> Controller: {data: songList}
 deactivate Service
-Controller --> UI: {status: 200, songs: [...]}
+Controller --> UI: {status: 200, data: songList}
 deactivate Controller
-UI --> User: Hiển thị danh sách bài hát yêu thích
+UI --> User: Hiển thị danh sách yêu thích
 deactivate UI
 
-' === Dòng sự kiện chính (bước 2): Người dùng tìm kiếm ===
-User -> UI: Nhập (từ khóa) vào ô tìm kiếm
+' === BƯỚC 2: TÌM KIẾM TRONG YÊU THÍCH ===
+User -> UI: Nhập từ khóa (VD: "Mưa")
 activate UI
-UI -> Controller: Yêu cầu tìm kiếm(keyword, userId)
+UI -> Controller: searchFavorites(favoriteSongsDto, keyword)
 activate Controller
-Controller -> Service: searchFavoriteSongs(keyword, userId)
+Controller -> Service: searchFavorites(userId, keyword)
 activate Service
-Service -> DB: SELECT * FROM songs JOIN likes ON ... WHERE ...
+
+' Query phức tạp hơn một chút: Tìm Like của User này MÀ Song Title có chứa Keyword
+Service -> DB: find({ where: { userId, song: { title: ILike(%k%) } } })
 activate DB
-DB --> Service: [kết quả tìm kiếm]
+DB --> Service: [SearchResults]
 deactivate DB
-Service --> Controller: {success: true, songs: [...]}
+
+Service --> Controller: {data: SearchResults}
 deactivate Service
-Controller --> UI: {status: 200, songs: [...]}
+Controller --> UI: {status: 200, data: SearchResults}
 deactivate Controller
-UI --> User: Hiển thị danh sách kết quả tìm kiếm
+UI --> User: Hiển thị kết quả
 deactivate UI
 
-' === Dòng sự kiện chính (bước 3 & 4): Tương tác (Ví dụ: Hủy Thích) ===
-User -> UI: Chọn (songId) & Nhấn nút "Hủy Thích"
+' === BƯỚC 3 & 4: HỦY THÍCH (Xóa khỏi danh sách) ===
+User -> UI: Nhấn "Hủy Thích" (songId)
 activate UI
-UI -> Controller: Yêu cầu Hủy Thích(songId, userId)
+
+UI -> Controller: unlikeSong(songId, favoriteSongsDto)
 activate Controller
-Controller -> Service: unlikeSong(songId, userId)
+Controller -> Service: unlikeSong(userId, songId)
 activate Service
 
-' === Dòng sự kiện (bước 4) & Dòng sự kiện phụ (4.1) ===
-alt Dòng sự kiện phụ (4.1) - Ghi nhận thất bại
-    Service -> DB: DELETE FROM likes WHERE ...
-    activate DB
-    DB --> Service: Lỗi! (Không thể xóa)
-    deactivate DB
-    Service --> Controller: {error: "Lỗi DB"}
+Service -> DB: delete({ userId, songId })
+activate DB
+DB --> Service: result { affected: 1 }
+deactivate DB
+
+alt Lỗi (affected == 0 hoặc DB Error)
+    Service --> Controller: Throw Error
+    Controller --> UI: {status: 500, error: "Failed"}
+    UI --> User: Thông báo lỗi
+else Thành công (Bước 4 & 5)
+    Service --> Controller: {success: true}
     deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi"}
+    
+    ' Client tự bỏ dòng đó khỏi giao diện (Optimistic UI)
+    Controller --> UI: {status: 200, success: true}
     deactivate Controller
     
-    UI --> User: Thông báo "Hành động thất bại, vui lòng thử lại"
-    deactivate UI
-
-else Ghi nhận thành công (Bước 4)
-    Service -> DB: DELETE FROM likes WHERE ...
-    activate DB
-    DB --> Service: {success: true}
-    deactivate DB
-    Service --> Controller: {success: true, message: "Đã hủy thích"}
-    deactivate Service
-
-    ' === Dòng sự kiện chính (bước 5): Hiện lại danh sách ===
-    ' (Hệ thống tự động làm mới giao diện)
-    Controller -> Service: getFavoriteSongs(userId) ' Yêu cầu làm mới
-    activate Service
-    Service -> DB: SELECT * FROM songs JOIN likes ON ... WHERE userId=...
-    activate DB
-    DB --> Service: [Danh sách bài hát mới]
-    deactivate DB
-    Service --> Controller: {success: true, songs: [...]}
-    deactivate Service
-    
-    Controller --> UI: {status: 200, songs: [...]}
-    deactivate Controller
-    
-    UI --> User: Hiển thị lại giao diện với danh sách bài hát yêu thích sau khi cập nhật
+    UI -> UI: Xóa bài hát khỏi danh sách đang hiện
+    UI --> User: Cập nhật giao diện
     deactivate UI
 end
 @enduml

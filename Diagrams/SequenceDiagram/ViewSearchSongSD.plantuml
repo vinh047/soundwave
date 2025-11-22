@@ -1,84 +1,76 @@
-@startuml Sequence Diagram - Xem Danh Sách & Tìm Kiếm Bài Hát
+@startuml Sequence Diagram - Xem Danh Sách Bài Hát và Tìm Kiếm Bài Hát
 
-title Sơ Đồ Tuần Tự - Chức Năng Xem Danh Sách & Tìm Kiếm Bài Hát
+title Sơ Đồ Tuần Tự - Xem Danh Sách Và Tìm Kiếm Bài Hát 
 
 actor "Người dùng" as User
-participant ":GiaoDienTimKiem" as UI
+participant ":NextJS Client" as UI
 participant ":SearchController" as Controller
 participant ":SearchService" as Service
-participant ":Database" as DB
+participant ":SongRepository" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1) & Dòng sự kiện phụ (1.1) ===
-User -> UI: Yêu cầu trang "Tìm kiếm" (hoặc trang chủ)
+' === BƯỚC 1: TẢI DANH SÁCH BAN ĐẦU ===
+User -> UI: Vào trang "Tìm kiếm bài hát"
 activate UI
 
-alt Dòng sự kiện phụ (1.1) - Tải danh sách thất bại
-    UI -> Controller: Yêu cầu lấy danh sách bài hát()
-    activate Controller
-    Controller -> Service: getInitialSongList()
-    activate Service
-    Service -> DB: SELECT * FROM songs LIMIT 20
-    activate DB
-    DB --> Service: Lỗi! (Database timeout/error)
-    deactivate DB
-    Service --> Controller: {error: "Lỗi tải dữ liệu"}
-    deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi DB"}
-    deactivate Controller
-    
-    UI --> User: Thông báo "Hiện danh sách bài hát thất bại, vui lòng thử lại"
-    deactivate UI
+' Gửi request (Chỉ vẽ 1 lần duy nhất ở đây)
+UI -> Controller: getAllSongs()
+activate Controller
+Controller -> Service: getAllSongs()
+activate Service
 
-else Tải danh sách thành công (Bước 1)
-    UI -> Controller: Yêu cầu lấy danh sách bài hát()
-    activate Controller
-    Controller -> Service: getInitialSongList()
-    activate Service
-    Service -> DB: SELECT * FROM songs LIMIT 20
-    activate DB
-    DB --> Service: [danh sách bài hát]
-    deactivate DB
-    Service --> Controller: {success: true, songs: [...]}
+' Truy vấn DB (Lấy 20 bài mới nhất)
+Service -> DB: find({ order: { createdAt: 'DESC' }, take: 20 })
+activate DB
+DB --> Service: result
+deactivate DB
+
+' Phân nhánh kết quả
+alt 1.1: Lỗi kết nối / Timeout
+    Service --> Controller: Throw InternalServerError
+    Controller --> UI: {status: 500, error: "Load Failed"}
+    UI --> User: Thông báo "Hiện danh sách thất bại"
+
+else 1: Thành công
+    Service --> Controller: {data: songList}
     deactivate Service
-    Controller --> UI: {status: 200, songs: [...]}
+    Controller --> UI: {status: 200, data: songList}
     deactivate Controller
     
-    UI --> User: Hiển thị giao diện & danh sách bài hát
+    UI --> User: Hiển thị danh sách bài hát
     deactivate UI
 end
 
-' === Dòng sự kiện chính (bước 1 - vế sau): Người dùng tìm kiếm ===
-User -> UI: Nhập (từ khóa) vào ô tìm kiếm
+' === BƯỚC 2: TÌM KIẾM ===
+User -> UI: Nhập từ khóa (VD: "Lạc Trôi")
 activate UI
-UI -> Controller: Yêu cầu tìm kiếm(keyword)
+
+' NestJS: Dùng Query Param (?q=keyword)
+UI -> Controller: searchSongs(keyword)
 activate Controller
-Controller -> Service: searchSongs(keyword)
+Controller -> Service: search(keyword)
 activate Service
-Service -> DB: SELECT * FROM songs WHERE title LIKE ...
+
+' TypeORM: Tìm kiếm gần đúng (Like)
+Service -> DB: find({ where: { title: Like(%keyword%) } })
 activate DB
-DB --> Service: [kết quả tìm kiếm]
+DB --> Service: [searchResults]
 deactivate DB
-Service --> Controller: {success: true, songs: [...]}
+
+Service --> Controller: {data: searchResults}
 deactivate Service
-Controller --> UI: {status: 200, songs: [...]}
+Controller --> UI: {status: 200, data: searchResults}
 deactivate Controller
 
-UI --> User: Hiển thị danh sách kết quả tìm kiếm
+UI --> User: Cập nhật danh sách kết quả
 deactivate UI
 
-' === Dòng sự kiện chính (bước 2) ===
-User -> UI: Chọn 1 bài hát (songId) từ danh sách
+' === BƯỚC 3: CHỌN BÀI HÁT ===
+User -> UI: Chọn 1 bài hát
 activate UI
-UI --> User: (Hiển thị các tùy chọn: Nghe nhạc, Thích, Chia sẻ...)
+UI --> User: Hiển thị nút (Nghe, Thích, Share...)
+note right: Hệ thống sẵn sàng cho UC "Nghe nhạc", "Tương tác"
 deactivate UI
-
-note right of User
-  Hậu điều kiện:
-  Hệ thống sẵn sàng để
-  kích hoạt Usecase 
-  (Nghe nhạc), (Thích),...
-end note
 
 @enduml

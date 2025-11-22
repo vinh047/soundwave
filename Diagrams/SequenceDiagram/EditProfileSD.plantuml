@@ -1,53 +1,64 @@
 @startuml Sequence Diagram - Sửa Hồ Sơ Cá Nhân
 
-title Sơ Đồ Tuần Tự - Chức Năng Sửa Hồ Sơ Cá Nhân
+title Sơ Đồ Tuần Tự - Sửa Hồ Sơ Cá Nhân 
 
 actor "Người dùng" as User
-participant ":GiaoDienSuaHoSo" as UI
+participant ":NextJS Client" as UI
 participant ":ProfileController" as Controller
 participant ":ProfileService" as Service
-participant ":Database" as DB
+participant ":ProfileRepository" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1): Hiển thị form ===
-' (Giả định user đã ở trang Sửa hồ sơ)
-UI --> User: Hiển thị form (Tên, ảnh,...) với thông tin cũ
+' === BƯỚC 1: HIỂN THỊ FORM ===
+' (Dòng sự kiện chính 1)
+User -> UI: Vào trang "Sửa hồ sơ"
+activate UI
+UI --> User: Hiển thị form (Tên, Ảnh đại diện...)
 
-' === Dòng sự kiện chính (bước 2): Người dùng nhấn Lưu ===
+' === BƯỚC 2: GỬI DỮ LIỆU ===
+' (Dòng sự kiện chính 2)
 User -> UI: Nhập thông tin mới & Nhấn "Lưu"
 activate UI
-UI -> Controller: updateProfile(updatedProfileInfo)
+
+' Dùng DTO
+UI -> Controller: updateProfile(updateProfileDto)
 activate Controller
 
-Controller -> Service: updateProfile(userId, updatedProfileInfo)
+' Lấy userId từ req.user
+Controller -> Service: updateProfile(userId, updateProfileDto)
 activate Service
 
-' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
-alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
-    Service -> DB: UPDATE profile SET ... WHERE id=userId
-    activate DB
-    DB --> Service: Lỗi! (Không thể ghi)
-    deactivate DB
-    Service --> Controller: {error: "Lỗi ghi CSDL"}
+' === BƯỚC 3: CẬP NHẬT DB ===
+' TypeORM: update(criteria, partialEntity)
+Service -> DB: update({ userId: userId }, updateProfileDto)
+activate DB
+DB --> Service: result { affected: N }
+deactivate DB
+
+' === PHÂN NHÁNH KẾT QUẢ (Main Flow vs Alternative Flow) ===
+alt Dòng sự kiện phụ 3.1: Cập nhật thất bại (affected == 0 hoặc Lỗi DB)
+    Service --> Controller: Throw InternalServerError / NotFound
     deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi DB"}
+    
+    Controller --> UI: {status: 500, error: "Update Failed"}
     deactivate Controller
     
+    ' [KHỚP ĐẶC TẢ 3.1]
     UI --> User: Thông báo "Cập nhật hồ sơ thất bại, vui lòng thử lại"
     deactivate UI
 
-else Ghi nhận thành công (Bước 3)
-    Service -> DB: UPDATE profile SET ... WHERE id=userId
-    activate DB
-    DB --> Service: {success: true}
-    deactivate DB
-    Service --> Controller: {success: true, message: "Cập nhật thành công"}
+else Dòng sự kiện chính 3 & 4: Cập nhật thành công (affected > 0)
+    ' Đã activate Service ở trên
+    Service --> Controller: {success: true}
     deactivate Service
     
-    ' === Dòng sự kiện chính (bước 4): Chuyển giao diện ===
-    Controller --> UI: {status: 200, redirect: '/manage-profile'}
+    Controller --> UI: {status: 200, message: "Updated Successfully"}
     deactivate Controller
+    
+    ' === BƯỚC 4: CHUYỂN GIAO DIỆN ===
+    ' Client tự điều hướng
+    UI -> UI: Router.push('/manage-profile')
     
     UI --> User: Chuyển sang giao diện Quản lý hồ sơ cá nhân
     deactivate UI

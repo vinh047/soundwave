@@ -1,46 +1,45 @@
-@startuml Sequence Diagram - Đăng Xuất NestJS
+@startuml Sequence Diagram - Đăng Xuất 
 
-title Sơ Đồ Tuần Tự - Chức Năng Đăng Xuất (NestJS + JWT)
+title Sơ Đồ Tuần Tự - Chức Năng Đăng Xuất 
 
 actor "Người dùng" as User
 participant ":NextJS Client" as UI
 participant ":AuthController" as Controller
 participant ":AuthService" as Service
-participant ":Redis/Database" as DB
+participant ":TokenBlacklistRepository" as DB
 
 autonumber
 
 ' === BƯỚC 1: GỬI YÊU CẦU ===
 User -> UI: Nhấn nút "Đăng xuất"
 activate UI
-UI -> Controller: logout(req)
+UI -> Controller: logout(logoutDto)
 activate Controller
-note right of UI: Request Header chứa:\nAuthorization: Bearer <token>
+note right of UI: Header: Authorization: Bearer <token>
 
 ' Controller lấy token từ Header
-Controller -> Service: logout(userId, token)
+Controller -> Service: logout(token)
 activate Service
 
 ' === BƯỚC 2: XỬ LÝ SERVER (Blacklist Token) ===
-' Trong NestJS/JWT, để đăng xuất server-side, ta lưu token vào Blacklist
-alt Đăng xuất thất bại (Lỗi kết nối Cache/DB)
-    Service -> DB: blacklistToken(token, expiresIn)
+' Logic: Lưu token vào bảng TokenBlacklist
+alt Đăng xuất thất bại (Lỗi DB)
+    Service -> DB: save({ token, expiresAt })
     activate DB
-    DB --> Service: Lỗi / Exception
+    DB --> Service: Error
     deactivate DB
     
-    Service --> Controller: {error: "Lỗi hệ thống"}
+    Service --> Controller: Throw InternalServerError
     deactivate Service
     Controller --> UI: {status: 500, error: "Logout Failed"}
     deactivate Controller
     
-    ' Theo đúng đặc tả Use case: Báo lỗi
     UI --> User: Thông báo "Đăng xuất thất bại, vui lòng thử lại"
 
 else Đăng xuất thành công
-    Service -> DB: blacklistToken(token, expiresIn)
+    Service -> DB: save({ token, expiresAt })
     activate DB
-    DB --> Service: {success: true}
+    DB --> Service: savedRecord
     deactivate DB
     
     Service --> Controller: {success: true}
@@ -48,14 +47,14 @@ else Đăng xuất thành công
     Controller --> UI: {status: 200, success: true}
     deactivate Controller
     
-    ' === BƯỚC 3: XỬ LÝ CLIENT (Quan trọng nhất với NextJS) ===
-    ' NextJS xóa Token lưu ở Client để người dùng không truy cập được nữa
+    ' === BƯỚC 3: XỬ LÝ CLIENT (NextJS Cleanup) ===
+    ' Quan trọng: Xóa dấu vết ở Client
     UI -> UI: removeToken(LocalStorage / Cookies)
     
     UI --> User: Thông báo "Bạn đã đăng xuất thành công"
     
     ' Chuyển hướng
-    UI --> User: Chuyển về trang Login / Trang chủ (Khách)
+    UI --> User: Chuyển về trang Login
     deactivate UI
 end
 @enduml

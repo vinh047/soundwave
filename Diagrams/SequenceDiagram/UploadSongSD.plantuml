@@ -1,55 +1,70 @@
-@startuml Sequence Diagram - Tải Lên Bài Hát
+@startuml Sequence Diagram - Tải Lên Bài Hát 
 
-title Sơ Đồ Tuần Tự - Chức Năng Tải Lên Bài Hát
+title Sơ Đồ Tuần Tự - Tải Lên Bài Hát 
 
 actor "Nghệ sĩ" as Artist
-participant ":GiaoDienTaiLen" as UI
+participant ":NextJS Client" as UI
 participant ":SongController" as Controller
 participant ":SongService" as Service
-participant ":Database" as DB
+participant ":FileStorageService" as Storage
+participant ":SongRepository" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1): Giao diện đã được hiển thị ===
-' (Giả định nghệ sĩ đã ở trang Tải lên)
-UI --> Artist: Hiển thị form (Ảnh, tên, thể loại, file,...)
+' === BƯỚC 1: HIỂN THỊ ===
+UI --> Artist: Hiển thị form upload
 
-' === Dòng sự kiện chính (bước 2): Nghệ sĩ điền thông tin và tải lên ===
-Artist -> UI: Điền thông tin, chọn file & Nhấn "Tải lên"
+' === BƯỚC 2: GỬI DỮ LIỆU ===
+Artist -> UI: Điền thông tin, chọn File & Nhấn "Tải lên"
 activate UI
-UI -> Controller: Yêu cầu tải lên(songData, file)
+
+' NestJS dùng Interceptor để hứng File (Multer)
+UI -> Controller: uploadSong(createSongDto, file)
 activate Controller
 
-Controller -> Service: saveSong(songData, file)
+' Lấy artistId từ req.user
+Controller -> Service: uploadSong(artistId, createSongDto, file)
 activate Service
 
-' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
-alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
-    Service -> DB: INSERT INTO songs (data, file_path)
-    activate DB
-    DB --> Service: Lỗi! (Không thể ghi)
-    deactivate DB
-    Service --> Controller: {error: "Lỗi ghi CSDL"}
-    deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi DB"}
-    deactivate Controller
-    
-    UI --> Artist: Thông báo "Tải lên bài hát thất bại"
-    deactivate UI
+' === BƯỚC 3: XỬ LÝ FILE (QUAN TRỌNG) ===
+Service -> Storage: upload(file)
+activate Storage
 
-else Ghi nhận thành công (Bước 3)
-    Service -> DB: INSERT INTO songs (data, file_path)
+alt Lỗi Upload File (Dung lượng lớn / Sai định dạng)
+    Storage --> Service: Error
+    deactivate Storage
+    Service --> Controller: Throw BadRequestException
+    Controller --> UI: {status: 400, error: "File Error"}
+    UI --> Artist: Thông báo lỗi file
+else Upload thành công
+    Storage --> Service: fileUrl (VD: /uploads/song.mp3)
+    deactivate Storage
+
+    ' === BƯỚC 4: LƯU VÀO DATABASE ===
+    ' Lúc này mới có fileUrl để lưu vào DB
+    Service -> DB: save({ ...createSongDto, userId: artistId, fileUrl })
     activate DB
-    DB --> Service: {success: true, newSongId: 123}
-    deactivate DB
-    Service --> Controller: {success: true, message: "Tải lên thành công"}
-    deactivate Service
     
-    ' === Dòng sự kiện chính (bước 4): Chuyển giao diện ===
-    Controller --> UI: {status: 201, redirect: '/manage-songs'}
-    deactivate Controller
-    
-    UI --> Artist: Chuyển sang giao diện Quản lý bài hát cá nhân
-    deactivate UI
+    alt Lỗi Database
+        DB --> Service: Error
+        deactivate DB
+        Service --> Controller: Throw InternalServerError
+        Controller --> UI: {status: 500, error: "DB Error"}
+        UI --> Artist: Thông báo "Tải lên thất bại"
+    else Lưu thành công
+        DB --> Service: newSongEntity
+        deactivate DB
+        
+        Service --> Controller: {success: true, data: newSongEntity}
+        deactivate Service
+        
+        Controller --> UI: {status: 201, message: "Uploaded Successfully"}
+        deactivate Controller
+        
+        ' === BƯỚC 5: CHUYỂN TRANG ===
+        UI --> Artist: Thông báo thành công
+        UI --> Artist: Chuyển sang Quản lý bài hát
+        deactivate UI
+    end
 end
 @enduml

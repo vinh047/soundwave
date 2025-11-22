@@ -1,55 +1,60 @@
-@startuml Sequence Diagram - Tạo Playlist
+@startuml Sequence Diagram - Tạo Playlist Cá Nhân
 
-title Sơ Đồ Tuần Tự - Chức Năng Tạo Playlist Cá Nhân
+title Sơ Đồ Tuần Tự - Tạo Playlist Cá Nhân 
 
 actor "Người dùng" as User
-participant ":GiaoDienTaoPlaylist" as UI
+participant ":NextJS Client" as UI
 participant ":PlaylistController" as Controller
 participant ":PlaylistService" as Service
-participant ":Database" as DB
+participant ":PlaylistRepository" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1): Hiển thị form ===
-' (Giả định user đã ở trang Tạo Playlist)
-UI --> User: Hiển thị form (Ảnh, tên, mô tả,...)
+' === BƯỚC 1: HIỂN THỊ FORM ===
+UI --> User: Hiển thị form (Tên, Mô tả, Ảnh...)
 
-' === Dòng sự kiện chính (bước 2): Người dùng nhấn Tạo ===
+' === BƯỚC 2: GỬI YÊU CẦU ===
 User -> UI: Điền thông tin & Nhấn "Tạo Playlist"
 activate UI
-UI -> Controller: createPlaylist(playlistInfo)
+
+' Dùng DTO
+UI -> Controller: createPlaylist(createPlaylistDto)
 activate Controller
 
-Controller -> Service: createPlaylist(userId, playlistInfo)
+' Lấy userId từ req.user
+Controller -> Service: createPlaylist(userId, createPlaylistDto)
 activate Service
 
-' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
-alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
-    Service -> DB: INSERT INTO playlist (playlistInfo, userId)
-    activate DB
-    DB --> Service: Lỗi! (Không thể ghi)
-    deactivate DB
-    Service --> Controller: {error: "Lỗi ghi CSDL"}
+' === BƯỚC 3: LƯU DB ===
+' TypeORM: save(entity)
+Service -> DB: save({ ...createPlaylistDto, userId })
+activate DB
+DB --> Service: newPlaylistEntity
+deactivate DB
+
+alt Thất bại (Lỗi DB)
+    Service --> Controller: Throw InternalServerError
     deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi DB"}
+    Controller --> UI: {status: 500, error: "Create Failed"}
     deactivate Controller
     
     UI --> User: Thông báo "Tạo Playlist thất bại, vui lòng thử lại"
     deactivate UI
 
-else Ghi nhận thành công (Bước 3)
-    Service -> DB: INSERT INTO playlist (playlistInfo, userId)
-    activate DB
-    DB --> Service: {success: true, newPlaylistId: 123}
-    deactivate DB
-    Service --> Controller: {success: true, newPlaylistId: 123}
+else Thành công
+    ' Đã activate Service ở trên
+    activate Service
+    Service --> Controller: {success: true, data: newPlaylistEntity}
     deactivate Service
     
-    ' === Dòng sự kiện chính (bước 4): Chuyển giao diện ===
-    Controller --> UI: {status: 201, redirect: '/edit-playlist/123'}
+    Controller --> UI: {status: 201, id: newPlaylistEntity.id}
     deactivate Controller
     
-    UI --> User: Chuyển sang giao diện Sửa Playlist cá nhân
+    ' === BƯỚC 4: CHUYỂN GIAO DIỆN ===
+    ' Client tự điều hướng
+    UI -> UI: Router.push(`/edit-playlist/${id}`)
+    
+    UI --> User: Chuyển sang giao diện Sửa Playlist
     deactivate UI
 end
 @enduml

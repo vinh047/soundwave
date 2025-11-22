@@ -1,84 +1,72 @@
-@startuml Sequence Diagram - Xem Danh Sách & Tìm Kiếm Nghệ Sĩ
+@startuml Sequence Diagram - Xem Danh Sách Và Tìm Kiếm Nghệ Sĩ 
 
-title Sơ Đồ Tuần Tự - Chức Năng Xem Danh Sách & Tìm Kiếm Nghệ Sĩ
+title Sơ Đồ Tuần Tự - Xem Danh Sách Và Tìm Kiếm Nghệ Sĩ 
 
 actor "Người dùng" as User
-participant ":GiaoDienTimKiem" as UI
+participant ":NextJS Client" as UI
 participant ":SearchController" as Controller
 participant ":SearchService" as Service
-participant ":Database" as DB
+participant ":ArtistRepository" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1) & Dòng sự kiện phụ (1.1) ===
-User -> UI: Yêu cầu trang "Tìm kiếm nghệ sĩ"
+' === BƯỚC 1: TẢI DANH SÁCH BAN ĐẦU ===
+User -> UI: Vào trang "Tìm kiếm nghệ sĩ"
 activate UI
 
-alt Dòng sự kiện phụ (1.1) - Tải danh sách thất bại
-    UI -> Controller: Yêu cầu lấy danh sách nghệ sĩ()
-    activate Controller
-    Controller -> Service: getInitialArtistList()
-    activate Service
-    Service -> DB: SELECT * FROM artists LIMIT 20
-    activate DB
-    DB --> Service: Lỗi! (Database timeout/error)
-    deactivate DB
-    Service --> Controller: {error: "Lỗi tải dữ liệu"}
-    deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi DB"}
-    deactivate Controller
-    
-    UI --> User: Thông báo "Hiện danh sách nghệ sĩ thất bại, vui lòng thử lại"
-    deactivate UI
+' Gửi request (Chỉ gửi 1 lần)
+UI -> Controller: getAllArtists()
+activate Controller
+Controller -> Service: getAllArtists()
+activate Service
 
-else Tải danh sách thành công (Bước 1)
-    UI -> Controller: Yêu cầu lấy danh sách nghệ sĩ()
-    activate Controller
-    Controller -> Service: getInitialArtistList()
-    activate Service
-    Service -> DB: SELECT * FROM artists LIMIT 20
-    activate DB
-    DB --> Service: [danh sách nghệ sĩ]
-    deactivate DB
-    Service --> Controller: {success: true, artists: [...]}
+' Truy vấn DB
+Service -> DB: find({ take: 20 })
+activate DB
+DB --> Service: result
+deactivate DB
+
+' Phân nhánh kết quả trả về
+alt 1.1: Lỗi kết nối DB / Timeout
+    Service --> Controller: Throw InternalServerError
+    Controller --> UI: {status: 500, error: "Load Failed"}
+    UI --> User: Thông báo "Hiện danh sách thất bại"
+
+else 1: Thành công
+    Service --> Controller: {data: artistList}
     deactivate Service
-    Controller --> UI: {status: 200, artists: [...]}
+    Controller --> UI: {status: 200, data: artistList}
     deactivate Controller
-    
-    UI --> User: Hiển thị giao diện & danh sách nghệ sĩ
+    UI --> User: Hiển thị danh sách nghệ sĩ
     deactivate UI
 end
 
-' === Dòng sự kiện chính (bước 2): Người dùng tìm kiếm ===
-User -> UI: Nhập (từ khóa) vào ô tìm kiếm
+' === BƯỚC 2: TÌM KIẾM ===
+User -> UI: Nhập từ khóa (VD: "Sơn Tùng")
 activate UI
-UI -> Controller: Yêu cầu tìm kiếm(keyword)
+
+' NestJS: Dùng Query Param (?q=keyword)
+UI -> Controller: searchArtists(keyword)
 activate Controller
 Controller -> Service: searchArtists(keyword)
 activate Service
-Service -> DB: SELECT * FROM artists WHERE name LIKE ...
+
+' TypeORM: Dùng ILIKE để tìm kiếm không phân biệt hoa thường
+Service -> DB: find({ where: { name: ILike(%keyword%) } })
 activate DB
-DB --> Service: [kết quả tìm kiếm]
+DB --> Service: [searchResults]
 deactivate DB
-Service --> Controller: {success: true, artists: [...]}
+
+Service --> Controller: {data: searchResults}
 deactivate Service
-Controller --> UI: {status: 200, artists: [...]}
+Controller --> UI: {status: 200, data: searchResults}
 deactivate Controller
 
-UI --> User: Hiển thị danh sách kết quả tìm kiếm
-deactivate UI
+UI --> User: Cập nhật danh sách theo kết quả tìm kiếm
 
-' === Dòng sự kiện chính (bước 3) ===
-User -> UI: Chọn 1 nghệ sĩ (artistId) từ danh sách
-activate UI
-UI --> User: (Hiển thị các tùy chọn: Theo dõi,...)
+' === BƯỚC 3: CHỌN NGHỆ SĨ ===
+User -> UI: Chọn Nghệ sĩ -> Chuyển hướng
+note right: Hệ thống sẵn sàng cho UC "Theo dõi Nghệ sĩ"(Chuyển user đến trang chi tiết hoặc hiện nút Follow)
 deactivate UI
-
-note right of User
-  Hậu điều kiện:
-  Hệ thống sẵn sàng để
-  kích hoạt Usecase 
-  (Theo dõi nghệ sĩ).
-end note
 
 @enduml

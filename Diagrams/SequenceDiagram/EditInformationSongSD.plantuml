@@ -1,61 +1,97 @@
-@startuml Sequence Diagram - Sửa Thông Tin Bài Hát
+@startuml Sequence Diagram - Sửa Thông Tin Bài Hát 
 
-title Sơ Đồ Tuần Tự - Sửa Thông Tin Bài Hát
+title Sơ Đồ Tuần Tự - Sửa Thông Tin Bài Hát 
 
 actor "Nghệ sĩ" as Artist
-participant ":GiaoDienSuaBaiHat" as UI
+participant ":NextJS Client" as UI
 participant ":SongController" as Controller
 participant ":SongService" as Service
-participant ":FileStorage" as Storage
-participant ":Database" as DB
+participant ":FileStorageService" as Storage
+participant ":SongRepository" as DB
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ ===
-UI --> Artist: Hiển thị form thông tin cũ
+' === BƯỚC 1: HIỂN THỊ FORM (Implicit) ===
+UI --> Artist: Hiển thị form với dữ liệu cũ
 
-' === BƯỚC 2: GỬI YÊU CẦU ===
-Artist -> UI: Thay đổi thông tin (có thể kèm File nhạc mới) & Nhấn "Lưu"
+' === BƯỚC 2: NGHỆ SĨ SỬA & LƯU ===
+Artist -> UI: Thay đổi thông tin/File & Nhấn "Lưu"
 activate UI
-UI -> Controller: updateSong(songId, formData)
+
+' Gửi request API
+UI -> Controller: updateSongInfo(songId, updateSongDto, file)
 activate Controller
-Controller -> Service: updateSong(userId, songId, formData)
+
+' Lấy userId từ Token (req.user)
+Controller -> Service: updateSongInfo(userId, songId, updateSongDto, file)
 activate Service
 
-' === BƯỚC 3: XỬ LÝ LOGIC ===
-
-' [MỚI] Kiểm tra xem người dùng có up file nhạc mới không?
-alt Người dùng có tải lên file nhạc mới
-    Service -> Storage: storeFile(newMusicFile)
-    activate Storage
-    Storage --> Service: newFileUrl
-    deactivate Storage
-    note right of Service: Cập nhật URL mới vào đối tượng Song
-else Không tải file mới
-    note right of Service: Giữ nguyên URL cũ
-end
-
-' === BƯỚC 4: GHI DB ===
-Service -> DB: UPDATE song SET title=..., fileUrl=... \nWHERE id=songId AND userId=userId
+' === BƯỚC 3: LẤY DỮ LIỆU CŨ & CHECK QUYỀN ===
+Service -> DB: findOne({ where: { id: songId, userId: userId } })
 activate DB
+DB --> Service: oldSongEntity
+deactivate DB
 
-alt Ghi nhận thất bại (Lỗi DB hoặc không đúng chủ sở hữu)
-    DB --> Service: Lỗi
-    deactivate DB
-    Service --> Controller: {error: "Lỗi cập nhật"}
-    Controller --> UI: {status: 500, error: "Failed"}
-    UI --> Artist: Thông báo "Cập nhật thất bại"
+alt Không tìm thấy (Sai ID hoặc Không phải chủ sở hữu)
+    Service --> Controller: Throw ForbiddenException
+    Controller --> UI: {status: 403, error: "Access Denied"}
+    UI --> Artist: Thông báo "Không có quyền sửa"
+    
+else Hợp lệ (Tiếp tục xử lý)
 
-else Ghi nhận thành công
-    DB --> Service: {success: true}
-    deactivate DB
-    Service --> Controller: {success: true}
-    deactivate Service
+    ' === BƯỚC 4: XỬ LÝ FILE (Logic File) ===
+    alt Có tải lên file nhạc mới
+        Service -> Storage: upload(file)
+        activate Storage
+        Storage --> Service: newFileUrl
+        deactivate Storage
+        
+        ' Xóa file cũ (Dọn rác)
+        Service -> Storage: delete(oldSongEntity.fileUrl)
+        activate Storage
+        deactivate Storage
+        
+        note right of Service: Gán fileUrl mới vào DTO
+    else Không tải file mới
+        note right of Service: Giữ nguyên fileUrl cũ
+    end
+
+    ' === BƯỚC 5: CẬP NHẬT DB & XỬ LÝ LỖI (Use Case 3 & 3.1) ===
+    Service -> Service: merge(oldSongEntity, updateSongDto)
     
-    Controller --> UI: {status: 200, redirect: '/manage-songs'}
-    deactivate Controller
+    Service -> DB: save(updatedEntity)
+    activate DB
     
-    UI --> Artist: Chuyển sang giao diện Quản lý
-    deactivate UI
+    alt Dòng sự kiện phụ 3.1: Ghi nhận thất bại (Lỗi DB)
+        DB --> Service: Error / Exception
+        deactivate DB
+        
+        Service --> Controller: Throw InternalServerError
+        deactivate Service
+        
+        Controller --> UI: {status: 500, error: "Database Error"}
+        deactivate Controller
+        
+        UI --> Artist: Thông báo "Cập nhật thông tin bài hát thất bại"
+        deactivate UI
+        
+    else Dòng sự kiện chính 3 & 4: Ghi nhận thành công
+        ' (DB đã activate ở trên)
+        DB --> Service: savedSong
+        deactivate DB
+        
+        Service --> Controller: {success: true, data: savedSong}
+        activate Service
+        deactivate Service
+        
+        Controller --> UI: {status: 200, message: "Update Success"}
+        activate Controller
+        deactivate Controller
+        
+        ' Client chuyển hướng
+        UI -> UI: Router.push('/manage-songs')
+        UI --> Artist: Chuyển sang giao diện Quản lý & Thông báo thành công
+        deactivate UI
+    end
 end
 @enduml

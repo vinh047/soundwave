@@ -1,13 +1,13 @@
-@startuml Sequence Diagram - Đăng Nhập NestJS
+@startuml Sequence Diagram - Đăng Nhập 
 
-title Sơ Đồ Tuần Tự - Chức Năng Đăng Nhập (Kiến trúc NestJS)
+title Sơ Đồ Tuần Tự - Đăng Nhập 
 
 actor "Người dùng" as User
 participant ":NextJS Client" as UI
 participant ":AuthController" as Controller
 participant ":AuthService" as AuthService
 participant ":UsersService" as UserService
-participant ":Database" as DB
+participant ":UserRepository" as DB
 
 autonumber
 
@@ -22,8 +22,6 @@ activate Controller
 ' === BƯỚC 3: XỬ LÝ LOGIC ===
 
 ' --- CHECK 1: ĐỊNH DẠNG EMAIL (Validation Pipe) ---
-' Trong NestJS, bước này thường tự động ở Controller nhờ class-validator
-' Nhưng vẽ vào đây để khớp với đặc tả use case 3.1
 Controller -> Controller: validate(loginDto)
 alt 3.1: Email không hợp lệ (Validation Failed)
     Controller --> UI: {status: 400, error: "Bad Request - Invalid Email"}
@@ -35,18 +33,20 @@ else Format OK
     activate AuthService
 
     ' --- CHECK 2: TÌM USER (Gọi sang UsersService) ---
-    ' AuthService không chọc thẳng DB, mà nhờ UsersService tìm
     AuthService -> UserService: findOneByEmail(email)
     activate UserService
+    
+    ' Service gọi Repository (TypeORM)
     UserService -> DB: findOne({ where: { email } })
     activate DB
     DB --> UserService: userEntity
     deactivate DB
+    
     UserService --> AuthService: userEntity
     deactivate UserService
     
     alt 3.3: Tài khoản không tồn tại (userEntity == null)
-        AuthService --> Controller: null (hoặc throw NotFoundException)
+        AuthService --> Controller: Throw NotFoundException
         deactivate AuthService
         Controller --> UI: {status: 404, error: "User Not Found"}
         UI --> User: Thông báo "Tài khoản không tồn tại"
@@ -54,10 +54,11 @@ else Format OK
     else User Tồn tại
         activate AuthService
         ' --- CHECK 3: MẬT KHẨU ---
+        ' Sử dụng bcrypt để so sánh
         AuthService -> AuthService: verifyPassword(pass, user.hash)
         
         alt 3.2: Sai mật khẩu
-            AuthService --> Controller: null (hoặc throw UnauthorizedException)
+            AuthService --> Controller: Throw UnauthorizedException
             Controller --> UI: {status: 401, error: "Wrong Password"}
             UI --> User: Thông báo "Sai mật khẩu"
             

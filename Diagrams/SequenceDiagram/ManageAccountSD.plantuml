@@ -1,77 +1,84 @@
-@startuml Sequence Diagram - Quản Lý Tài Khoản Người Dùng
+@startuml Sequence Diagram - Quản Lý Tài Khoản 
 
-title Sơ Đồ Tuần Tự - Chức Năng Quản Lý Tài Khoản Người Dùng
+title Sơ Đồ Tuần Tự - Quản Lý Tài Khoản 
 
 actor "Admin" as Admin
-participant ":GiaoDienQLTaiKhoan" as UI
+participant ":NextJS Admin" as UI
 participant ":AccountController" as Controller
-participant ":AccountService" as Service
-participant ":Database" as DB
+participant ":UsersService" as Service
+participant ":UserRepository" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1 & 2): Tải giao diện ===
-Admin -> UI: Yêu cầu trang "Quản lý tài khoản"
+' === BƯỚC 1: TẢI DANH SÁCH ===
+Admin -> UI: Vào trang "Quản lý tài khoản"
 activate UI
-UI -> Controller: Yêu cầu lấy danh sách tài khoản()
+UI -> Controller: getAllAccounts()
 activate Controller
 Controller -> Service: getAllAccounts()
 activate Service
-Service -> DB: SELECT * FROM accounts
+
+Service -> DB: find()
 activate DB
-DB --> Service: [danh sách tài khoản]
+DB --> Service: [UserEntities]
 deactivate DB
-Service --> Controller: {success: true, accounts: [...]}
+
+Service --> Controller: {data: [...]}
 deactivate Service
-Controller --> UI: {status: 200, accounts: [...]}
+Controller --> UI: {status: 200, data: [...]}
 deactivate Controller
-UI --> Admin: Hiển thị danh sách tài khoản & nút "Khóa"
+UI --> Admin: Hiển thị danh sách User & trạng thái (Active/Locked)
 deactivate UI
 
-' === Dòng sự kiện chính (bước 3): Admin chọn Khóa tài khoản ===
-Admin -> UI: Chọn (accountId) & Nhấn nút "Khóa"
+' === BƯỚC 2: THAY ĐỔI TRẠNG THÁI (KHÓA / MỞ KHÓA) ===
+' Use case nói: Khóa hoặc Mở khóa -> Ta dùng tham số status để đại diện cả 2
+Admin -> UI: Chọn User & Nhấn nút "Khóa/Mở khóa"
 activate UI
-UI -> Controller: requestLockAccount(accountId, 'lock')
+
+' Gửi status ngược lại với hiện tại (VD: đang Active -> gửi Locked)
+UI -> Controller: updateStatus(userId, { status: newStatus })
 activate Controller
-Controller -> Service: setAccountStatus(accountId, 'locked')
+
+Controller -> Service: updateStatus(userId, newStatus)
 activate Service
 
-' === Dòng sự kiện chính (bước 4) & Dòng sự kiện phụ (4.1) ===
-alt Dòng sự kiện phụ (4.1) - Ghi nhận thất bại
-    Service -> DB: UPDATE accounts SET status='locked' WHERE id=accountId
+' === BƯỚC 3: CẬP NHẬT DB ===
+alt Cập nhật thất bại (User không tồn tại / Lỗi DB)
+    Service -> DB: update(userId, { isLocked: newStatus })
     activate DB
-    DB --> Service: Lỗi! (Không thể cập nhật)
+    DB --> Service: Error
     deactivate DB
-    Service --> Controller: {error: "Cập nhật thất bại"}
+    
+    Service --> Controller: Throw BadRequest/InternalError
     deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi DB"}
+    Controller --> UI: {status: 500, error: "Update Failed"}
     deactivate Controller
     
-    UI --> Admin: Thông báo "Khoá(Mở khoá) tài khoản thất bại"
+    UI --> Admin: Thông báo "Cập nhật trạng thái thất bại"
     deactivate UI
 
-else Ghi nhận thành công (Bước 4)
-    Service -> DB: UPDATE accounts SET status='locked' WHERE id=accountId
+else Cập nhật thành công
+    Service -> DB: update(userId, { isLocked: newStatus })
     activate DB
-    DB --> Service: {success: true}
+    DB --> Service: {affected: 1}
     deactivate DB
-    Service --> Controller: {success: true, message: "Đã cập nhật trạng thái"}
+    
+    Service --> Controller: {success: true}
     deactivate Service
-
-    ' === Dòng sự kiện chính (bước 5): Hiện lại danh sách ===
-    ' (Hệ thống tự động làm mới giao diện)
-    Controller -> Service: getAllAccounts() ' Yêu cầu làm mới
-    activate Service
-    Service -> DB: SELECT * FROM accounts
-    activate DB
-    DB --> Service: [danh sách tài khoản mới]
-    deactivate DB
-    Service --> Controller: {success: true, accounts: [...]}
-    deactivate Service
-    Controller --> UI: {status: 200, accounts: [...]}
+    
+    ' === BƯỚC 4: LÀM MỚI DỮ LIỆU ===
+    ' Cách tối ưu: Trả về success, Client tự reload hoặc update state
+    Controller --> UI: {status: 200, message: "Updated Successfully"}
     deactivate Controller
     
-    UI --> Admin: Hiển thị danh sách đã cập nhật (tài khoản A có trạng thái "Đã khóa")
+    ' Client tự động gọi lại API lấy danh sách (hoặc tự sửa UI)
+    UI -> Controller: getAllAccounts() (Tự động refresh)
+    activate Controller
+    ' ... (Lặp lại quy trình lấy danh sách như Bước 1) ...
+    Controller --> UI: [Danh sách mới]
+    deactivate Controller
+    
+    UI --> Admin: Cập nhật giao diện với trạng thái mới
     deactivate UI
 end
 @enduml

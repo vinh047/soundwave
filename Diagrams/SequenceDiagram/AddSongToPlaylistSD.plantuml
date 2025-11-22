@@ -1,54 +1,66 @@
-@startuml Sequence Diagram - Thêm Bài Hát Vào Playlist
+@startuml Sequence Diagram - Thêm Bài Hát Vào Playlist Cá Nhân
 
-title Sơ Đồ Tuần Tự - Chức Năng Thêm Bài Hát Vào Playlist
+title Sơ Đồ Tuần Tự - Thêm Bài Hát Vào Playlist Cá Nhân 
 
 actor "Người dùng" as User
-participant ":GiaoDienThemBaiHat" as UI
+participant ":NextJS Client" as UI
 participant ":PlaylistController" as Controller
 participant ":PlaylistService" as Service
-participant ":Database" as DB
+participant ":PlaylistRepository" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1): Tải giao diện ===
-' (Giả định user đã ở trang Thêm bài hát)
+' === BƯỚC 1: HIỂN THỊ DANH SÁCH ===
 UI --> User: Hiển thị giao diện & danh sách bài hát
 
-' === Dòng sự kiện chính (bước 2): Người dùng chọn Thêm ===
+' === BƯỚC 2: GỬI YÊU CẦU ===
 User -> UI: Chọn (songId) & Nhấn "Thêm"
 activate UI
-UI -> Controller: addSongToPlaylist(playlistId, songId)
+
+' Request: POST /playlists/:id/songs (Body: { songId: 123 })
+UI -> Controller: addSongToPlaylist(playlistId, addSongDto)
 activate Controller
 
-Controller -> Service: addSongToPlaylist(userId, playlistId, songId)
+' Lấy userId từ req.user
+Controller -> Service: addSongToPlaylist(userId, playlistId, addSongDto)
 activate Service
 
-' === Dòng sự kiện (bước 3) & Dòng sự kiện phụ (3.1) ===
-alt Dòng sự kiện phụ (3.1) - Ghi nhận thất bại
-    Service -> DB: INSERT INTO playlist_song (playlistId, songId)
-    activate DB
-    DB --> Service: Lỗi! (Không thể ghi)
-    deactivate DB
-    Service --> Controller: {error: "Lỗi ghi CSDL"}
-    deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi DB"}
-    deactivate Controller
+' === BƯỚC 3: CHECK QUYỀN SỞ HỮU & LẤY PLAYLIST ===
+' Tìm playlist của user này để đảm bảo quyền sở hữu (Owner Check)
+Service -> DB: findOne({ where: { id: playlistId, userId: userId }, relations: ['songs'] })
+activate DB
+DB --> Service: playlistEntity
+deactivate DB
 
-    UI --> User: Thông báo "Thêm bài hát vào Playlist thất bại, vui lòng thử lại"
+alt Playlist không tìm thấy (hoặc không phải chủ sở hữu)
+    Service --> Controller: Throw NotFoundException
+    deactivate Service
+    Controller --> UI: {status: 404, error: "Playlist not found or access denied"}
+    deactivate Controller
+    
+    UI --> User: Thông báo lỗi
     deactivate UI
 
-else Ghi nhận thành công (Bước 3)
-    Service -> DB: INSERT INTO playlist_song (playlistId, songId)
+else Playlist Hợp lệ
+    ' === BƯỚC 4: THỰC HIỆN THÊM ===
+    ' Logic: Lấy songId từ DTO, push vào mảng songs của playlist
+    note right of Service: playlist.songs.push({ id: addSongDto.songId })
+    
+    Service -> DB: save(playlistEntity)
     activate DB
-    DB --> Service: {success: true}
+    DB --> Service: updatedPlaylist
     deactivate DB
-    Service --> Controller: {success: true, message: "Đã thêm thành công"}
+    
+    Service --> Controller: {success: true}
     deactivate Service
-
-    ' === Dòng sự kiện chính (bước 4): Chuyển giao diện ===
-    Controller --> UI: {status: 201, redirect: '/edit-playlist/playlistId'}
+    
+    Controller --> UI: {status: 201, message: "Added successfully"}
     deactivate Controller
-
+    
+    ' === BƯỚC 5: CHUYỂN GIAO DIỆN ===
+    ' Client tự điều hướng
+    UI -> UI: Router.push(`/edit-playlist/${playlistId}`)
+    
     UI --> User: Chuyển sang giao diện Sửa Playlist cá nhân
     deactivate UI
 end

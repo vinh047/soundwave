@@ -1,79 +1,100 @@
-@startuml Sequence Diagram - Sửa Playlist
+@startuml Sequence Diagram - Sửa Playlist Cá Nhân
 
-title Sơ Đồ Tuần Tự - Chức Năng Sửa Playlist Cá Nhân
+title Sơ Đồ Tuần Tự - Sửa Playlist Cá Nhân 
 
 actor "Người dùng" as User
-participant ":GiaoDienSuaPlaylist" as UI
+participant ":NextJS Client" as UI
 participant ":PlaylistController" as Controller
 participant ":PlaylistService" as Service
-participant ":Database" as DB
+participant ":PlaylistRepository" as PlaylistDB
+participant ":PlaylistSongRepository" as SongDB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1): Tải giao diện ===
-' Tiền điều kiện 1: Người dùng đã đăng nhập
-User -> UI: Yêu cầu trang "Sửa Playlist" (playlistId)
+' === BƯỚC 1: TẢI GIAO DIỆN (LOAD DETAIL) ===
+User -> UI: Vào trang "Sửa Playlist" (playlistId)
 activate UI
 UI -> Controller: getPlaylistDetails(playlistId)
 activate Controller
+
+' Lấy userId từ Token
 Controller -> Service: getPlaylistDetails(userId, playlistId)
 activate Service
-Service -> DB: SELECT * FROM playlist_song WHERE playlist_song.playlistId = playlistId AND playlistId IN (SELECT id FROM playlist WHERE playlist.userId=userId)
-activate DB
-DB --> Service: [danh sách bài hát]
-deactivate DB
-Service --> Controller: {success: true, songs: [...]}
+
+' Tìm playlist và load relation songs
+Service -> PlaylistDB: findOne({ where: { id: playlistId, userId }, relations: ['songs'] })
+activate PlaylistDB
+PlaylistDB --> Service: playlistEntity (kèm songs)
+deactivate PlaylistDB
+
+Service --> Controller: {data: playlistEntity}
 deactivate Service
-Controller --> UI: {status: 200, songs: [...]}
+Controller --> UI: {status: 200, data: playlistEntity}
 deactivate Controller
-UI --> User: Hiển thị danh sách bài hát & các nút chức năng
+UI --> User: Hiển thị danh sách bài hát
 deactivate UI
 
-' === Dòng sự kiện chính (bước 2.3): Người dùng chọn Xóa ===
-User -> UI: Chọn (songId) & Nhấn nút "Xóa bài hát"
+' === BƯỚC 2.3: XÓA BÀI HÁT (MAIN FLOW) ===
+User -> UI: Chọn bài hát & Nhấn "Xóa"
 activate UI
-UI -> Controller: removeSongFromPlaylist(playlistId, songId)
+
+' [CẬP NHẬT] Dùng RemoveSongDto để chứa songId
+' Request: DELETE /playlists/:id/songs (Body: { songId: 123 })
+UI -> Controller: removeSongFromPlaylist(playlistId, removedSongFromPlaylistDto)
 activate Controller
-Controller -> Service: removeSongFromPlaylist(userId, playlistId, songId)
+
+' Truyền DTO xuống Service
+Controller -> Service: removeSongFromPlaylist(userId, playlistId, removedSongFromPlaylistDto)
 activate Service
 
-' === Dòng sự kiện (bước 2.3) & Dòng sự kiện phụ (2.3.1) ===
-alt Dòng sự kiện phụ (2.3.1) - Xóa thất bại
-    Service -> DB: DELETE FROM playlist_song WHERE playlist_song.playlistId=playlistId AND playlist_song.songId=songId AND playlistId IN (SELECT id FROM playlist WHERE playlist.userId=userId)
-    activate DB
-    DB --> Service: Lỗi!
-    deactivate DB
-    Service --> Controller: {error: "Lỗi DB"}
-    deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi"}
-    deactivate Controller
+' --- BƯỚC KIỂM TRA QUYỀN (CHECK OWNER) ---
+Service -> PlaylistDB: count({ where: { id: playlistId, userId } })
+activate PlaylistDB
+PlaylistDB --> Service: count
+deactivate PlaylistDB
 
-    UI --> User: Thông báo "Xoá bài hát khỏi Playlist thất bại, vui lòng thử lại"
-    deactivate UI
-
-else Xóa thành công (Bước 2.3)
-    Service -> DB: DELETE FROM playlist_song WHERE playlist_song.playlistId=playlistId AND playlist_song.songId=songId AND playlistId IN (SELECT id FROM playlist WHERE playlist.userId=userId)
-    activate DB
-    DB --> Service: {success: true}
-    deactivate DB
-    Service -> Controller: {success: true, message: "Đã xóa"}
-    deactivate Service
-
-    ' === Dòng sự kiện chính (bước 3): Hiện lại danh sách ===
-    ' (Hệ thống tự động làm mới giao diện)
-    Controller -> Service: getPlaylistDetails(userId, playlistId) ' Yêu cầu làm mới
-    activate Service
-    Service -> DB: SELECT * FROM playlist_song WHERE playlist_song.playlistId = playlistId AND playlistId IN (SELECT id FROM playlist WHERE playlist.userId=userId)..
-    activate DB
-    DB --> Service: [Danh sách bài hát mới]
-    deactivate DB
-    Service -> Controller: {success: true, songs: [...]}
-    deactivate Service
+alt Không có quyền (count == 0)
+    Service --> Controller: Throw ForbiddenException
+    Controller --> UI: {status: 403, error: "Access Denied"}
+    UI --> User: Thông báo "Bạn không có quyền sửa Playlist này"
+else Có quyền (Hợp lệ)
+    ' --- THỰC HIỆN XÓA (Bảng trung gian) ---
+    ' Lấy songId từ DTO
+    Service -> SongDB: delete({ playlistId, songId: removedSongFromPlaylistDto.songId })
+    activate SongDB
+    SongDB --> Service: result { affected: N }
+    deactivate SongDB
     
-    Controller --> UI: {status: 200, songs: [...]}
-    deactivate Controller
-    
-    UI --> User: Hiển thị lại giao diện với danh sách bài hát sau khi cập nhật
-    deactivate UI
+    ' === XỬ LÝ DÒNG SỰ KIỆN PHỤ 2.3.1 ===
+    alt Xóa thất bại (affected == 0 HOẶC Lỗi DB)
+        Service --> Controller: Throw InternalServerError / NotFound
+        deactivate Service
+        
+        Controller --> UI: {status: 500, error: "Delete Failed"}
+        deactivate Controller
+        
+        ' [KHỚP ĐẶC TẢ USECASE 2.3.1]
+        UI --> User: Thông báo "Xoá bài hát khỏi Playlist thất bại, vui lòng thử lại"
+        deactivate UI
+        
+    else Xóa thành công (affected > 0)
+        ' Đã activate Service ở trên
+        Service --> Controller: {success: true}
+        deactivate Service
+        
+        ' === BƯỚC 3: LÀM MỚI (AUTO REFRESH) ===
+        Controller --> UI: {status: 200, message: "Removed"}
+        deactivate Controller
+        
+        ' Client tự gọi lại API lấy chi tiết
+        UI -> Controller: getPlaylistDetails(playlistId)
+        activate Controller
+        ' ... (Lặp lại quy trình load như Bước 1) ...
+        Controller --> UI: [Playlist mới]
+        deactivate Controller
+        
+        UI --> User: Hiển thị lại danh sách (Đã xóa bài hát)
+        deactivate UI
+    end
 end
 @enduml

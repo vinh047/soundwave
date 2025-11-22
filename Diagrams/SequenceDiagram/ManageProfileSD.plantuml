@@ -1,82 +1,85 @@
-@startuml Sequence Diagram - QuảnLý Hồ Sơ Cá Nhân
+@startuml Sequence Diagram - Quản Lý Hồ Sơ Cá Nhân 
 
-title Sơ Đồ Tuần Tự - Chức Năng Quản Lý Hồ Sơ Cá Nhân
+title Sơ Đồ Tuần Tự - Quản Lý Hồ Sơ Cá Nhân
 
 actor "Người dùng" as User
-participant ":GiaoDienHoSo" as UI
+participant ":NextJS Client" as UI
 participant ":ProfileController" as Controller
-participant ":InteractionService" as InteractionService
+participant ":ProfileService" as ProfileService
+participant ":InteractionService" as InterService
 participant ":Database" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1 & 2): Tải giao diện ===
-User -> UI: Yêu cầu trang "Hồ sơ cá nhân"
+' === BƯỚC 1 & 2: TẢI GIAO DIỆN ===
+User -> UI: Vào trang "Hồ sơ cá nhân"
 activate UI
-UI -> Controller: Yêu cầu lấy dữ liệu hồ sơ(userId)
+UI -> Controller: getMyProfile(userProfileDto)
 activate Controller
-Controller -> InteractionService: getProfileData(userId)
-activate InteractionService
-InteractionService -> DB: SELECT * FROM users WHERE id=...
+
+' Controller phối hợp dữ liệu (Orchestration)
+' 1. Lấy thông tin cá nhân
+Controller -> ProfileService: getMyProfile(userId)
+activate ProfileService
+ProfileService -> DB: findOne(User, { where: { id: userId } })
 activate DB
-DB --> InteractionService: (Thông tin người dùng)
+DB --> ProfileService: userEntity
 deactivate DB
-InteractionService -> DB: SELECT * FROM reposts WHERE userId=...
+ProfileService --> Controller: userEntity
+deactivate ProfileService
+
+' 2. Lấy danh sách bài hát đã Repost
+Controller -> InterService: getRepostedSongs(userId)
+activate InterService
+InterService -> DB: find(Repost, { where: { userId }, relations: ['song'] })
 activate DB
-DB --> InteractionService: [Danh sách bài hát đã đăng lại]
+DB --> InterService: repostList
 deactivate DB
-InteractionService --> Controller: {profileData, reposts: [...]}
-deactivate InteractionService
-Controller --> UI: {status: 200, data: {...}}
+InterService --> Controller: repostList
+deactivate InterService
+
+' Trả về UI
+Controller --> UI: {status: 200, user: userEntity, reposts: repostList}
 deactivate Controller
-UI --> User: Hiển thị giao diện hồ sơ & danh sách bài hát
+
+UI --> User: Hiển thị Info & Danh sách bài hát
 deactivate UI
 
-' === Dòng sự kiện chính (bước 3.3): Người dùng chọn Hủy Đăng lại ===
-User -> UI: Chọn (songId) & Nhấn nút "Hủy Đăng lại"
+' === BƯỚC 3.3: HỦY ĐĂNG LẠI (Undo Repost) ===
+User -> UI: Nhấn "Hủy Đăng lại" (songId)
 activate UI
-UI -> Controller: Yêu cầu Hủy Đăng lại(songId, userId)
+UI -> Controller: undoRepost(songId, userProfileDto)
 activate Controller
-Controller -> InteractionService: unRepostSong(songId, userId)
-activate InteractionService
 
-' === Dòng sự kiện (bước 3.3) & Dòng sự kiện phụ (3.3.1) ===
-alt Dòng sự kiện phụ (3.3.1) - Ghi nhận thất bại
-    InteractionService -> DB: DELETE FROM reposts WHERE ...
-    activate DB
-    DB --> InteractionService: Lỗi! (Không thể xóa)
-    deactivate DB
-    InteractionService --> Controller: {error: "Lỗi DB"}
-    deactivate InteractionService
-    Controller --> UI: {status: 500, error: "Lỗi"}
+' Gọi InteractionService để xử lý tương tác
+Controller -> InterService: removeRepost(userId, songId)
+activate InterService
+
+' Check quyền sở hữu (Chỉ xóa nếu userId khớp)
+InterService -> DB: delete(Repost, { userId: userId, songId: songId })
+activate DB
+DB --> InterService: result { affected: 1 }
+deactivate DB
+
+alt Lỗi (affected == 0 hoặc Lỗi DB)
+    InterService --> Controller: Throw Error
+    deactivate InterService
+    Controller --> UI: {status: 500, error: "Failed"}
+    deactivate Controller
+    UI --> User: Thông báo thất bại
+
+else Thành công
+    activate InterService
+    InterService --> Controller: {success: true}
+    deactivate InterService
+    
+    ' === BƯỚC 4: LÀM MỚI (Client-side Trigger) ===
+    ' Client nhận success -> Tự bỏ bài hát khỏi list hoặc gọi lại API
+    Controller --> UI: {status: 200, success: true}
     deactivate Controller
     
-    UI --> User: Thông báo "Hành động thất bại, vui lòng thử lại"
-    deactivate UI
-
-else Ghi nhận thành công (Bước 3.3)
-    InteractionService -> DB: DELETE FROM reposts WHERE ...
-    activate DB
-    DB --> InteractionService: {success: true}
-    deactivate DB
-    InteractionService --> Controller: {success: true, message: "Đã hủy đăng lại"}
-    deactivate InteractionService
-
-    ' === Dòng sự kiện chính (bước 4): Hiện lại giao diện ===
-    ' (Hệ thống tự động làm mới giao diện)
-    Controller -> InteractionService: getProfileData(userId) ' Yêu cầu làm mới
-    activate InteractionService
-    InteractionService -> DB: SELECT * FROM reposts WHERE userId=...
-    activate DB
-    DB --> InteractionService: [Danh sách bài hát mới]
-    deactivate DB
-    InteractionService --> Controller: {profileData, reposts: [...]}
-    deactivate InteractionService
-    
-    Controller --> UI: {status: 200, data: {...}}
-    deactivate Controller
-    
-    UI --> User: Hiển thị lại giao diện với hồ sơ cá nhân sau khi cập nhật
+    UI -> UI: Xóa bài hát khỏi danh sách hiển thị
+    UI --> User: Cập nhật giao diện
     deactivate UI
 end
 @enduml

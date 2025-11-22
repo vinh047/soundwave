@@ -1,71 +1,97 @@
-@startuml Sequence Diagram - Theo Dõi Nghệ Sĩ
+@startuml Sequence Diagram - Theo Dõi Nghệ Sĩ 
 
-title Sơ Đồ Tuần Tự - Chức Năng Theo Dõi Nghệ Sĩ
+title Sơ Đồ Tuần Tự - Theo Dõi Nghệ Sĩ 
 
 actor "Người dùng" as User
-participant ":GiaoDienNgheSi" as UI
+participant ":NextJS Client" as UI
 participant ":FollowController" as Controller
 participant ":FollowService" as Service
-participant ":Database" as DB
+participant ":FollowRepository" as DB
+participant ":ArtistRepository" as ArtistDB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1 & 2): Tải giao diện ===
-User -> UI: Yêu cầu trang "Danh sách nghệ sĩ"
+' === BƯỚC 1: TẢI DANH SÁCH ===
+User -> UI: Vào trang "Danh sách nghệ sĩ"
 activate UI
-UI -> Controller: getArtistList()
+UI -> Controller: getAllArtists(artistsDto)
 activate Controller
-Controller -> Service: getArtistList(userId)
+
+' Lấy userId từ Token
+Controller -> Service: getAllArtists(userId)
 activate Service
-Service -> DB: SELECT a.*, \n(CASE WHEN f.followerId IS NOT NULL THEN true ELSE false END) as isFollowed \nFROM artist a \nLEFT JOIN follow f ON a.id = f.followingId AND f.followerId = userId
-activate DB
-DB --> Service: [danh sách nghệ sĩ]
-deactivate DB
-Service -> Controller: {success: true, artists: [...]}
+
+' Lấy danh sách kèm trạng thái isFollowed
+Service -> ArtistDB: createQueryBuilder("artist").leftJoinAndSelect("follow", ...).getMany()
+activate ArtistDB
+ArtistDB --> Service: artistListWithStatus
+deactivate ArtistDB
+
+Service --> Controller: {data: artistListWithStatus}
 deactivate Service
-Controller -> UI: {status: 200, artists: [...]}
+Controller --> UI: {status: 200, data: ...}
 deactivate Controller
-UI --> User: Hiển thị danh sách nghệ sĩ & nút "Theo dõi"
+UI --> User: Hiển thị danh sách (Nút hiện "Theo dõi" hoặc "Bỏ theo dõi")
 deactivate UI
 
-' === Dòng sự kiện chính (bước 3): Người dùng chọn Theo dõi ===
-User -> UI: Chọn (artistId) & Nhấn nút "Theo dõi"
+' === BƯỚC 3: TƯƠNG TÁC (TOGGLE) ===
+User -> UI: Nhấn nút "Theo dõi" hoặc "Bỏ theo dõi"
 activate UI
-UI -> Controller: requestFollow(artistId)
+
+' Dùng DTO
+UI -> Controller: toggleFollow(requestFollowDto)
 activate Controller
-Controller -> Service: followArtist(artistId, userId)
+
+' Service xử lý logic Toggle
+Controller -> Service: toggleFollow(userId, artistId)
 activate Service
 
-' === Dòng sự kiện (bước 4, 5) & Dòng sự kiện phụ (4.1) ===
-alt Dòng sự kiện phụ (4.1) - Ghi nhận thất bại
-    ' Bước 4 & 5: Ghi nhận vào CSDL
-    Service -> DB: INSERT INTO follow(followerId, followingId) VALUES (userId, artistId)
+' === BƯỚC 4 & 5: KIỂM TRA & XỬ LÝ ===
+Service -> DB: findOne({ where: { followerId: userId, followingId: artistId } })
+activate DB
+DB --> Service: existingFollow
+deactivate DB
+
+alt Trường hợp 1: Đã theo dõi -> Thực hiện BỎ THEO DÕI (Unfollow)
+    Service -> DB: delete({ followerId: userId, followingId: artistId })
     activate DB
-    DB --> Service: Lỗi! (Không thể ghi)
+    DB --> Service: result
     deactivate DB
-    Service -> Controller: {error: "Lỗi ghi CSDL"}
-    deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi DB"}
-    deactivate Controller
     
-    UI --> User: Thông báo "Theo dõi thất bại, vui lòng thử lại"
-    deactivate UI
+    alt Dòng sự kiện phụ 1.2: Bỏ theo dõi thất bại
+        Service --> Controller: Throw InternalServerError
+        Controller --> UI: {status: 500, error: "Unfollow Failed"}
+        UI --> User: Thông báo "Bỏ theo dõi thất bại"
+    else Thành công
+        Service --> Controller: {success: true, status: "unfollowed"}
+        
+        ' === BƯỚC 6: CẬP NHẬT UI ===
+        Controller --> UI: {status: 200, message: "Unfollowed"}
+        UI -> UI: Đổi nút thành "Theo dõi"
+        UI --> User: Cập nhật trạng thái thành công
+    end
 
-else Ghi nhận thành công (Bước 4 & 5)
-    Service -> DB: INSERT INTO follow(followerId, followingId) VALUES (userId, artistId)
+else Trường hợp 2: Chưa theo dõi -> Thực hiện THEO DÕI (Follow)
+    Service -> DB: save({ followerId: userId, followingId: artistId })
     activate DB
-    DB --> Service: {success: true}
+    DB --> Service: newRecord
     deactivate DB
-    Service -> Controller: {success: true, message: "Đã theo dõi"}
-    deactivate Service
-
-    ' === Dòng sự kiện chính (bước 6): Hiện lại danh sách ===
-    ' (Hệ thống tự động làm mới giao diện)
-    Controller --> UI: {status: 200, message: "Đã theo dõi"}
-    deactivate Controller
     
-    UI --> User: Nút chuyển sang trạng thái "Đang theo dõi"
-
-    deactivate UI
+    alt Dòng sự kiện phụ 1.1: Theo dõi thất bại
+        Service --> Controller: Throw InternalServerError
+        Controller --> UI: {status: 500, error: "Follow Failed"}
+        UI --> User: Thông báo "Theo dõi thất bại"
+    else Thành công
+        Service --> Controller: {success: true, status: "followed"}
+        deactivate Service
+        
+        ' === BƯỚC 6: CẬP NHẬT UI ===
+        Controller --> UI: {status: 201, message: "Followed"}
+        deactivate Controller
+        
+        UI -> UI: Đổi nút thành "Bỏ theo dõi"
+        UI --> User: Cập nhật trạng thái thành công
+        deactivate UI
+    end
 end
 @enduml

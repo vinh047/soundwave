@@ -1,79 +1,82 @@
-@startuml Sequence Diagram - Quản Lý Playlist
+@startuml Sequence Diagram - Quản Lý Playlist 
 
-title Sơ Đồ Tuần Tự - Chức Năng Quản Lý Playlist
+title Sơ Đồ Tuần Tự - Quản Lý Playlist 
 
 actor "Người dùng" as User
-participant ":GiaoDienQuanLyPlaylist" as UI
+participant ":NextJS Client" as UI
 participant ":PlaylistController" as Controller
 participant ":PlaylistService" as Service
-participant ":Database" as DB
+participant ":PlaylistRepository" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1 & 2): Tải giao diện ===
-' Tiền điều kiện 1: Người dùng đã đăng nhập
-User -> UI: Yêu cầu trang "Quản lý Playlist"
+' === BƯỚC 1: TẢI DANH SÁCH ===
+User -> UI: Vào trang "Quản lý Playlist"
 activate UI
-UI -> Controller: Yêu cầu lấy danh sách playlist(userId)
+UI -> Controller: getPlaylists(playlistsDto)
 activate Controller
-Controller -> Service: getPlaylists(userId)
+
+' Lấy userId từ token (req.user.id)
+Controller -> Service: findAllByUserId(userId)
 activate Service
-Service -> DB: SELECT * FROM playlists WHERE userId=...
+
+Service -> DB: find({ where: { userId } })
 activate DB
-DB --> Service: [danh sách playlist]
+DB --> Service: [PlaylistEntities]
 deactivate DB
-Service --> Controller: {success: true, playlists: [...]}
+
+Service --> Controller: {data: [...]}
 deactivate Service
-Controller --> UI: {status: 200, playlists: [...]}
+Controller --> UI: {status: 200, data: [...]}
 deactivate Controller
-UI --> User: Hiển thị danh sách Playlist & các nút chức năng
+UI --> User: Hiển thị danh sách & nút Xóa
 deactivate UI
 
-' === Dòng sự kiện chính (bước 3.3): Người dùng chọn Xóa ===
-User -> UI: Chọn (playlistId) & Nhấn nút "Xóa"
+' === BƯỚC 3.3: XÓA PLAYLIST ===
+User -> UI: Chọn Playlist & Nhấn "Xóa"
 activate UI
-UI -> Controller: Yêu cầu Xóa Playlist(playlistId)
+UI -> Controller: delete(id, playlistsDto)
 activate Controller
-Controller -> Service: deletePlaylist(playlistId)
+
+' Luôn truyền userId để check quyền
+Controller -> Service: remove(id, userId)
 activate Service
 
-' === Dòng sự kiện (bước 3.3) & Dòng sự kiện phụ (3.3.1) ===
-alt Dòng sự kiện phụ (3.3.1) - Xóa thất bại
-    Service -> DB: DELETE FROM playlists WHERE id=playlistId
-    activate DB
-    DB --> Service: Lỗi! (Không thể xóa)
-    deactivate DB
-    Service --> Controller: {error: "Lỗi DB"}
+' === XỬ LÝ XÓA AN TOÀN (Check Owner) ===
+' Cách 1: Dùng delete với điều kiện userId (Nhanh gọn)
+Service -> DB: delete({ id: id, userId: userId })
+activate DB
+DB --> Service: deleteResult { affected: 1 }
+deactivate DB
+
+alt Xóa thất bại (affected == 0 hoặc Lỗi DB)
+    ' affected = 0 nghĩa là ID không tồn tại hoặc không phải của User này
+    Service --> Controller: Throw NotFound/Forbidden
     deactivate Service
-    Controller --> UI: {status: 500, error: "Lỗi"}
+    Controller --> UI: {status: 400/500, error: "Delete Failed"}
     deactivate Controller
     
-    UI --> User: Thông báo "Xoá Playlist thất bại, vui lòng thử lại"
+    UI --> User: Thông báo "Xóa thất bại"
     deactivate UI
 
-else Xóa thành công (Bước 3.3)
-    Service -> DB: DELETE FROM playlists WHERE id=playlistId
-    activate DB
-    DB --> Service: {success: true}
-    deactivate DB
-    Service -> Controller: {success: true, message: "Đã xóa"}
+else Xóa thành công (affected > 0)
+    ' Đã activate Service ở trên
+    activate Service
+    Service --> Controller: {success: true}
     deactivate Service
 
-    ' === Dòng sự kiện chính (bước 4): Hiện lại danh sách ===
-    ' (Hệ thống tự động làm mới giao diện)
-    Controller -> Service: getPlaylists(userId) ' Yêu cầu làm mới
-    activate Service
-    Service -> DB: SELECT * FROM playlists WHERE userId=...
-    activate DB
-    DB --> Service: [Danh sách playlist mới]
-    deactivate DB
-    Service -> Controller: {success: true, playlists: [...]}
-    deactivate Service
-    
-    Controller --> UI: {status: 200, playlists: [...]}
+    ' === BƯỚC 4: LÀM MỚI DANH SÁCH ===
+    ' Client tự gọi lại API lấy danh sách (Logic React/NextJS chuẩn)
+    Controller --> UI: {status: 200, message: "Deleted"}
     deactivate Controller
     
-    UI --> User: Hiển thị lại giao diện với danh sách Playlist sau khi cập nhật
+    UI -> Controller: getPlaylists(playlistsDto) (Auto Refresh)
+    activate Controller
+    ' ... (Lặp lại quy trình lấy danh sách như Bước 1) ...
+    Controller --> UI: [Danh sách mới]
+    deactivate Controller
+    
+    UI --> User: Hiển thị danh sách sau khi cập nhật
     deactivate UI
 end
 @enduml

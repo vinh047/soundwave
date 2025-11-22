@@ -1,95 +1,79 @@
-@startuml Sequence Diagram - Đăng Ký
+@startuml Sequence Diagram - Đăng Ký 
 
-title Sơ Đồ Tuần Tự - Chức Năng Đăng Ký
+title Sơ Đồ Tuần Tự - Đăng Ký  
 
 actor "Người dùng" as User
-participant ":GiaoDienDangKy" as UI
-participant ":RegisterController" as Controller
-participant ":RegisterService" as Service
-participant ":Database" as DB
+participant ":NextJS Client" as UI
+participant ":AuthController" as Controller
+participant ":AuthService" as AuthService
+participant ":UsersService" as UsersService
+participant ":UserRepository" as DB
 
 autonumber
 
-' === Dòng sự kiện chính (bước 1): Hiển thị form ===
-User -> UI: Yêu cầu trang Đăng ký
-activate UI
-UI --> User: Hiển thị form (email, pass, vai trò)
-deactivate UI
-
-' === Dòng sự kiện chính (bước 2): Người dùng gửi thông tin ===
+' === BƯỚC 1 & 2: GỬI YÊU CẦU ===
 User -> UI: Nhập (email, pass, role) & Nhấn "Đăng ký"
 activate UI
-UI -> Controller: Yêu cầu đăng ký(data)
+
+' NestJS dùng DTO để hứng và validate dữ liệu
+UI -> Controller: register(registerDto)
 activate Controller
-Controller -> Service: register(data)
-activate Service
 
-' === Dòng sự kiện (bước 3) & Các dòng sự kiện phụ ===
-' Service thực hiện các bước kiểm tra
-' 3.1: Kiểm tra email hợp lệ
-alt Dòng sự kiện phụ (3.1) - Email không hợp lệ
-    Service -> Service: validateEmailFormat(data.email)
-    ' (Giả sử kiểm tra thấy không hợp lệ)
-    Service --> Controller: {error: "Email không hợp lệ"}
-    deactivate Service
-    Controller --> UI: {status: 400, error: "Email không hợp lệ"}
-    deactivate Controller
-    
-    UI --> User: Thông báo "Email không hợp lệ, vui lòng nhập lại"
-    deactivate UI
-    
-' 3.3: Kiểm tra mật khẩu yếu
-else Dòng sự kiện phụ (3.3) - Mật khẩu quá yếu
-    Service -> Service: validateEmailFormat(data.email) ' (Pass)
-    Service -> Service: validatePasswordStrength(data.password) ' (Fail)
-    Service --> Controller: {error: "Mật khẩu quá yếu"}
-    deactivate Service
-    Controller --> UI: {status: 400, error: "Mật khẩu quá yếu"}
-    deactivate Controller
-    
-    UI --> User: Thông báo "Mật khẩu quá yếu, vui lòng nhập lại"
-    deactivate UI
-    
-' 3.2: Kiểm tra tài khoản tồn tại
-else Dòng sự kiện phụ (3.2) - Tài khoản đã tồn tại
-    Service -> Service: validateEmailFormat(data.email) ' (Pass)
-    Service -> Service: validatePasswordStrength(data.password) ' (Pass)
-    Service -> DB: findByEmail(data.email)
-    activate DB
-    DB --> Service: (Trả về 1 tài khoản đã tồn tại)
-    deactivate DB
-    
-    Service --> Controller: {error: "Tài khoản đã tồn tại"}
-    deactivate Service
-    Controller --> UI: {status: 409, error: "Tài khoản đã tồn tại"}
-    deactivate Controller
-    
-    UI --> User: Thông báo "Tài khoản đã tồn tại, đăng ký thất bại"
-    deactivate UI
-    
-' Dòng sự kiện chính (Bước 4 & 5) - Đăng ký thành công
-else Mọi thứ hợp lệ (Bước 3 thành công)
-    Service -> Service: validateEmailFormat(data.email) ' (Pass)
-    Service -> Service: validatePasswordStrength(data.password) ' (Pass)
-    Service -> DB: findByEmail(data.email)
-    activate DB
-    DB --> Service: (Trả về null)
-    deactivate DB
+' === BƯỚC 3: XỬ LÝ LOGIC ===
 
-    ' Bước 4: Ghi nhận tài khoản mới
-    Service -> DB: INSERT INTO accounts (data)
+' --- CHECK 1 & 3: VALIDATION (Email format & Pass strength) ---
+' Trong NestJS, việc này thường được xử lý tự động bởi DTO + class-validator trước khi vào Controller
+' Nhưng ta vẽ ở đây để khớp với Use case 3.1 và 3.3
+note right of Controller: ValidationPipe kiểm tra format Email và độ mạnh Password
+
+alt 3.1 & 3.3: Dữ liệu không hợp lệ (Format sai / Pass yếu)
+    Controller --> UI: {status: 400, error: "Bad Request (Validation Failed)"}
+    UI --> User: Thông báo lỗi nhập liệu
+
+else Dữ liệu hợp lệ
+    Controller -> AuthService: register(registerDto)
+    activate AuthService
+
+    ' --- CHECK 2: TÀI KHOẢN TỒN TẠI (Use case 3.2) ---
+    AuthService -> UsersService: findOneByEmail(email)
+    activate UsersService
+    UsersService -> DB: findOne({ where: { email } })
     activate DB
-    DB --> Service: {success: true, newAccountId: 123}
+    DB --> UsersService: existingUser
     deactivate DB
-    Service --> Controller: {success: true, message: "Đăng ký thành công"}
-    deactivate Service
-    Controller --> UI: {status: 201, ...}
-    deactivate Controller
+    UsersService --> AuthService: existingUser
+    deactivate UsersService
     
-    UI --> User: Thông báo "Đăng ký thành công"
-    
-    ' Bước 5: Chuyển giao diện
-    UI --> User: Chuyển sang giao diện Đăng nhập
-    deactivate UI
+    alt 3.2: Tài khoản đã tồn tại (existingUser != null)
+        AuthService --> Controller: Throw ConflictException
+        Controller --> UI: {status: 409, error: "Email already exists"}
+        UI --> User: Thông báo "Tài khoản đã tồn tại"
+        
+    else Tài khoản chưa tồn tại (Main Flow)
+        ' --- BƯỚC PHỤ QUAN TRỌNG: MÃ HÓA MẬT KHẨU ---
+        AuthService -> AuthService: hashPassword(password)
+        
+        ' --- BƯỚC 4: GHI DB ---
+        AuthService -> UsersService: create(userEntity)
+        activate UsersService
+        UsersService -> DB: save(userEntity)
+        activate DB
+        DB --> UsersService: newUser
+        deactivate DB
+        
+        UsersService --> AuthService: newUser
+        deactivate UsersService
+        
+        AuthService --> Controller: {success: true}
+        deactivate AuthService
+        
+        Controller --> UI: {status: 201, message: "Registered Successfully"}
+        deactivate Controller
+        
+        ' --- BƯỚC 5: CHUYỂN TRANG ---
+        UI --> User: Thông báo thành công
+        UI --> User: Chuyển sang trang Đăng nhập
+        deactivate UI
+    end
 end
 @enduml
