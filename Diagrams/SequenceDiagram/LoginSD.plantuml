@@ -22,7 +22,7 @@ activate Controller
 ' === BƯỚC 3: XỬ LÝ LOGIC ===
 
 ' --- CHECK 1: ĐỊNH DẠNG EMAIL (Validation Pipe) ---
-Controller -> Controller: validate(loginDto)
+Controller -> Controller: ValidationPipe(loginDto.email)
 alt 3.1: Email không hợp lệ (Validation Failed)
     Controller --> UI: {status: 400, error: "Bad Request - Invalid Email"}
     UI --> User: Thông báo "Email không hợp lệ"
@@ -32,7 +32,7 @@ else Format OK
     Controller -> AuthService: validateUser(email, pass)
     activate AuthService
 
-    ' --- CHECK 2: TÌM USER (Gọi sang UsersService) ---
+    ' --- CHECK 2: TÌM USER (Gọi sang UserService) ---
     AuthService -> UserService: findOneByEmail(email)
     activate UserService
     

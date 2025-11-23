@@ -36,7 +36,7 @@ Admin -> UI: Chọn User & Nhấn nút "Khóa/Mở khóa"
 activate UI
 
 ' Gửi status ngược lại với hiện tại (VD: đang Active -> gửi Locked)
-UI -> Controller: updateStatus(userId, { status: newStatus })
+UI -> Controller: updateStatus(userId, newStatus)
 activate Controller
 
 Controller -> Service: updateStatus(userId, newStatus)

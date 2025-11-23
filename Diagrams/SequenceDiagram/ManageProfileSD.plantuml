@@ -7,18 +7,18 @@ participant ":NextJS Client" as UI
 participant ":ProfileController" as Controller
 participant ":ProfileService" as ProfileService
 participant ":InteractionService" as InterService
-participant ":Database" as DB
+participant ":ProfileRepository" as DB
 
 autonumber
 
 ' === BƯỚC 1 & 2: TẢI GIAO DIỆN ===
 User -> UI: Vào trang "Hồ sơ cá nhân"
 activate UI
-UI -> Controller: getMyProfile(userProfileDto)
+UI -> Controller: getProfile(userId)
 activate Controller
 
 ' 1. Lấy thông tin cá nhân
-Controller -> ProfileService: getMyProfile(userId)
+Controller -> ProfileService: getProfile(userId)
 activate ProfileService
 ProfileService -> DB: findOne(User, { where: { id: userId } })
 activate DB

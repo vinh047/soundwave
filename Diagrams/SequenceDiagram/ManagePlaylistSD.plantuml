@@ -13,7 +13,7 @@ autonumber
 ' === BƯỚC 1: TẢI DANH SÁCH ===
 User -> UI: Vào trang "Quản lý Playlist"
 activate UI
-UI -> Controller: getPlaylists(playlistsDto)
+UI -> Controller: getPlaylists(userId)
 activate Controller
 
 ' Lấy userId từ token (req.user.id)
