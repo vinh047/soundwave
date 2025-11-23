@@ -14,12 +14,12 @@ autonumber
 ' === BƯỚC 1: TẢI DANH SÁCH ===
 Admin -> UI: Vào trang "Quản lý Báo cáo"
 activate UI
-UI -> Controller: getAllPendingReports()
+UI -> Controller: getReports()
 activate Controller
-Controller -> Service: getAllPendingReports()
+Controller -> Service: getReports()
 activate Service
 
-Service -> DB: find({ where: { status: 'PENDING' } })
+Service -> DB: find()
 activate DB
 DB --> Service: reportList
 deactivate DB
@@ -87,7 +87,7 @@ else Cập nhật thành công
         Controller --> UI: {status: 200, message: "Processed"}
         deactivate Controller
         
-        UI -> Controller: getAllPendingReports()
+        UI -> Controller: getReports()
         activate Controller
         ' ... (Lặp lại quy trình lấy danh sách) ...
         Controller --> UI: [Danh sách mới]

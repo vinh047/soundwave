@@ -13,11 +13,11 @@ autonumber
 ' === BƯỚC 1: TẢI DANH SÁCH ===
 User -> UI: Vào trang "Quản lý Playlist"
 activate UI
-UI -> Controller: getPlaylists(userId)
+UI -> Controller: getPlaylists(req)
 activate Controller
 
 ' Lấy userId từ token (req.user.id)
-Controller -> Service: findAllByUserId(userId)
+Controller -> Service: getPlaylists(userId)
 activate Service
 
 Service -> DB: find({ where: { userId } })
@@ -70,7 +70,7 @@ else Xóa thành công (affected > 0)
     Controller --> UI: {status: 200, message: "Deleted"}
     deactivate Controller
     
-    UI -> Controller: getPlaylists(playlistsDto) (Auto Refresh)
+    UI -> Controller: getPlaylists(req) (Auto Refresh)
     activate Controller
     ' ... (Lặp lại quy trình lấy danh sách như Bước 1) ...
     Controller --> UI: [Danh sách mới]

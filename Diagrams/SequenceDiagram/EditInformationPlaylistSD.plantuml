@@ -18,7 +18,7 @@ User -> UI: Thay đổi thông tin & Nhấn "Lưu"
 activate UI
 
 ' Dùng DTO
-UI -> Controller: updatePlaylist(playlistId, updatePlaylistDto)
+UI -> Controller: updatePlaylist(req, playlistId, updatePlaylistDto)
 activate Controller
 
 ' Lấy userId từ req.user

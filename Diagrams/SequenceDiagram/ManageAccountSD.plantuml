@@ -13,9 +13,9 @@ autonumber
 ' === BƯỚC 1: TẢI DANH SÁCH ===
 Admin -> UI: Vào trang "Quản lý tài khoản"
 activate UI
-UI -> Controller: getAllAccounts()
+UI -> Controller: getAccounts()
 activate Controller
-Controller -> Service: getAllAccounts()
+Controller -> Service: getAccounts()
 activate Service
 
 Service -> DB: find()
@@ -72,7 +72,7 @@ else Cập nhật thành công
     deactivate Controller
     
     ' Client tự động gọi lại API lấy danh sách (hoặc tự sửa UI)
-    UI -> Controller: getAllAccounts() (Tự động refresh)
+    UI -> Controller: getAccounts() (Tự động refresh)
     activate Controller
     ' ... (Lặp lại quy trình lấy danh sách như Bước 1) ...
     Controller --> UI: [Danh sách mới]

@@ -19,10 +19,10 @@ group Dòng sự kiện: Chọn tương tác
     ' === KỊCH BẢN 2.1: THÍCH BÀI HÁT ===
     User -> UI: Nhấn "Thích"
     activate UI
-    UI -> Controller: likeSong(songId)
+    UI -> Controller: likeSong(req, songId)
     activate Controller
     
-    ' Controller lấy userId từ dto.user
+    ' Controller lấy userId từ req.user
     Controller -> Service: likeSong(userId, songId)
     activate Service
 

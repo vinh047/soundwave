@@ -19,7 +19,7 @@ Artist -> UI: Thay đổi thông tin/File & Nhấn "Lưu"
 activate UI
 
 ' Gửi request API
-UI -> Controller: updateSongInfo(songId, updateSongDto, file)
+UI -> Controller: updateSongInfo(req, songId, updateSongDto, file)
 activate Controller
 
 ' Lấy userId từ Token (req.user)

@@ -15,9 +15,9 @@ User -> UI: Vào trang "Tìm kiếm bài hát"
 activate UI
 
 ' Gửi request (Chỉ vẽ 1 lần duy nhất ở đây)
-UI -> Controller: getAllSongs()
+UI -> Controller: getSongs()
 activate Controller
-Controller -> Service: getAllSongs()
+Controller -> Service: getSongs()
 activate Service
 
 ' Truy vấn DB (Lấy 20 bài mới nhất)

@@ -68,19 +68,19 @@ package "UserModule" {
 package "SongModule" {
     class SongController {
         + uploadSong(req, dto, file): Promise<Song>
-        + updateSong(id, dto, file): Promise<Song>
-        + toggleStatus(id, req): Promise<void>
+        + updateSongInfo(req, dto, file): Promise<Song>
+        + toggleStatus(req, songId): Promise<void>
         + getSongStream(id): Promise<Stream>
-        + getSongsByArtist(req): Promise<Song[]>
+        + getSongs(req): Promise<Song[]>
     }
 
     class SongService {
-        + create(userId, dto, fileUrl): Promise<Song>
-        + update(userId, songId, dto, file): Promise<void>
-        + toggleStatus(songId, artistId): Promise<void>
+        + uploadSong(userId, dto, file): Promise<Song>
+        + updateSongInfo(userId, songId, dto, file): Promise<void>
+        + toggleStatus(userId, songId): Promise<void>
         + findOne(id): Promise<Song>
-        + findAllByArtist(artistId): Promise<Song[]>
-        + hideSong(id): Promise<void>
+        + getSongs(userId): Promise<Song[]>
+        + hideSong(songId): Promise<void>
     }
 }
 
@@ -144,13 +144,13 @@ package "PlayerModule" {
 package "ReportModule" {
     class ReportController {
         + createReport(req, dto): Promise<void>
-        + getPendingReports(): Promise<Report[]>
+        + getReports(): Promise<Report[]>
         + processReport(id, action): Promise<void>
     }
 
     class ReportService {
-        + create(userId, dto): Promise<void>
-        + getPendingReports(): Promise<Report[]>
+        + createReport(userId, dto): Promise<void>
+        + getReports(): Promise<Report[]>
         + processReport(id, action): Promise<void>
     }
 }
@@ -158,12 +158,12 @@ package "ReportModule" {
 package "ShareModule" {
     class ShareController {
         + getFriends(platform): Promise<any[]>
-        + share(req, dto): Promise<void>
+        + shareSong(req, dto): Promise<void>
     }
     
     class ShareService {
-        + getExternalFriends(userId, platform): Promise<any[]>
-        + share(userId, dto): Promise<void>
+        + getFriends(userId, platform): Promise<any[]>
+        + shareSong(userId, dto): Promise<void>
     }
 }
 

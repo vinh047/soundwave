@@ -14,7 +14,7 @@ autonumber
 ' === BƯỚC 1 & 2: TẢI GIAO DIỆN ===
 User -> UI: Vào trang "Hồ sơ cá nhân"
 activate UI
-UI -> Controller: getProfile(userId)
+UI -> Controller: getProfile(req)
 activate Controller
 
 ' 1. Lấy thông tin cá nhân

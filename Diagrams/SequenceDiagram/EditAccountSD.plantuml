@@ -23,7 +23,7 @@ User -> UI: Nhập thông tin mới & Nhấn "Lưu"
 activate UI
 
 ' Sử dụng UpdateAccountDto
-UI -> Controller: updateAccount(updateAccountDto)
+UI -> Controller: updateAccount(req, updateAccountDto)
 activate Controller
 
 ' Lấy userId từ req.user

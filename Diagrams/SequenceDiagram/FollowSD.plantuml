@@ -14,11 +14,11 @@ autonumber
 ' === BƯỚC 1: TẢI DANH SÁCH ===
 User -> UI: Vào trang "Danh sách nghệ sĩ"
 activate UI
-UI -> Controller: getAllArtists(artistsDto)
+UI -> Controller: getArtists(req)
 activate Controller
 
 ' Lấy userId từ Token
-Controller -> Service: getAllArtists(userId)
+Controller -> Service: getArtists(userId)
 activate Service
 
 ' Lấy danh sách kèm trạng thái isFollowed

@@ -40,7 +40,7 @@ activate UI
 
 ' [CẬP NHẬT] Dùng RemoveSongDto để chứa songId
 ' Request: DELETE /playlists/:id/songs (Body: { songId: 123 })
-UI -> Controller: removeSongFromPlaylist(playlistId, removedSongFromPlaylistDto)
+UI -> Controller: removeSongFromPlaylist(req, playlistId, removedSongFromPlaylistDto)
 activate Controller
 
 ' Truyền DTO xuống Service

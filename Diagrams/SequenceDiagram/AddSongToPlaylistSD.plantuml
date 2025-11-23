@@ -18,7 +18,7 @@ User -> UI: Chọn (songId) & Nhấn "Thêm"
 activate UI
 
 ' Request: POST /playlists/:id/songs (Body: { songId: 123 })
-UI -> Controller: addSongToPlaylist(playlistId, addSongDto)
+UI -> Controller: addSongToPlaylist(req, playlistId, addSongDto)
 activate Controller
 
 ' Lấy userId từ req.user

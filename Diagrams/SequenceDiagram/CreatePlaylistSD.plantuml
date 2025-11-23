@@ -18,7 +18,7 @@ User -> UI: Điền thông tin & Nhấn "Tạo Playlist"
 activate UI
 
 ' Dùng DTO
-UI -> Controller: createPlaylist(createPlaylistDto)
+UI -> Controller: createPlaylist(req, createPlaylistDto)
 activate Controller
 
 ' Lấy userId từ req.user

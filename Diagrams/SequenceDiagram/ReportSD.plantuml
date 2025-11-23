@@ -24,7 +24,7 @@ User -> ReportUI: Điền lý do & Nhấn "Gửi"
 activate ReportUI
 
 ' Dùng DTO để gói dữ liệu
-ReportUI -> Controller: createReport(createReportDto)
+ReportUI -> Controller: createReport(req, createReportDto)
 activate Controller
 
 ' Lấy userId từ req.user (AuthGuard đã check account not locked)

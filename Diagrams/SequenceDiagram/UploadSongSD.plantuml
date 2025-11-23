@@ -19,7 +19,7 @@ Artist -> UI: Điền thông tin, chọn File & Nhấn "Tải lên"
 activate UI
 
 ' NestJS dùng Interceptor để hứng File (Multer)
-UI -> Controller: uploadSong(createSongDto, file)
+UI -> Controller: uploadSong(req, createSongDto, file)
 activate Controller
 
 ' Lấy artistId từ req.user

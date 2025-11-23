@@ -13,7 +13,7 @@ autonumber
 ' === BƯỚC 1: TẢI DANH SÁCH YÊU THÍCH ===
 User -> UI: Vào trang "Bài hát yêu thích"
 activate UI
-UI -> Controller: getFavoriteSongs(favoriteSongsDto)
+UI -> Controller: getFavoriteSongs(req)
 activate Controller
 
 ' Lấy userId từ token

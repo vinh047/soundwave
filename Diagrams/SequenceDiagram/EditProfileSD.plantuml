@@ -22,7 +22,7 @@ User -> UI: Nhập thông tin mới & Nhấn "Lưu"
 activate UI
 
 ' Dùng DTO
-UI -> Controller: updateProfile(updateProfileDto)
+UI -> Controller: updateProfile(req, updateProfileDto)
 activate Controller
 
 ' Lấy userId từ req.user

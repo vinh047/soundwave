@@ -13,11 +13,11 @@ autonumber
 ' === BƯỚC 1: TẢI DANH SÁCH ===
 Artist -> UI: Vào trang "Quản lý bài hát"
 activate UI
-UI -> Controller: getAllSongsByArtist(artistSongsDto)
+UI -> Controller: getSongs(req)
 activate Controller
 
 ' Lấy artistId từ req.user.id
-Controller -> Service: getAllSongsByArtist(artistId)
+Controller -> Service: getSongs(artistId)
 activate Service
 
 Service -> DB: find({ where: { userId: artistId } })
@@ -48,15 +48,15 @@ group Chọn chức năng
     else Kịch bản 3.3: Ẩn/Hiện bài hát
         Artist -> UI: Chọn bài & Nhấn "Ẩn/Hiện"
         activate UI
-        UI -> Controller: toggleStatus(id, artistSongsDto)
+        UI -> Controller: toggleStatus(req, songId)
         activate Controller
 
-        ' Truyền artistId để check quyền sở hữu
-        Controller -> Service: toggleStatus(id, artistId)
+        ' Truyền userId để check quyền sở hữu
+        Controller -> Service: toggleStatus(artistId, songId)
         activate Service
 
         ' Logic: Tìm bài hát -> Đảo trạng thái -> Lưu lại
-        Service -> DB: findOne({ where: { id, userId: artistId } })
+        Service -> DB: findOne({ where: { userId: artistId, id: songId } })
         activate DB
         DB --> Service: songEntity
         deactivate DB
@@ -80,7 +80,7 @@ group Chọn chức năng
             deactivate Controller
             
             ' Client tự gọi lại API lấy danh sách (Auto Refresh)
-            UI -> Controller: getSongsByArtist(artistSongsDto)
+            UI -> Controller: getSongs(req)
             activate Controller
             ' ... (Lặp lại quy trình load danh sách) ...
             Controller --> UI: [Danh sách mới]

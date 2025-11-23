@@ -15,9 +15,9 @@ User -> UI: Vào trang "Tìm kiếm nghệ sĩ"
 activate UI
 
 ' Gửi request (Chỉ gửi 1 lần)
-UI -> Controller: getAllArtists()
+UI -> Controller: getArtists()
 activate Controller
-Controller -> Service: getAllArtists()
+Controller -> Service: getArtists()
 activate Service
 
 ' Truy vấn DB

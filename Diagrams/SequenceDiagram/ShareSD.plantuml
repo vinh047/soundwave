@@ -22,9 +22,9 @@ deactivate SongUI
 
 ' === BƯỚC 2 & 3: LẤY DANH SÁCH BẠN BÈ/TK ===
 User -> ShareUI: Chọn nền tảng (VD: Facebook)
-ShareUI -> Controller: getFriends(platform)
+ShareUI -> Controller: getFriends(req, platform)
 activate Controller
-Controller -> Service: getExternalFriends(userId, platform)
+Controller -> Service: getFriends(userId, platform)
 activate Service
 
 ' Gọi API bên thứ 3 để lấy danh sách bạn bè
@@ -44,7 +44,7 @@ User -> ShareUI: Chọn tài khoản & Nhấn "Chia sẻ"
 activate ShareUI
 
 ' Dùng DTO
-UI -> Controller: shareSong(shareSongDto)
+UI -> Controller: shareSong(req, shareSongDto)
 activate Controller
 Controller -> Service: shareSong(userId, shareSongDto)
 activate Service
