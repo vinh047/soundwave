@@ -17,6 +17,7 @@ rectangle "Chức năng người dùng" {
     (Quản lý hồ sơ cá nhân) as UC_ManageProfile
     (Xem hồ sơ cá nhân) as UC_ViewProfile
     (Sửa hồ sơ cá nhân) as UC_EditProfile
+    (Sửa tài khoản cá nhân) as UC_EditAccount
     (Xem danh sách và tìm kiếm bài hát yêu thích) as UC_LikedSongs
     (Quản lý Playlist cá nhân) as UC_ManagePlaylist
     (Xem danh sách Playlist cá nhân) as UC_ViewPlaylist
@@ -56,6 +57,7 @@ rectangle "Chức năng người dùng" {
     UC_ViewSearchArtist --> UC_Follow: <<extend>>
     UC_ViewProfile --> UC_ManageProfile: <<extend>>
     UC_EditProfile --> UC_ManageProfile: <<extend>>
+    UC_EditAccount --> UC_ManageProfile: <<extend>>
     UC_LikedSongs --> UC_ManageProfile: <<extend>>
 
     ' Quan hệ <<include>> (các chức năng cần đăng nhập)

@@ -29,22 +29,25 @@ package "AuthModule" {
 }
 
 package "UserModule" {
-    class UsersService {
+    class UserService {
         + findOneByEmail(email): Promise<User>
         + create(user): Promise<User>
         + findAll(): Promise<User[]>
         + updateStatus(id, isLocked): Promise<void>
         + warnUser(id): Promise<void>
+        + updateAccount(userId, dto): Promise<void>
     }
 
     class AccountController {
         + getAllAccounts(): Promise<User[]>
         + updateStatus(id, status): Promise<void>
+        + updateAccount(req, dto): Promise<void>
     }
 
     class ProfileController {
         + getProfile(req): Promise<any>
         + updateProfile(req, dto): Promise<void>
+        + undoRepost(req, songId): Promise<void>
     }
     
     class ProfileService {
@@ -53,12 +56,10 @@ package "UserModule" {
     }
     
     class FollowController {
-        ' [SYNC] Đổi tên thành toggleFollow cho khớp Sequence Diagram
         + toggleFollow(req, dto): Promise<void>
         + getFollowedArtists(req): Promise<Artist[]>
     }
     class FollowService {
-        ' [SYNC] Đổi tên thành toggleFollow
         + toggleFollow(userId, artistId): Promise<void>
         + getArtistList(userId): Promise<any[]>
     }
@@ -67,7 +68,6 @@ package "UserModule" {
 package "SongModule" {
     class SongController {
         + uploadSong(req, dto, file): Promise<Song>
-        ' [SYNC] Thêm tham số file cho khớp Sequence Sửa Bài Hát
         + updateSong(id, dto, file): Promise<Song>
         + toggleStatus(id, req): Promise<void>
         + getSongStream(id): Promise<Stream>
@@ -76,7 +76,6 @@ package "SongModule" {
 
     class SongService {
         + create(userId, dto, fileUrl): Promise<Song>
-        ' [SYNC] Thêm tham số file
         + update(userId, songId, dto, file): Promise<void>
         + toggleStatus(songId, artistId): Promise<void>
         + findOne(id): Promise<Song>
@@ -90,7 +89,6 @@ package "PlaylistModule" {
         + create(req, dto): Promise<Playlist>
         + update(id, dto): Promise<void>
         + delete(id, req): Promise<void>
-        ' [SYNC] Dùng DTO cho khớp Sequence Thêm Bài Hát
         + addSong(id, dto): Promise<void>
         + removeSong(id, dto): Promise<void>
         + getMyPlaylists(req): Promise<Playlist[]>
@@ -100,7 +98,6 @@ package "PlaylistModule" {
         + create(userId, dto): Promise<Playlist>
         + update(userId, id, dto): Promise<void>
         + remove(userId, id): Promise<void>
-        ' [SYNC] Dùng DTO
         + addSong(userId, playlistId, dto): Promise<void>
         + removeSong(userId, playlistId, dto): Promise<void>
         + findAllByUserId(userId): Promise<Playlist[]>
@@ -184,61 +181,129 @@ package "SearchModule" {
 
 ' --- ENTITIES ---
 package "Database Entities" {
-    class User {
-        + id: number
-        + email: string
-        + isLocked: boolean
+    enum Role {
+        USER
+        ARTIST
+        ADMIN
     }
 
-    class TokenBlacklist {
-        + id: number
-        + token: string
+    enum ReportAction {
+        HIDE_SONG
+        WARN_USER
+        DISMISS
+    }
+
+    class User {
+        + id: string
+        + name: string
+        + email: string
+        + emailVerified: Date
+        + password: string
+        + role: Role
+        + imagePath: string
+        + createdAt: Date = now()
+        + updatedAt: Date
+        + isLocked: boolean = false
+    }
+
+    class Profile {
+        + id: string
+        + bio: string
+        + location: string
+        + userId: string
     }
 
     class Song {
-        + id: number
+        + id: string
         + title: string
-        + status: string
+        + description: string
+        + imagePath: string
+        + audioPath: string
+        + duration: number
+        + playCount: number
+        + waveform: json
+        + isPublic: boolean = false
+        + createdAt: Date = now()
+        + updatedAt: Date
+        + isBanned: boolean = false
+        + userId: string
     }
 
     class Playlist {
-        + id: number
-        + userId: number
+        + id: string
+        + title: string
+        + description: string
+        + isPublic: boolean = false
+        + createdAt: Date = now()
+        + updatedAt: Date
+        + userId: string
         + songs: Song[]
     }
 
     class Like {
-        + userId: number
-        + songId: number
+        + userId: string
+        + songId: string
+        + createdAt: Date = now()
+        + songId: string
     }
 
     class Comment {
-        + id: number
+        + id: string
         + content: string
-        + userId: number
-        + songId: number
+        + userId: string
+        + songId: string
+        + createdAt: Date = now()
+        + timestamp: number
+    }
+
+    class Follow {
+        + followerId: string
+        + followingId: string
+        + createdAt: Date = now()
     }
 
     class Repost {
         + userId: number
         + songId: number
+        + createdAt: Date = now()
     }
     
     class Share {
         + userId: number
         + songId: number
         + platform: string
+        + createdAt: Date = now()
     }
 
     class Report {
         + id: number
+        + message: string
         + reason: string
         + status: string
+        + action: ReportAction
+        + createdAt: Date = now()
+        + songId: string
+        + reporterId: string
     }
-    
+
+    class Notification {
+        + id: string
+        + userId: string
+        + message: string
+        + isRead: boolean = false
+        + createdAt: Date = now()
+    }
+
+    class TokenBlacklist {
+        + id: string
+        + token: string
+    }
+
     class PasswordResetToken {
+        + id: string
+        + userId: string
+        + expiresAt: Date
         + code: string
-        + userId: number
     }
 }
 
@@ -263,9 +328,9 @@ package "Shared" {
 
 ' Auth & User
 AuthController --> AuthService
-AuthService ..> UsersService : Use
+AuthService ..> UserService : Use
 AuthService ..> TokenBlacklist : Use (Logout)
-PasswordResetService ..> UsersService
+PasswordResetService ..> UserService
 PasswordResetService ..> MailService
 PasswordResetService ..> PasswordResetToken
 
@@ -308,16 +373,43 @@ ReportService ..> NotificationService : Use
 
 ' Profile
 ProfileController --> ProfileService
-ProfileController --> InteractionService : Use (Get Reposts)
+ProfileController --> InteractionService : Use (Get Reposts, Undo Repost)
 
 ' Entity Relations
-User "1" -- "0..*" Playlist
-User "1" -- "0..*" Song
-Playlist "0..*" -- "0..*" Song
-Song "1" -- "0..*" Like
-Song "1" -- "0..*" Comment
-Song "1" -- "0..*" Repost
-Song "1" -- "0..*" Share
-Song "1" -- "0..*" Report
+
+' 1. USER & PROFILE
+User "1" -- "1" Profile : has >
+
+' 2. FOLLOW
+User "1" -- "0..*" Follow : has followers (followerId) >
+User "1" -- "0..*" Follow : follows (followingId) >
+
+' 3. PLAYLIST & SONG
+User "1" -- "0..*" Playlist : owns >
+User "1" -- "0..*" Song : uploads (artist) >
+
+Playlist "0..*" o-- "0..*" Song : contains >
+
+' 4. INTERACTIONS (Like, Comment, Repost, Share)
+User "1" -- "0..*" Like : likes >
+Like "0..*" --> "1" Song : target >
+
+User "1" -- "0..*" Comment : writes >
+Comment "0..*" --> "1" Song : on >
+
+User "1" -- "0..*" Repost : reposts >
+Repost "0..*" --> "1" Song : target >
+
+User "1" -- "0..*" Share : shares >
+Share "0..*" --> "1" Song : target >
+
+' 5. REPORT SYSTEM
+User "1" -- "0..*" Report : creates (reporter) >
+Report "0..*" --> "1" Song : targets >
+User "1" -- "0..*" Report : processes (admin) >
+
+' 6. NOTIFICATION & TOKEN (Bổ sung)
+User "1" -- "0..*" Notification : receives >
+User "1" -- "0..*" TokenBlacklist : invalidates >
 
 @enduml

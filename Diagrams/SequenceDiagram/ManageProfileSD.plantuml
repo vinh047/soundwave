@@ -1,6 +1,6 @@
 @startuml Sequence Diagram - Quản Lý Hồ Sơ Cá Nhân 
 
-title Sơ Đồ Tuần Tự - Quản Lý Hồ Sơ Cá Nhân
+title Sơ Đồ Tuần Tự - Quản Lý Hồ Sơ Cá Nhân 
 
 actor "Người dùng" as User
 participant ":NextJS Client" as UI
@@ -17,7 +17,6 @@ activate UI
 UI -> Controller: getMyProfile(userProfileDto)
 activate Controller
 
-' Controller phối hợp dữ liệu (Orchestration)
 ' 1. Lấy thông tin cá nhân
 Controller -> ProfileService: getMyProfile(userId)
 activate ProfileService
@@ -45,41 +44,59 @@ deactivate Controller
 UI --> User: Hiển thị Info & Danh sách bài hát
 deactivate UI
 
-' === BƯỚC 3.3: HỦY ĐĂNG LẠI (Undo Repost) ===
-User -> UI: Nhấn "Hủy Đăng lại" (songId)
-activate UI
-UI -> Controller: undoRepost(songId, userProfileDto)
-activate Controller
+' === BƯỚC 3: NGƯỜI DÙNG LỰA CHỌN CHỨC NĂNG ===
+group Dòng sự kiện chính (Bước 3)
 
-' Gọi InteractionService để xử lý tương tác
-Controller -> InterService: removeRepost(userId, songId)
-activate InterService
+    ' [PHẦN MỚI THÊM]: 3.2 Sửa tài khoản
+    alt Trường hợp 3.2: Sửa tài khoản
+        User -> UI: Nhấn nút "Sửa tài khoản"
+        activate UI
+        
+        ' Client tự điều hướng sang trang Edit Account
+        UI -> UI: Router.push('/settings/account')
+        
+        note right of UI: Chuyển sang Usecase "Sửa tài khoản cá nhân"
+        deactivate UI
 
-' Check quyền sở hữu (Chỉ xóa nếu userId khớp)
-InterService -> DB: delete(Repost, { userId: userId, songId: songId })
-activate DB
-DB --> InterService: result { affected: 1 }
-deactivate DB
+    ' [PHẦN CŨ GIỮ NGUYÊN]: 3.4 Hủy đăng lại
+    else Trường hợp 3.4: Hủy Đăng lại (Undo Repost)
+        User -> UI: Nhấn "Hủy Đăng lại" (songId)
+        activate UI
+        UI -> Controller: undoRepost(songId, userProfileDto)
+        activate Controller
 
-alt Lỗi (affected == 0 hoặc Lỗi DB)
-    InterService --> Controller: Throw Error
-    deactivate InterService
-    Controller --> UI: {status: 500, error: "Failed"}
-    deactivate Controller
-    UI --> User: Thông báo thất bại
+        ' Gọi InteractionService
+        Controller -> InterService: removeRepost(userId, songId)
+        activate InterService
 
-else Thành công
-    activate InterService
-    InterService --> Controller: {success: true}
-    deactivate InterService
-    
-    ' === BƯỚC 4: LÀM MỚI (Client-side Trigger) ===
-    ' Client nhận success -> Tự bỏ bài hát khỏi list hoặc gọi lại API
-    Controller --> UI: {status: 200, success: true}
-    deactivate Controller
-    
-    UI -> UI: Xóa bài hát khỏi danh sách hiển thị
-    UI --> User: Cập nhật giao diện
-    deactivate UI
+        ' Check quyền sở hữu & Xóa
+        InterService -> DB: delete(Repost, { userId: userId, songId: songId })
+        activate DB
+        DB --> InterService: result { affected: 1 }
+        deactivate DB
+
+        alt Lỗi (affected == 0 hoặc Lỗi DB)
+            InterService --> Controller: Throw Error
+            deactivate InterService
+            Controller --> UI: {status: 500, error: "Failed"}
+            deactivate Controller
+            
+            ' [KHỚP ĐẶC TẢ 3.4.1]
+            UI --> User: Thông báo "Hành động thất bại, vui lòng thử lại"
+
+        else Thành công
+            activate InterService
+            InterService --> Controller: {success: true}
+            deactivate InterService
+            
+            ' === BƯỚC 4: LÀM MỚI ===
+            Controller --> UI: {status: 200, success: true}
+            deactivate Controller
+            
+            UI -> UI: Xóa bài hát khỏi danh sách hiển thị
+            UI --> User: Cập nhật giao diện
+            deactivate UI
+        end
+    end
 end
 @enduml

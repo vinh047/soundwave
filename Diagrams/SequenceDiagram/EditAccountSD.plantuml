@@ -1,0 +1,73 @@
+@startuml Sequence Diagram - Sửa Tài Khoản Cá Nhân
+
+title Sơ Đồ Tuần Tự - Sửa Tài Khoản Cá Nhân 
+
+actor "Người dùng" as User
+participant ":NextJS Client" as UI
+participant ":AccountController" as Controller
+participant ":UsersService" as Service
+participant ":UserRepository" as DB
+
+autonumber
+
+' === BƯỚC 1: HIỂN THỊ FORM ===
+' (Dòng sự kiện chính 1)
+User -> UI: Vào trang "Sửa tài khoản"
+activate UI
+' (Có thể có bước fetch thông tin email hiện tại, nhưng lược bỏ cho gọn)
+UI --> User: Hiển thị form (Email, Mật khẩu mới...)
+
+' === BƯỚC 2: GỬI DỮ LIỆU ===
+' (Dòng sự kiện chính 2)
+User -> UI: Nhập thông tin mới & Nhấn "Lưu"
+activate UI
+
+' Sử dụng UpdateAccountDto
+UI -> Controller: updateAccount(updateAccountDto)
+activate Controller
+
+' Lấy userId từ req.user
+Controller -> Service: updateAccount(userId, updateAccountDto)
+activate Service
+
+' === BƯỚC 3: XỬ LÝ LOGIC & DB ===
+' (Logic phụ: Nếu có đổi mật khẩu thì phải mã hóa trước khi lưu)
+opt Có thay đổi mật khẩu
+    Service -> Service: hashPassword(updateAccountDto.newPassword)
+end
+
+' TypeORM: update(criteria, partialEntity)
+Service -> DB: update({ id: userId }, updateData)
+activate DB
+DB --> Service: result { affected: N }
+deactivate DB
+
+' === PHÂN NHÁNH KẾT QUẢ (Main Flow vs Alternative Flow) ===
+alt Dòng sự kiện phụ 3.1: Cập nhật thất bại (affected == 0 hoặc Lỗi DB)
+    ' Có thể do lỗi kết nối hoặc Email bị trùng (Duplicate Entry)
+    Service --> Controller: Throw InternalServerError / ConflictException
+    deactivate Service
+    
+    Controller --> UI: {status: 500, error: "Update Failed"}
+    deactivate Controller
+    
+    ' [KHỚP ĐẶC TẢ 3.1]
+    UI --> User: Thông báo "Cập nhật tài khoản thất bại, vui lòng thử lại"
+    deactivate UI
+
+else Dòng sự kiện chính 3 & 4: Cập nhật thành công (affected > 0)
+    ' Đã activate Service ở trên
+    Service --> Controller: {success: true}
+    deactivate Service
+    
+    Controller --> UI: {status: 200, message: "Updated Successfully"}
+    deactivate Controller
+    
+    ' === BƯỚC 4: CHUYỂN GIAO DIỆN ===
+    ' Client tự điều hướng về trang quản lý hồ sơ
+    UI -> UI: Router.push('/manage-profile')
+    
+    UI --> User: Chuyển sang giao diện Quản lý hồ sơ cá nhân
+    deactivate UI
+end
+@enduml
