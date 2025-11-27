@@ -5,8 +5,8 @@ title Sơ Đồ Tuần Tự - Chia Sẻ Bài Hát
 actor "Người dùng" as User
 participant ":GiaoDienBaiHat" as SongUI
 participant ":GiaoDienChiaSe" as ShareUI
-participant ":ShareController" as Controller
-participant ":ShareService" as Service
+participant ":ShareController" as ShareController
+participant ":ShareService" as ShareService
 participant ":HttpService (Axios)" as ExternalAPI
 participant ":ShareRepository" as DB
 
@@ -22,21 +22,21 @@ deactivate SongUI
 
 ' === BƯỚC 2 & 3: LẤY DANH SÁCH BẠN BÈ/TK ===
 User -> ShareUI: Chọn nền tảng (VD: Facebook)
-ShareUI -> Controller: getFriends(req, platform)
-activate Controller
-Controller -> Service: getFriends(userId, platform)
-activate Service
+ShareUI -> ShareController: getFriends(req, platform)
+activate ShareController
+ShareController -> ShareService: getFriends(userId, platform)
+activate ShareService
 
 ' Gọi API bên thứ 3 để lấy danh sách bạn bè
-Service -> ExternalAPI: get('https://graph.facebook.com/me/friends...')
+ShareService -> ExternalAPI: get('https://graph.facebook.com/me/friends...')
 activate ExternalAPI
-ExternalAPI --> Service: {data: [FriendList]}
+ExternalAPI --> ShareService: {data: [FriendList]}
 deactivate ExternalAPI
 
-Service --> Controller: [FriendList]
-deactivate Service
-Controller --> ShareUI: {accounts: [...]}
-deactivate Controller
+ShareService --> ShareController: [FriendList]
+deactivate ShareService
+ShareController --> ShareUI: {accounts: [...]}
+deactivate ShareController
 ShareUI --> User: Hiển thị danh sách tài khoản để chọn
 
 ' === BƯỚC 4: THỰC HIỆN CHIA SẺ ===
@@ -44,38 +44,38 @@ User -> ShareUI: Chọn tài khoản & Nhấn "Chia sẻ"
 activate ShareUI
 
 ' Dùng DTO
-UI -> Controller: shareSong(req, shareSongDto)
-activate Controller
-Controller -> Service: shareSong(userId, shareSongDto)
-activate Service
+UI -> ShareController: shareSong(req, shareSongDto)
+activate ShareController
+ShareController -> ShareService: shareSong(userId, shareSongDto)
+activate ShareService
 
 ' === BƯỚC 5: GỌI API BÊN THỨ 3 ===
 alt Lỗi từ phía Nền tảng (VD: Token hết hạn / Mạng lỗi)
-    Service -> ExternalAPI: post('https://api.facebook.com/.../feed', body)
+    ShareService -> ExternalAPI: post('https://api.facebook.com/.../feed', body)
     activate ExternalAPI
-    ExternalAPI --> Service: Error (4xx, 5xx)
+    ExternalAPI --> ShareService: Error (4xx, 5xx)
     deactivate ExternalAPI
     
-    Service --> Controller: Throw ServiceUnavailableException
-    Controller --> ShareUI: {status: 500, error: "Platform Error"}
+    ShareService --> ShareController: Throw ServiceUnavailableException
+    ShareController --> ShareUI: {status: 500, error: "Platform Error"}
     ShareUI --> User: Thông báo "Chia sẻ thất bại"
 
 else Thành công
-    Service -> ExternalAPI: post(url, body)
+    ShareService -> ExternalAPI: post(url, body)
     activate ExternalAPI
-    ExternalAPI --> Service: {success: true, postId: 'xyz'}
+    ExternalAPI --> ShareService: {success: true, postId: 'xyz'}
     deactivate ExternalAPI
 
     ' === BƯỚC 6: GHI DB (Chỉ ghi khi API thành công) ===
-    Service -> DB: save({ userId, songId, platform, type: 'SHARE' })
+    ShareService -> DB: save({ userId, songId, platform, type: 'SHARE' })
     activate DB
-    DB --> Service: savedRecord
+    DB --> ShareService: savedRecord
     deactivate DB
     
-    Service --> Controller: {success: true}
-    deactivate Service
-    Controller --> ShareUI: {status: 200, message: "Shared"}
-    deactivate Controller
+    ShareService --> ShareController: {success: true}
+    deactivate ShareService
+    ShareController --> ShareUI: {status: 200, message: "Shared"}
+    deactivate ShareController
     
     ' === BƯỚC 7 & 8: THÔNG BÁO & ĐÓNG ===
     ShareUI --> User: Thông báo "Đã chia sẻ thành công"

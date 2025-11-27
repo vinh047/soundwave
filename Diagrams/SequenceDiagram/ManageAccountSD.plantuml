@@ -5,7 +5,7 @@ title Sơ Đồ Tuần Tự - Quản Lý Tài Khoản
 actor "Admin" as Admin
 participant ":NextJS Admin" as UI
 participant ":AccountController" as Controller
-participant ":UsersService" as Service
+participant ":UserService" as Service
 participant ":UserRepository" as DB
 
 autonumber

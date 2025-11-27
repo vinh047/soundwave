@@ -6,7 +6,7 @@ actor "Người dùng" as User
 participant ":NextJS Client" as UI
 participant ":ProfileController" as Controller
 participant ":ProfileService" as ProfileService
-participant ":InteractionService" as InterService
+participant ":InteractionService" as InteractionService
 participant ":ProfileRepository" as DB
 
 autonumber
@@ -28,14 +28,14 @@ ProfileService --> Controller: userEntity
 deactivate ProfileService
 
 ' 2. Lấy danh sách bài hát đã Repost
-Controller -> InterService: getRepostedSongs(userId)
-activate InterService
-InterService -> DB: find(Repost, { where: { userId }, relations: ['song'] })
+Controller -> InteractionService: getRepostedSongs(userId)
+activate InteractionService
+InteractionService -> DB: find(Repost, { where: { userId }, relations: ['song'] })
 activate DB
-DB --> InterService: repostList
+DB --> InteractionService: repostList
 deactivate DB
-InterService --> Controller: repostList
-deactivate InterService
+InteractionService --> Controller: repostList
+deactivate InteractionService
 
 ' Trả về UI
 Controller --> UI: {status: 200, user: userEntity, reposts: repostList}
@@ -46,6 +46,18 @@ deactivate UI
 
 ' === BƯỚC 3: NGƯỜI DÙNG LỰA CHỌN CHỨC NĂNG ===
 group Dòng sự kiện chính (Bước 3)
+
+    ' === KỊCH BẢN 3.1: Sửa hồ sơ cá nhân ===
+    User -> UI: Nhấn "Sửa hồ sơ"
+    activate UI
+    note right: Chuyển sang Usecase "Sửa hồ sơ cá nhân"
+    deactivate UI
+
+    ' === KỊCH BẢN 3.3: Xem danh sách và tìm kiếm bài hát yêu thích ===
+    User -> UI: Nhấn "Bài hát yêu thích"
+    activate UI
+    note right: Chuyển sang Usecase "Xem danh sách và tìm kiếm bài hát yêu thích"
+    deactivate UI
 
     ' [PHẦN MỚI THÊM]: 3.2 Sửa tài khoản
     alt Trường hợp 3.2: Sửa tài khoản
@@ -62,22 +74,22 @@ group Dòng sự kiện chính (Bước 3)
     else Trường hợp 3.4: Hủy Đăng lại (Undo Repost)
         User -> UI: Nhấn "Hủy Đăng lại" (songId)
         activate UI
-        UI -> Controller: undoRepost(songId, userProfileDto)
+        UI -> Controller: removeRepost(songId, userProfileDto)
         activate Controller
 
         ' Gọi InteractionService
-        Controller -> InterService: removeRepost(userId, songId)
-        activate InterService
+        Controller -> InteractionService: removeRepost(userId, songId)
+        activate InteractionService
 
         ' Check quyền sở hữu & Xóa
-        InterService -> DB: delete(Repost, { userId: userId, songId: songId })
+        InteractionService -> DB: delete(Repost, { userId: userId, songId: songId })
         activate DB
-        DB --> InterService: result { affected: 1 }
+        DB --> InteractionService: result { affected: 1 }
         deactivate DB
 
         alt Lỗi (affected == 0 hoặc Lỗi DB)
-            InterService --> Controller: Throw Error
-            deactivate InterService
+            InteractionService --> Controller: Throw Error
+            deactivate InteractionService
             Controller --> UI: {status: 500, error: "Failed"}
             deactivate Controller
             
@@ -85,9 +97,9 @@ group Dòng sự kiện chính (Bước 3)
             UI --> User: Thông báo "Hành động thất bại, vui lòng thử lại"
 
         else Thành công
-            activate InterService
-            InterService --> Controller: {success: true}
-            deactivate InterService
+            activate InteractionService
+            InteractionService --> Controller: {success: true}
+            deactivate InteractionService
             
             ' === BƯỚC 4: LÀM MỚI ===
             Controller --> UI: {status: 200, success: true}

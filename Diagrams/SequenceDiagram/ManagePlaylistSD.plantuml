@@ -29,22 +29,34 @@ Service --> Controller: {data: [...]}
 deactivate Service
 Controller --> UI: {status: 200, data: [...]}
 deactivate Controller
-UI --> User: Hiển thị danh sách & nút Xóa
+UI --> User: Hiển thị danh sách & các nút chức năng
 deactivate UI
+
+' === KỊCH BẢN 3.2: Tạo Playlist cá nhân cá nhân ===
+    User -> UI: Nhấn "Tạo Playlist"
+    activate UI
+    note right: Chuyển sang Usecase "Tạo Playlist cá nhân"
+    deactivate UI
+
+' === KỊCH BẢN 3.2: Sửa Playlist cá nhân ===
+    User -> UI: Chọn 1 Playlist và Nhấn "Sửa Playlist"
+    activate UI
+    note right: Chuyển sang Usecase "Sửa Playlist cá nhân"
+    deactivate UI
 
 ' === BƯỚC 3.3: XÓA PLAYLIST ===
 User -> UI: Chọn Playlist & Nhấn "Xóa"
 activate UI
-UI -> Controller: delete(id, playlistsDto)
+UI -> Controller: deletePlaylist(req, playlistId)
 activate Controller
 
 ' Luôn truyền userId để check quyền
-Controller -> Service: remove(id, userId)
+Controller -> Service: deletePlaylist(userId, playlistId)
 activate Service
 
 ' === XỬ LÝ XÓA AN TOÀN (Check Owner) ===
 ' Cách 1: Dùng delete với điều kiện userId (Nhanh gọn)
-Service -> DB: delete({ id: id, userId: userId })
+Service -> DB: delete({ id: playlistId, userId: userId })
 activate DB
 DB --> Service: deleteResult { affected: 1 }
 deactivate DB

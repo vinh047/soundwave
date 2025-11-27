@@ -4,9 +4,9 @@ title Sơ Đồ Tuần Tự - Xem Danh Sách Và Tìm Kiếm Nghệ Sĩ
 
 actor "Người dùng" as User
 participant ":NextJS Client" as UI
-participant ":SearchController" as Controller
-participant ":SearchService" as Service
-participant ":ArtistRepository" as DB
+participant ":UserController" as Controller
+participant ":UserService" as Service
+participant ":UserRepository" as DB
 
 autonumber
 

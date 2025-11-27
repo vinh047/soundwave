@@ -14,7 +14,7 @@ autonumber
 ' === BƯỚC 1: BẮT ĐẦU PHÁT NHẠC ===
 User -> UI: Chọn bài hát (songId)
 activate UI
-UI -> Controller: playSong(songId)
+UI -> Controller: getSongData(songId)
 activate Controller
 
 ' Controller gọi Service xử lý trọn gói
@@ -66,9 +66,9 @@ group Tương tác Player
         
         alt Chọn Next
             User -> UI: Nhấn "Bài tiếp theo"
-            UI -> Controller: playNextSong(currentId, playlistId)
+            UI -> Controller: playNextSong(currentId)
             activate Controller
-            Controller -> Service: playNextSong(currentId, playlistId)
+            Controller -> Service: playNextSong(currentId)
             activate Service
             
             ' Logic tìm bài kế tiếp (VD: bài có ID lớn hơn hoặc order lớn hơn)
@@ -79,9 +79,9 @@ group Tương tác Player
             
         else Chọn Previous
             User -> UI: Nhấn "Bài trước"
-            UI -> Controller: playPreviousSong(currentId, playlistId)
+            UI -> Controller: playPreviousSong(currentId)
             ' Controller đã activate từ nhánh Next/Prev chung
-            Controller -> Service: playPreviousSong(currentId, playlistId)
+            Controller -> Service: playPreviousSong(currentId)
             activate Service
             
             ' Logic tìm bài trước đó

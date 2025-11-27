@@ -4,8 +4,8 @@ title Sơ Đồ Tuần Tự - Xem Danh Sách Và Tìm Kiếm Bài Hát
 
 actor "Người dùng" as User
 participant ":NextJS Client" as UI
-participant ":SearchController" as Controller
-participant ":SearchService" as Service
+participant ":SongController" as Controller
+participant ":SongService" as Service
 participant ":SongRepository" as DB
 
 autonumber
@@ -49,7 +49,7 @@ activate UI
 ' NestJS: Dùng Query Param (?q=keyword)
 UI -> Controller: searchSongs(keyword)
 activate Controller
-Controller -> Service: search(keyword)
+Controller -> Service: searchSongs(keyword)
 activate Service
 
 ' TypeORM: Tìm kiếm gần đúng (Like)

@@ -36,9 +36,9 @@ deactivate UI
 ' === BƯỚC 2: TÌM KIẾM TRONG YÊU THÍCH ===
 User -> UI: Nhập từ khóa (VD: "Mưa")
 activate UI
-UI -> Controller: searchFavorites(favoriteSongsDto, keyword)
+UI -> Controller: searchFavoriteSongs(req, keyword)
 activate Controller
-Controller -> Service: searchFavorites(userId, keyword)
+Controller -> Service: searchFavoriteSongs(userId, keyword)
 activate Service
 
 ' Query phức tạp hơn một chút: Tìm Like của User này MÀ Song Title có chứa Keyword
@@ -58,7 +58,7 @@ deactivate UI
 User -> UI: Nhấn "Hủy Thích" (songId)
 activate UI
 
-UI -> Controller: unlikeSong(songId, favoriteSongsDto)
+UI -> Controller: unlikeSong(req, songId)
 activate Controller
 Controller -> Service: unlikeSong(userId, songId)
 activate Service

@@ -63,7 +63,7 @@ group Dòng sự kiện: Chọn tương tác
     ' === KỊCH BẢN 2.2: BÌNH LUẬN ===
     User -> UI: Nhập comment & Nhấn Gửi
     activate UI
-    UI -> Controller: addComment(createCommentDto)
+    UI -> Controller: addComment(req, createCommentDto)
     activate Controller
     Controller -> Service: addComment(userId, createCommentDto)
     activate Service
@@ -94,9 +94,9 @@ group Dòng sự kiện: Chọn tương tác
     ' === KỊCH BẢN 2.4: ĐĂNG LẠI (Repost) ===
     User -> UI: Nhấn "Đăng lại"
     activate UI
-    UI -> Controller: repostSong(repostSongDto)
+    UI -> Controller: repostSong(req, repostSongDto)
     activate Controller
-    Controller -> Service: repost(userId, songId)
+    Controller -> Service: repostSong(userId, songId)
     activate Service
     
     Service -> DB: save({ userId, songId, type: 'REPOST' })

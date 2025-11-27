@@ -4,9 +4,9 @@ title Sơ Đồ Tuần Tự - Đăng Ký
 
 actor "Người dùng" as User
 participant ":NextJS Client" as UI
-participant ":AuthController" as Controller
+participant ":AuthController" as AuthController
 participant ":AuthService" as AuthService
-participant ":UsersService" as UsersService
+participant ":UserService" as UserService
 participant ":UserRepository" as DB
 
 autonumber
@@ -16,37 +16,37 @@ User -> UI: Nhập (email, pass, role) & Nhấn "Đăng ký"
 activate UI
 
 ' NestJS dùng DTO để hứng và validate dữ liệu
-UI -> Controller: register(registerDto)
-activate Controller
+UI -> AuthController: register(registerDto)
+activate AuthController
 
 ' === BƯỚC 3: XỬ LÝ LOGIC ===
 
 ' --- CHECK 1 & 3: VALIDATION (Email format & Pass strength) ---
-' Trong NestJS, việc này thường được xử lý tự động bởi DTO + class-validator trước khi vào Controller
+' Trong NestJS, việc này thường được xử lý tự động bởi DTO + class-validator trước khi vào AuthController
 ' Nhưng ta vẽ ở đây để khớp với Use case 3.1 và 3.3
-note right of Controller: ValidationPipe kiểm tra format Email và độ mạnh Password
+note right of AuthController: ValidationPipe kiểm tra format Email và độ mạnh Password
 
 alt 3.1 & 3.3: Dữ liệu không hợp lệ (Format sai / Pass yếu)
-    Controller --> UI: {status: 400, error: "Bad Request (Validation Failed)"}
+    AuthController --> UI: {status: 400, error: "Bad Request (Validation Failed)"}
     UI --> User: Thông báo lỗi nhập liệu
 
 else Dữ liệu hợp lệ
-    Controller -> AuthService: register(registerDto)
+    AuthController -> AuthService: register(registerDto)
     activate AuthService
 
     ' --- CHECK 2: TÀI KHOẢN TỒN TẠI (Use case 3.2) ---
-    AuthService -> UsersService: findOneByEmail(email)
-    activate UsersService
-    UsersService -> DB: findOne({ where: { email } })
+    AuthService -> UserService: findOneByEmail(email)
+    activate UserService
+    UserService -> DB: findOne({ where: { email } })
     activate DB
-    DB --> UsersService: existingUser
+    DB --> UserService: existingUser
     deactivate DB
-    UsersService --> AuthService: existingUser
-    deactivate UsersService
+    UserService --> AuthService: existingUser
+    deactivate UserService
     
     alt 3.2: Tài khoản đã tồn tại (existingUser != null)
-        AuthService --> Controller: Throw ConflictException
-        Controller --> UI: {status: 409, error: "Email already exists"}
+        AuthService --> AuthController: Throw ConflictException
+        AuthController --> UI: {status: 409, error: "Email already exists"}
         UI --> User: Thông báo "Tài khoản đã tồn tại"
         
     else Tài khoản chưa tồn tại (Main Flow)
@@ -54,21 +54,21 @@ else Dữ liệu hợp lệ
         AuthService -> AuthService: hashPassword(password)
         
         ' --- BƯỚC 4: GHI DB ---
-        AuthService -> UsersService: create(userEntity)
-        activate UsersService
-        UsersService -> DB: save(userEntity)
+        AuthService -> UserService: createUser(userEntity)
+        activate UserService
+        UserService -> DB: save(userEntity)
         activate DB
-        DB --> UsersService: newUser
+        DB --> UserService: newUser
         deactivate DB
         
-        UsersService --> AuthService: newUser
-        deactivate UsersService
+        UserService --> AuthService: newUser
+        deactivate UserService
         
-        AuthService --> Controller: {success: true}
+        AuthService --> AuthController: {success: true}
         deactivate AuthService
         
-        Controller --> UI: {status: 201, message: "Registered Successfully"}
-        deactivate Controller
+        AuthController --> UI: {status: 201, message: "Registered Successfully"}
+        deactivate AuthController
         
         ' --- BƯỚC 5: CHUYỂN TRANG ---
         UI --> User: Thông báo thành công

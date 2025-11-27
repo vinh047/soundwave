@@ -36,13 +36,13 @@ Admin -> UI: Chọn báo cáo & Hành động (Ẩn/Cảnh cáo/Bỏ qua)
 activate UI
 
 ' DTO chứa reportId và action (HIDE_SONG | WARN_USER | DISMISS)
-UI -> Controller: processReport(processReportDto)
+UI -> Controller: processReport(reportId, reportDTO)
 activate Controller
-Controller -> Service: processReport(id, action)
+Controller -> Service: processReport(reportId, reportDTO)
 activate Service
 
 ' === BƯỚC 5: CẬP NHẬT TRẠNG THÁI REPORT (Bước chung) ===
-Service -> DB: update(id, { status: 'PROCESSED' })
+Service -> DB: update(reportId, { status: 'PROCESSED' })
 activate DB
 DB --> Service: updateResult
 deactivate DB
@@ -54,19 +54,19 @@ alt 5.1: Cập nhật thất bại
 else Cập nhật thành công
     ' === BƯỚC 6: THỰC HIỆN HÀNH ĐỘNG (Rẽ nhánh) ===
     
-    alt Action == HIDE_SONG
+    alt reportDTO.action == HIDE_SONG
         Service -> ExtService: SongService.hideSong(songId)
         activate ExtService
         ExtService --> Service: Result
         deactivate ExtService
         
-    else Action == WARN_USER
-        Service -> ExtService: UsersService.warnUser(userId)
+    else reportDTO.action == WARN_USER
+        Service -> ExtService: UserService.warnUser(userId)
         activate ExtService
         ExtService --> Service: Result
         deactivate ExtService
         
-    else Action == DISMISS
+    else reportDTO.action == DISMISS
         note right of Service: Không cần gọi Service nào khác
     end
 
@@ -76,7 +76,7 @@ else Cập nhật thành công
         UI --> Admin: Thông báo "Xử lý thất bại"
     else Hành động thành công
         ' === BƯỚC 8: GỬI THÔNG BÁO (Bước chung) ===
-        Service -> ExtService: NotificationService.send(userId, msg)
+        Service -> ExtService: NotificationService.sendNotification(userId, msg)
         activate ExtService
         deactivate ExtService
 

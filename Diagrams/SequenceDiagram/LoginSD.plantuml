@@ -6,7 +6,7 @@ actor "Người dùng" as User
 participant ":NextJS Client" as UI
 participant ":AuthController" as Controller
 participant ":AuthService" as AuthService
-participant ":UsersService" as UserService
+participant ":UserService" as UserService
 participant ":UserRepository" as DB
 
 autonumber
