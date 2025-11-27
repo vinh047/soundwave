@@ -6,7 +6,7 @@ export default async function TracksPage({
 }: {
   searchParams: Promise<Record<string, string>>;
 }) {
-  const params = await searchParams; // 👈 phải await trước khi dùng
+  const params = await searchParams; 
 
   const initTracks = await trackApi.getTracks({
     page: Number(params.page) || 1,

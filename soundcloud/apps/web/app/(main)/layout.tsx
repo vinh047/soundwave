@@ -1,6 +1,6 @@
 // app/home/layout.tsx
 import { GlobalPlayer } from "@/components/player/GlobalPlayer";
-import { Navbar } from "./_components/navbar";
+import { Navbar } from "./home/_components/navbar";
 
 export default function HomeLayout({
   children,
