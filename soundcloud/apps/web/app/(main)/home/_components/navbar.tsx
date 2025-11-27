@@ -345,7 +345,7 @@ export function Navbar() {
 
             {/* Nav Links - Desktop */}
             <div className="hidden md:flex items-center h-full">
-              <NavLink href="/">Home</NavLink>
+              <NavLink href="/home">Home</NavLink>
               <NavLink href="/feed">Feed</NavLink>
               <NavLink href="/library">Library</NavLink>
               <NavLink href="/upload">Upload</NavLink>

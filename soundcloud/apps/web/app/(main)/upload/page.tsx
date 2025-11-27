@@ -8,8 +8,8 @@ import Image from "next/image";
 import { Button } from "@/components/ui2/Button";
 import { Input } from "@/components/ui2/Input";
 import { Textarea } from "@/components/ui2/Textarea";
-import { Card } from "../../components/ui2/Card";
-import { Toggle } from "../../components/ui2/Toggle";
+import { Card } from "../../../components/ui2/Card";
+import { Toggle } from "../../../components/ui2/Toggle";
 
 export default function UploadPage() {
   const [title, setTitle] = useState("");
