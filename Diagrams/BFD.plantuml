@@ -3,7 +3,12 @@ title Sơ đồ phân rã chức năng (BFD) - Hệ thống nghe nhạc trực t
 
 *[#lightgreen] **Hệ thống Nghe nhạc Trực tuyến**
 ** Lắng nghe & Khám phá
-*** Xem danh sách và tìm kiếm bài hát
+*** Khám phá bài hát
+**** Xem danh sách và tìm kiếm bài hát
+**** Thích bài hát
+**** Bình luận bài hát
+**** Chia sẻ bài hát
+**** Đăng lại bài hát
 *** Nghe nhạc
 ** Quản lý Tài khoản
 *** Đăng ký
@@ -14,7 +19,6 @@ title Sơ đồ phân rã chức năng (BFD) - Hệ thống nghe nhạc trực t
 *** Quản lý hồ sơ cá nhân
 **** Xem hồ sơ cá nhân
 **** Sửa hồ sơ cá nhân
-**** Sửa tài khoản cá nhân
 **** Xem danh sách và tìm kiếm bài hát yêu thích
 *** Quản lý Playlist cá nhân
 **** Xem danh sách Playlist cá nhân
@@ -25,20 +29,17 @@ title Sơ đồ phân rã chức năng (BFD) - Hệ thống nghe nhạc trực t
 ***** Sửa thông tin Playlist
 ***** Thêm bài hát
 ***** Xóa bài hát
-*** Quản lý tương tác bài hát
-**** Thích bài hát
-**** Bình luận bài hát
-**** Chia sẻ bài hát
-**** Đăng lại bài hát
-*** Theo dõi Nghệ sĩ
-**** Xem và tìm kiếm danh sách nghệ sĩ
-*** Báo cáo vi phạm
-** Chức năng Nghệ sĩ
-*** Quản lý bài hát cá nhân nghệ sĩ
+*** Quản lý bài hát cá nhân 
 **** Xem danh sách bài hát đã tải lên
 **** Tải lên bài hát
 **** Sửa thông tin bài hát
 **** Ẩn bài hát
+*** Khám phá nghệ sĩ
+**** Xem và tìm kiếm danh sách nghệ sĩ
+**** Theo dõi Nghệ sĩ
+*** Báo cáo vi phạm
+*** Cài đặt
+**** Sửa tài khoản cá nhân
 ** Chức năng Quản trị
 *** Quản lý tài khoản người dùng
 **** Xem danh sách và tìm kiếm tài khoản người dùng
