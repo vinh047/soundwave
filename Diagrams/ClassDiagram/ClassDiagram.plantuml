@@ -138,11 +138,11 @@ package "Database Entities" {
 ' --- RELATIONSHIPS ---
 
 ' 1. USER & AUTH
-User "1" -- "1" Profile : has >
+User "1" -- "1" Profile : có >
 
 ' 2. FOLLOW
 User "1" -- "0..*" Follow : theo dõi >
-User "1" -- "0..*" Follow : theo dõi >
+User "1" -- "0..*" Follow : được theo dõi bởi <
 
 ' 3. PLAYLIST & SONG
 User "1" -- "0..*" Playlist : tạo >
