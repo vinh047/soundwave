@@ -1,0 +1,100 @@
+@startuml Sequence Diagram - Quản Lý Chi Tiết Playlist (Thông điệp)
+
+title Sơ Đồ Tuần Tự - Quản Lý Chi Tiết Playlist Cá Nhân
+
+actor "Người dùng" as User
+participant ":Giao diện" as UI
+participant ":Controller" as Controller
+participant ":Service" as Service
+participant ":Database" as DB
+
+autonumber
+
+' === BƯỚC 1: HIỂN THỊ CHI TIẾT (Dòng sự kiện chính 1) ===
+User -> UI: Chọn một Playlist để xem chi tiết
+activate UI
+
+UI -> Controller: Gửi yêu cầu lấy thông tin và danh sách bài hát của Playlist
+activate Controller
+Controller -> Service: Yêu cầu truy xuất dữ liệu chi tiết
+activate Service
+
+Service -> DB: Truy vấn thông tin Playlist và các bài hát bên trong
+activate DB
+DB --> Service: Trả về dữ liệu Playlist và danh sách bài hát
+deactivate DB
+
+Service --> Controller: Dữ liệu chi tiết Playlist
+deactivate Service
+Controller --> UI: Hiển thị dữ liệu lên màn hình
+deactivate Controller
+
+UI --> User: Hiển thị danh sách bài hát và các nút chức năng
+deactivate UI
+
+' === BƯỚC 2: NGƯỜI DÙNG CHỌN CHỨC NĂNG ===
+group Người dùng chọn 1 trong 3 chức năng
+
+    ' --- Kịch bản 2.1: Sửa thông tin Playlist ---
+    alt Trường hợp: Chọn Sửa thông tin Playlist
+        User -> UI: Nhấn nút "Sửa thông tin"
+        activate UI
+        UI --> User: Chuyển hướng sang Use Case "Sửa thông tin Playlist"
+        note right: Xem chi tiết tại Sequence Diagram\n[Sửa thông tin Playlist]
+        deactivate UI
+
+    ' --- Kịch bản 2.2: Thêm bài hát vào Playlist ---
+    else Trường hợp: Chọn Thêm bài hát
+        User -> UI: Nhấn nút "Thêm bài hát"
+        activate UI
+        UI --> User: Chuyển hướng sang Use Case "Thêm bài hát vào Playlist"
+        note right: Xem chi tiết tại Sequence Diagram\n[Thêm bài hát vào Playlist]
+        deactivate UI
+
+    ' --- Kịch bản 2.3: Xóa bài hát khỏi Playlist ---
+    else Trường hợp: Chọn Xóa bài hát khỏi Playlist
+        User -> UI: Chọn một bài hát và nhấn nút "Xóa"
+        activate UI
+        
+        UI -> Controller: Gửi yêu cầu xóa bài hát khỏi Playlist này
+        activate Controller
+        
+        Controller -> Service: Kiểm tra quyền sở hữu và xử lý xóa
+        activate Service
+        
+        ' Bước 2.3 (Ghi nhận vào CSDL)
+        Service -> DB: Yêu cầu xóa liên kết bài hát khỏi Playlist
+        activate DB
+        
+        ' --- Dòng sự kiện phụ 2.3.1 ---
+        alt Xóa thất bại (Lỗi hệ thống)
+            DB --> Service: Phản hồi lỗi (Không thể xóa dữ liệu)
+            Service --> Controller: Báo lỗi xử lý
+            Controller --> UI: Phản hồi trạng thái lỗi
+            UI --> User: Thông báo "Xoá bài hát khỏi Playlist thất bại, vui lòng thử lại"
+        
+        ' --- Dòng sự kiện chính 3 (Cập nhật thành công) ---
+        else Xóa thành công
+            DB --> Service: Xác nhận đã xóa thành công
+            deactivate DB
+            
+            Service --> Controller: Xác nhận thao tác hoàn tất
+            deactivate Service
+            
+            ' Bước 3: Hệ thống cập nhật Playlist
+            Controller --> UI: Yêu cầu làm mới giao diện
+            deactivate Controller
+            
+            ' Tự động tải lại danh sách
+            UI -> Controller: Gửi yêu cầu lấy lại danh sách bài hát mới
+            activate Controller
+            note right: (Hệ thống tự động tải lại để\nngười dùng thấy bài hát đã biến mất)
+            Controller --> UI: Danh sách bài hát mới (đã cập nhật)
+            deactivate Controller
+            
+            UI --> User: Hiển thị danh sách bài hát đã cập nhật
+            deactivate UI
+        end
+    end
+end
+@enduml

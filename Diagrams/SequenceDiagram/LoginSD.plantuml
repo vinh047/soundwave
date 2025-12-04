@@ -1,82 +1,79 @@
-@startuml Sequence Diagram - Đăng Nhập 
+@startuml Sequence Diagram - Đăng Nhập (Thông điệp)
 
-title Sơ Đồ Tuần Tự - Đăng Nhập 
+title Sơ Đồ Tuần Tự - Đăng Nhập
 
 actor "Người dùng" as User
-participant ":NextJS Client" as UI
-participant ":AuthController" as Controller
-participant ":AuthService" as AuthService
-participant ":UserService" as UserService
-participant ":UserRepository" as DB
+participant ":Giao diện" as UI
+participant ":Controller" as Controller
+participant ":Service" as Service
+participant ":Database" as DB
 
 autonumber
 
-' === BƯỚC 1 & 2: GỬI YÊU CẦU ===
-User -> UI: Nhập (email, pass) & Nhấn "Đăng nhập"
+' === BƯỚC 1: HIỂN THỊ GIAO DIỆN ===
+User -> UI: Yêu cầu mở trang "Đăng nhập"
+activate UI
+UI --> User: Hiển thị biểu mẫu (Email, Mật khẩu)
+deactivate UI
+
+' === BƯỚC 2: NGƯỜI DÙNG NHẬP LIỆU ===
+User -> UI: Nhập Email, Mật khẩu và nhấn nút "Đăng nhập"
 activate UI
 
-' NestJS dùng DTO để hứng dữ liệu
-UI -> Controller: login(loginDto)
+UI -> Controller: Gửi thông tin đăng nhập
 activate Controller
 
-' === BƯỚC 3: XỬ LÝ LOGIC ===
+' === BƯỚC 3: KIỂM TRA LOGIC (Các dòng sự kiện) ===
 
-' --- CHECK 1: ĐỊNH DẠNG EMAIL (Validation Pipe) ---
-Controller -> Controller: ValidationPipe(loginDto.email)
-alt 3.1: Email không hợp lệ (Validation Failed)
-    Controller --> UI: {status: 400, error: "Bad Request - Invalid Email"}
-    UI --> User: Thông báo "Email không hợp lệ"
+' --- Kiểm tra 3.1: Định dạng Email ---
+Controller -> Controller: Kiểm tra tính hợp lệ của định dạng Email
 
-else Format OK
-    ' Controller gọi AuthService để xử lý nghiệp vụ
-    Controller -> AuthService: validateUser(email, pass)
-    activate AuthService
+alt Dòng sự kiện phụ 3.1: Email không hợp lệ
+    Controller --> UI: Phản hồi lỗi định dạng
+    UI --> User: Thông báo "Email không hợp lệ, vui lòng nhập lại"
 
-    ' --- CHECK 2: TÌM USER (Gọi sang UserService) ---
-    AuthService -> UserService: findOneByEmail(email)
-    activate UserService
+else Định dạng Email hợp lệ (Tiếp tục xử lý)
+    Controller -> Service: Chuyển tiếp yêu cầu xác thực
+    activate Service
     
-    ' Service gọi Repository (TypeORM)
-    UserService -> DB: findOne({ where: { email } })
+    ' --- Kiểm tra 3.3: Tài khoản tồn tại ---
+    Service -> DB: Truy vấn tìm tài khoản theo Email
     activate DB
-    DB --> UserService: userEntity
+    DB --> Service: Kết quả truy vấn (Có hoặc Không)
     deactivate DB
     
-    UserService --> AuthService: userEntity
-    deactivate UserService
+    alt Dòng sự kiện phụ 3.3: Tài khoản không tồn tại
+        Service --> Controller: Báo lỗi không tìm thấy tài khoản
+        Controller --> UI: Phản hồi trạng thái lỗi
+        UI --> User: Thông báo "Tài khoản không tồn tại, vui lòng đăng ký"
+        
+    else Tài khoản tồn tại (Tiếp tục kiểm tra mật khẩu)
     
-    alt 3.3: Tài khoản không tồn tại (userEntity == null)
-        AuthService --> Controller: Throw NotFoundException
-        deactivate AuthService
-        Controller --> UI: {status: 404, error: "User Not Found"}
-        UI --> User: Thông báo "Tài khoản không tồn tại"
+        ' --- Kiểm tra 3.2: Mật khẩu đúng/sai ---
+        Service -> Service: So sánh mật khẩu nhập vào và mật khẩu trong hệ thống
         
-    else User Tồn tại
-        activate AuthService
-        ' --- CHECK 3: MẬT KHẨU ---
-        ' Sử dụng bcrypt để so sánh
-        AuthService -> AuthService: verifyPassword(pass, user.hash)
-        
-        alt 3.2: Sai mật khẩu
-            AuthService --> Controller: Throw UnauthorizedException
-            Controller --> UI: {status: 401, error: "Wrong Password"}
-            UI --> User: Thông báo "Sai mật khẩu"
+        alt Dòng sự kiện phụ 3.2: Sai mật khẩu
+            Service --> Controller: Báo lỗi sai thông tin xác thực
+            Controller --> UI: Phản hồi trạng thái lỗi
+            UI --> User: Thông báo "Sai email hoặc mật khẩu, vui lòng nhập lại"
             
-        else Đăng nhập thành công
-            ' --- TẠO TOKEN (JWT) ---
-            AuthService -> AuthService: generateJwtToken(user)
+        else Đăng nhập thành công (Dòng sự kiện chính 4)
+            Service -> Service: Tạo phiên làm việc (Session/Token)
             
-            AuthService --> Controller: { accessToken: "eyJh..." }
-            deactivate AuthService
+            Service --> Controller: Xác nhận đăng nhập thành công
+            deactivate Service
             
-            Controller --> UI: {status: 200, accessToken: "..."}
+            Controller --> UI: Phản hồi thành công
             deactivate Controller
             
-            ' NextJS lưu token và chuyển trang
-            UI -> UI: Lưu Token (Cookies/Storage)
-            UI --> User: Thông báo thành công & Chuyển trang
+            ' === BƯỚC 4 & 5: THÔNG BÁO & CHUYỂN TRANG ===
+            UI --> User: Thông báo "Đăng nhập thành công"
+            
+            UI -> UI: Chuyển hướng sang trang chủ (Đã đăng nhập)
+            UI --> User: Hiển thị giao diện người dùng đã đăng nhập
             deactivate UI
         end
     end
 end
+
 @enduml

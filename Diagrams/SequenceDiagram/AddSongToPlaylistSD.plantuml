@@ -1,67 +1,94 @@
-@startuml Sequence Diagram - Thêm Bài Hát Vào Playlist Cá Nhân
+@startuml Sequence Diagram - Thêm Bài Hát (Thông điệp)
 
-title Sơ Đồ Tuần Tự - Thêm Bài Hát Vào Playlist Cá Nhân 
+title Sơ Đồ Tuần Tự - Thêm Bài Hát Vào Playlist
 
 actor "Người dùng" as User
-participant ":NextJS Client" as UI
-participant ":PlaylistController" as Controller
-participant ":PlaylistService" as Service
-participant ":PlaylistRepository" as DB
+participant ":Giao diện" as UI_Edit
+participant ":Form\nThêm bài hát" as UI_Form
+participant ":Controller" as Controller
+participant ":Service" as Service
+participant ":Database" as DB
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ DANH SÁCH ===
-UI --> User: Hiển thị giao diện & danh sách bài hát
+' === BƯỚC 1: HIỂN THỊ FORM (Dòng sự kiện chính 1) ===
+User -> UI_Edit: Nhấn nút "Thêm bài hát"
+activate UI_Edit
 
-' === BƯỚC 2: GỬI YÊU CẦU ===
-User -> UI: Chọn (songId) & Nhấn "Thêm"
-activate UI
-
-' Request: POST /playlists/:id/songs (Body: { songId: 123 })
-UI -> Controller: addSongToPlaylist(req, playlistId, addSongDto)
+UI_Edit -> Controller: Yêu cầu lấy danh sách tất cả bài hát trong hệ thống
 activate Controller
-
-' Lấy userId từ req.user
-Controller -> Service: addSongToPlaylist(userId, playlistId, addSongDto)
+Controller -> Service: Truy xuất danh sách bài hát khả dụng
 activate Service
 
-' === BƯỚC 3: CHECK QUYỀN SỞ HỮU & LẤY PLAYLIST ===
-' Tìm playlist của user này để đảm bảo quyền sở hữu (Owner Check)
-Service -> DB: findOne({ where: { id: playlistId, userId: userId }, relations: ['songs'] })
+Service -> DB: Truy vấn danh sách bài hát
 activate DB
-DB --> Service: playlistEntity
+DB --> Service: Trả về danh sách
 deactivate DB
 
-alt Playlist không tìm thấy (hoặc không phải chủ sở hữu)
-    Service --> Controller: Throw NotFoundException
-    deactivate Service
-    Controller --> UI: {status: 404, error: "Playlist not found or access denied"}
-    deactivate Controller
-    
-    UI --> User: Thông báo lỗi
-    deactivate UI
+Service --> Controller: Dữ liệu danh sách bài hát
+deactivate Service
+Controller --> UI_Form: Hiển thị Biểu mẫu kèm danh sách
+deactivate Controller
+activate UI_Form
 
-else Playlist Hợp lệ
-    ' === BƯỚC 4: THỰC HIỆN THÊM ===
-    ' Logic: Lấy songId từ DTO, push vào mảng songs của playlist
-    note right of Service: playlist.songs.push({ id: addSongDto.songId })
+UI_Form --> User: Hiển thị Form danh sách bài hát để chọn
+deactivate UI_Edit
+
+' === BƯỚC 2: NGƯỜI DÙNG CHỌN VÀ THÊM (Dòng sự kiện chính 2) ===
+User -> UI_Form: Chọn một bài hát và nhấn nút "Thêm"
+activate UI_Form
+
+UI_Form -> Controller: Gửi yêu cầu thêm bài hát (ID Playlist, ID Bài hát)
+activate Controller
+Controller -> Service: Chuyển tiếp yêu cầu xử lý
+activate Service
+
+' === BƯỚC 3: GHI NHẬN VÀO CSDL (Dòng sự kiện chính 3) ===
+' (Bước kiểm tra quyền sở hữu ngầm định trong Service)
+Service -> DB: Kiểm tra quyền sở hữu Playlist
+activate DB
+DB --> Service: Xác nhận hợp lệ
+deactivate DB
+
+Service -> DB: Yêu cầu lưu liên kết Bài hát vào Playlist
+activate DB
+
+alt Dòng sự kiện phụ 3.1: Ghi nhận thất bại
+    DB --> Service: Phản hồi lỗi (Lỗi kết nối hoặc Bài hát đã tồn tại)
+    Service --> Controller: Báo lỗi xử lý
+    Controller --> UI_Form: Phản hồi trạng thái lỗi
     
-    Service -> DB: save(playlistEntity)
-    activate DB
-    DB --> Service: updatedPlaylist
+    UI_Form --> User: Thông báo "Thêm bài hát vào Playlist thất bại, vui lòng thử lại"
+    ' (Form vẫn mở để người dùng thử lại hoặc chọn bài khác)
+
+else Ghi nhận thành công (Dòng sự kiện chính 3 & 4)
+    DB --> Service: Xác nhận đã lưu thành công
     deactivate DB
     
-    Service --> Controller: {success: true}
+    Service --> Controller: Xác nhận quy trình hoàn tất
     deactivate Service
     
-    Controller --> UI: {status: 201, message: "Added successfully"}
+    Controller --> UI_Form: Phản hồi thành công & Yêu cầu tắt form
     deactivate Controller
     
-    ' === BƯỚC 5: CHUYỂN GIAO DIỆN ===
-    ' Client tự điều hướng
-    UI -> UI: Router.push(`/edit-playlist/${playlistId}`)
+    ' === BƯỚC 4: TẮT FORM & CẬP NHẬT ===
+    UI_Form --> User: Thông báo "Đã thêm bài hát thành công"
     
-    UI --> User: Chuyển sang giao diện Sửa Playlist cá nhân
-    deactivate UI
+    UI_Form -> UI_Form: Tắt form (Đóng cửa sổ chọn bài)
+    deactivate UI_Form
+    
+    UI_Form --> UI_Edit: Quay lại màn hình Sửa Playlist
+    activate UI_Edit
+    
+    ' (Tự động làm mới danh sách trong playlist)
+    UI_Edit -> Controller: Yêu cầu cập nhật lại danh sách bài hát trong Playlist
+    activate Controller
+    ' ... (Các bước tải lại dữ liệu) ...
+    Controller --> UI_Edit: Dữ liệu mới
+    deactivate Controller
+
+    UI_Edit --> User: Hiển thị Playlist với bài hát vừa thêm
+    deactivate UI_Edit
 end
+
 @enduml

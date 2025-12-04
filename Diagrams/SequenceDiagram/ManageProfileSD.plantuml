@@ -1,112 +1,98 @@
-@startuml Sequence Diagram - Quản Lý Hồ Sơ Cá Nhân 
+@startuml Sequence Diagram - Quản Lý Hồ Sơ (Thông điệp)
 
-title Sơ Đồ Tuần Tự - Quản Lý Hồ Sơ Cá Nhân 
+title Sơ Đồ Tuần Tự - Quản Lý Hồ Sơ Cá Nhân
 
 actor "Người dùng" as User
-participant ":NextJS Client" as UI
-participant ":ProfileController" as Controller
-participant ":ProfileService" as ProfileService
-participant ":InteractionService" as InteractionService
-participant ":ProfileRepository" as DB
+participant ":Giao diện" as UI
+participant ":Controller" as Controller
+participant ":Service" as Service
+participant ":Database" as DB
 
 autonumber
 
-' === BƯỚC 1 & 2: TẢI GIAO DIỆN ===
-User -> UI: Vào trang "Hồ sơ cá nhân"
+' === BƯỚC 1 & 2: HIỂN THỊ HỒ SƠ (Dòng sự kiện chính 1, 2) ===
+User -> UI: Chọn chức năng "Quản lý hồ sơ cá nhân"
 activate UI
-UI -> Controller: getProfile(req)
+
+UI -> Controller: Gửi yêu cầu lấy thông tin hồ sơ và danh sách đăng lại
 activate Controller
+Controller -> Service: Yêu cầu truy xuất dữ liệu cá nhân
+activate Service
 
-' 1. Lấy thông tin cá nhân
-Controller -> ProfileService: getProfile(userId)
-activate ProfileService
-ProfileService -> DB: findOne(User, { where: { id: userId } })
+Service -> DB: Truy vấn thông tin người dùng và bài hát đã đăng lại
 activate DB
-DB --> ProfileService: userEntity
+DB --> Service: Trả về dữ liệu hồ sơ và danh sách bài hát
 deactivate DB
-ProfileService --> Controller: userEntity
-deactivate ProfileService
 
-' 2. Lấy danh sách bài hát đã Repost
-Controller -> InteractionService: getRepostedSongs(userId)
-activate InteractionService
-InteractionService -> DB: find(Repost, { where: { userId }, relations: ['song'] })
-activate DB
-DB --> InteractionService: repostList
-deactivate DB
-InteractionService --> Controller: repostList
-deactivate InteractionService
-
-' Trả về UI
-Controller --> UI: {status: 200, user: userEntity, reposts: repostList}
+Service --> Controller: Dữ liệu hồ sơ sẵn sàng
+deactivate Service
+Controller --> UI: Hiển thị thông tin lên màn hình
 deactivate Controller
 
-UI --> User: Hiển thị Info & Danh sách bài hát
+UI --> User: Hiển thị Hồ sơ cá nhân (Thông tin + Bài đăng lại)
 deactivate UI
 
-' === BƯỚC 3: NGƯỜI DÙNG LỰA CHỌN CHỨC NĂNG ===
-group Dòng sự kiện chính (Bước 3)
+' === BƯỚC 3: NGƯỜI DÙNG CHỌN CHỨC NĂNG (Dòng sự kiện chính 3) ===
+group Người dùng chọn 1 trong các chức năng
 
-    ' === KỊCH BẢN 3.1: Sửa hồ sơ cá nhân ===
-    User -> UI: Nhấn "Sửa hồ sơ"
-    activate UI
-    note right: Chuyển sang Usecase "Sửa hồ sơ cá nhân"
-    deactivate UI
-
-    ' === KỊCH BẢN 3.3: Xem danh sách và tìm kiếm bài hát yêu thích ===
-    User -> UI: Nhấn "Bài hát yêu thích"
-    activate UI
-    note right: Chuyển sang Usecase "Xem danh sách và tìm kiếm bài hát yêu thích"
-    deactivate UI
-
-    ' [PHẦN MỚI THÊM]: 3.2 Sửa tài khoản
-    alt Trường hợp 3.2: Sửa tài khoản
-        User -> UI: Nhấn nút "Sửa tài khoản"
+    ' --- 3.1: Sửa hồ sơ ---
+    alt Trường hợp: Chọn Sửa hồ sơ cá nhân
+        User -> UI: Nhấn nút "Sửa hồ sơ"
         activate UI
-        
-        ' Client tự điều hướng sang trang Edit Account
-        UI -> UI: Router.push('/settings/account')
-        
-        note right of UI: Chuyển sang Usecase "Sửa tài khoản cá nhân"
+        UI --> User: Chuyển hướng sang Use Case "Sửa hồ sơ cá nhân"
+        note right: Xem chi tiết tại Sequence Diagram riêng
         deactivate UI
 
-    ' [PHẦN CŨ GIỮ NGUYÊN]: 3.4 Hủy đăng lại
-    else Trường hợp 3.4: Hủy Đăng lại (Undo Repost)
-        User -> UI: Nhấn "Hủy Đăng lại" (songId)
+    ' --- 3.2: Sửa tài khoản ---
+    else Trường hợp: Chọn Sửa tài khoản
+        User -> UI: Nhấn nút "Sửa tài khoản"
         activate UI
-        UI -> Controller: removeRepost(songId, userProfileDto)
+        UI --> User: Chuyển hướng sang Use Case "Sửa tài khoản cá nhân"
+        note right: Xem chi tiết tại Sequence Diagram riêng
+        deactivate UI
+
+    ' --- 3.3: Xem bài hát yêu thích ---
+    else Trường hợp: Chọn Xem bài hát yêu thích
+        User -> UI: Nhấn nút "Bài hát yêu thích"
+        activate UI
+        UI --> User: Chuyển hướng sang Use Case "Xem danh sách yêu thích"
+        note right: Xem chi tiết tại Sequence Diagram riêng
+        deactivate UI
+
+    ' --- 3.4: Tương tác với bài đăng lại (Thích/Bình luận/Hủy đăng lại) ---
+    else Trường hợp: Tương tác với bài hát đã đăng lại
+        User -> UI: Chọn bài hát và thực hiện hành động (VD: Hủy đăng lại)
+        activate UI
+        
+        UI -> Controller: Gửi yêu cầu thực hiện tương tác
         activate Controller
-
-        ' Gọi InteractionService
-        Controller -> InteractionService: removeRepost(userId, songId)
-        activate InteractionService
-
-        ' Check quyền sở hữu & Xóa
-        InteractionService -> DB: delete(Repost, { userId: userId, songId: songId })
+        Controller -> Service: Xử lý logic tương tác
+        activate Service
+        
+        ' Bước 4: Ghi nhận vào CSDL
+        Service -> DB: Yêu cầu cập nhật tương tác (VD: Xóa bài đăng lại)
         activate DB
-        DB --> InteractionService: result { affected: 1 }
-        deactivate DB
-
-        alt Lỗi (affected == 0 hoặc Lỗi DB)
-            InteractionService --> Controller: Throw Error
-            deactivate InteractionService
-            Controller --> UI: {status: 500, error: "Failed"}
-            deactivate Controller
-            
-            ' [KHỚP ĐẶC TẢ 3.4.1]
+        
+        ' --- Dòng sự kiện phụ 3.4.1 ---
+        alt Thực hiện thất bại
+            DB --> Service: Phản hồi lỗi (Lỗi hệ thống/Dữ liệu)
+            Service --> Controller: Báo lỗi xử lý
+            Controller --> UI: Phản hồi trạng thái lỗi
             UI --> User: Thông báo "Hành động thất bại, vui lòng thử lại"
-
-        else Thành công
-            activate InteractionService
-            InteractionService --> Controller: {success: true}
-            deactivate InteractionService
             
-            ' === BƯỚC 4: LÀM MỚI ===
-            Controller --> UI: {status: 200, success: true}
+        ' --- Dòng sự kiện chính 4 (Thành công) ---
+        else Thực hiện thành công
+            DB --> Service: Xác nhận cập nhật thành công
+            deactivate DB
+            
+            Service --> Controller: Xác nhận hoàn tất
+            deactivate Service
+            
+            Controller --> UI: Phản hồi thành công và dữ liệu mới
             deactivate Controller
             
-            UI -> UI: Xóa bài hát khỏi danh sách hiển thị
-            UI --> User: Cập nhật giao diện
+            ' Cập nhật giao diện (VD: Bài hát biến mất khỏi list)
+            UI --> User: Cập nhật lại danh sách và số lượt tương tác
             deactivate UI
         end
     end

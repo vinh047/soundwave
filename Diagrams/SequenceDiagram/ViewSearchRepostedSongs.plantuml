@@ -1,6 +1,6 @@
-@startuml Sequence Diagram - Xem Yêu Thích (Thông điệp)
+@startuml Sequence Diagram - Xem Bài Hát Đăng Lại (Thông điệp)
 
-title Sơ Đồ Tuần Tự - Xem danh sách & tìm Kiếm bài hát yêu thích
+title Sơ Đồ Tuần Tự - Xem danh sách & tìm kiếm bài hát đăng lại
 
 actor "Người dùng" as User
 participant ":Giao diện" as UI
@@ -11,15 +11,16 @@ participant ":Database" as DB
 autonumber
 
 ' === BƯỚC 1: HIỂN THỊ DANH SÁCH (Dòng sự kiện chính 1) ===
-User -> UI: Chọn chức năng "Bài hát yêu thích"
+User -> UI: Chọn tab "Bài hát đăng lại" trong Hồ sơ
 activate UI
 
-UI -> Controller: Gửi yêu cầu lấy danh sách bài hát đã thích
+UI -> Controller: Gửi yêu cầu lấy danh sách bài hát đã đăng lại
 activate Controller
-Controller -> Service: Yêu cầu truy xuất dữ liệu
+Controller -> Service: Yêu cầu truy xuất dữ liệu theo ID người dùng
 activate Service
 
-Service -> DB: Truy vấn danh sách bài hát yêu thích của người dùng
+' Logic: Tìm trong bảng Repost, join sang bảng Song
+Service -> DB: Truy vấn danh sách bài hát đăng lại
 activate DB
 DB --> Service: Trả về danh sách bài hát
 deactivate DB
@@ -29,47 +30,50 @@ deactivate Service
 Controller --> UI: Hiển thị danh sách lên màn hình
 deactivate Controller
 
-UI --> User: Hiển thị danh sách bài hát yêu thích & Ô tìm kiếm
+UI --> User: Hiển thị danh sách bài hát đăng lại & Ô tìm kiếm
 deactivate UI
 
 ' === BƯỚC 2: TÌM KIẾM (Dòng sự kiện chính 2) ===
 group Người dùng tìm kiếm trong danh sách
     User -> UI: Nhập từ khóa tìm kiếm
     activate UI
-    UI -> Controller: Gửi yêu cầu lọc danh sách theo tên
+    UI -> Controller: Gửi yêu cầu lọc danh sách theo tên bài hát
     activate Controller
     Controller -> Service: Xử lý logic tìm kiếm
     activate Service
-    Service -> DB: Truy vấn bài hát yêu thích khớp từ khóa
+    
+    Service -> DB: Truy vấn bài hát đăng lại khớp từ khóa
     activate DB
     DB --> Service: Kết quả tìm kiếm
     deactivate DB
-    Service --> UI: Cập nhật danh sách hiển thị
+    
+    Service --> Controller: Trả về danh sách lọc
     deactivate Service
+    Controller --> UI: Cập nhật giao diện
     deactivate Controller
+    
+    UI --> User: Hiển thị kết quả tìm kiếm
     deactivate UI
 end
 
-' === BƯỚC 3, 4, 5: TƯƠNG TÁC (Chọn Hủy Thích làm ví dụ) ===
-group Người dùng chọn bài hát và thực hiện hành động
+' === BƯỚC 3, 4, 5: TƯƠNG TÁC (Chọn Hủy Đăng lại làm ví dụ) ===
+group Người dùng chọn bài hát và thực hiện chức năng
 
-    ' Các hành động khác (Nghe, Bình luận, Chia sẻ) sẽ chuyển sang UC khác hoặc xử lý tương tự
-    ' Ở đây vẽ chi tiết hành động "Hủy Thích" vì nó làm thay đổi danh sách (Dòng sự kiện 5)
-    
-    User -> UI: Nhấn nút "Hủy Thích" (Bỏ trái tim)
+    ' Ví dụ: Chọn Hủy Đăng lại (sẽ làm bài hát biến mất khỏi list)
+    User -> UI: Nhấn nút "Hủy Đăng lại" (Repost)
     activate UI
     
-    UI -> Controller: Gửi yêu cầu hủy thích bài hát
+    UI -> Controller: Gửi yêu cầu hủy đăng lại bài hát
     activate Controller
-    Controller -> Service: Xử lý logic hủy tương tác
+    Controller -> Service: Xử lý logic xóa tương tác đăng lại
     activate Service
     
     ' Bước 4: Ghi nhận vào CSDL
-    Service -> DB: Yêu cầu xóa bài hát khỏi danh sách yêu thích
+    Service -> DB: Yêu cầu xóa bản ghi đăng lại khỏi CSDL
     activate DB
     
     ' --- Dòng sự kiện phụ 4.1 ---
-    alt Ghi nhận thất bại (Lỗi hệ thống)
+    alt Ghi nhận thất bại (Lỗi hệ thống/DB)
         DB --> Service: Phản hồi lỗi (Không thể xóa)
         Service --> Controller: Báo lỗi xử lý
         Controller --> UI: Phản hồi trạng thái lỗi
@@ -86,10 +90,10 @@ group Người dùng chọn bài hát và thực hiện hành động
         Controller --> UI: Phản hồi thành công
         deactivate Controller
         
-        ' Bước 5: Cập nhật danh sách
+        ' Bước 5: Cập nhật danh sách (Giao diện tự xóa dòng đó đi)
         UI -> UI: Loại bỏ bài hát khỏi danh sách đang hiển thị
         
-        UI --> User: Hiển thị danh sách mới (đã mất bài hát đó)
+        UI --> User: Hiển thị danh sách mới (đã cập nhật)
         deactivate UI
     end
 end

@@ -1,0 +1,139 @@
+@startuml Sequence Diagram - Khám Phá Bài Hát (Thông điệp)
+
+title Sơ Đồ Tuần Tự - Khám Phá Bài Hát (Dạng Thông điệp)
+skinparam sequenceActorStyle awesome
+skinparam responseMessageBelowArrow true
+
+actor "Người dùng" as User
+participant ":Giao diện" as UI
+participant ":Controller" as Controller
+participant ":Service" as Service
+participant ":Database" as DB
+
+autonumber
+
+' === BƯỚC 1: HIỂN THỊ DANH SÁCH (Dòng sự kiện chính 1) ===
+User -> UI: Chọn chức năng "Khám phá bài hát"
+activate UI
+
+UI -> Controller: Gửi yêu cầu lấy danh sách bài hát đề xuất
+activate Controller
+Controller -> Service: Yêu cầu truy xuất dữ liệu bài hát
+activate Service
+
+Service -> DB: Truy vấn danh sách bài hát
+activate DB
+
+alt Dòng sự kiện phụ 1.1: Tải danh sách thất bại
+    DB --> Service: Phản hồi lỗi (Lỗi kết nối/Timeout)
+    Service --> Controller: Báo lỗi tải dữ liệu
+    Controller --> UI: Phản hồi trạng thái lỗi
+    
+    UI --> User: Thông báo "Hiện danh sách bài hát thất bại, vui lòng thử lại"
+
+else Tải danh sách thành công
+    DB --> Service: Trả về danh sách bài hát
+    deactivate DB
+    
+    Service --> Controller: Dữ liệu danh sách bài hát
+    deactivate Service
+    
+    Controller --> UI: Hiển thị danh sách lên màn hình
+    deactivate Controller
+    
+    UI --> User: Hiển thị danh sách bài hát và ô tìm kiếm
+    deactivate UI
+end
+
+' === BƯỚC 2: TÌM KIẾM ===
+group Người dùng tìm kiếm
+    User -> UI: Nhập từ khóa vào ô tìm kiếm
+    activate UI
+    UI -> Controller: Gửi yêu cầu tìm kiếm theo từ khóa
+    activate Controller
+    Controller -> Service: Xử lý tìm kiếm
+    activate Service
+    Service -> DB: Truy vấn bài hát theo tên/thể loại
+    activate DB
+    DB --> Service: Kết quả tìm kiếm
+    deactivate DB
+    Service --> UI: Cập nhật danh sách hiển thị
+    deactivate Service
+    deactivate Controller
+    deactivate UI
+end
+
+' === BƯỚC 3: TƯƠNG TÁC (Dòng sự kiện chính 2, 3, 4) ===
+group Người dùng chọn 1 bài hát và thực hiện chức năng
+
+    alt 2.1: Chức năng Nghe nhạc
+        User -> UI: Nhấn nút "Nghe nhạc"
+        activate UI
+        UI -> UI: Chuyển hướng sang Use Case "Nghe nhạc"
+        note right: Xem chi tiết tại Sequence Diagram "Nghe nhạc"
+        deactivate UI
+
+    else 2.2: Chức năng Thích bài hát
+        User -> UI: Nhấn nút "Thích"
+        activate UI
+        UI -> Controller: Gửi yêu cầu Thích bài hát
+        activate Controller
+        Controller -> Service: Xử lý logic Thích
+        activate Service
+        Service -> DB: Lưu bài hát vào danh sách yêu thích
+        activate DB
+        DB --> Service: Xác nhận thành công
+        deactivate DB
+        Service --> UI: Trả về số lượt thích mới
+        deactivate Service
+        deactivate Controller
+        UI --> User: Cập nhật biểu tượng "Đã thích" và số lượt thích
+        deactivate UI
+
+    else 2.3: Chức năng Bình luận
+        User -> UI: Nhấn nút "Bình luận"
+        activate UI
+        UI --> User: Hiển thị khung nhập bình luận
+        User -> UI: Nhập nội dung và nhấn "Gửi"
+        
+        UI -> Controller: Gửi nội dung bình luận
+        activate Controller
+        Controller -> Service: Xử lý thêm bình luận
+        activate Service
+        Service -> DB: Lưu bình luận vào CSDL
+        activate DB
+        DB --> Service: Xác nhận lưu thành công
+        deactivate DB
+        Service --> UI: Trả về dữ liệu bình luận mới
+        deactivate Service
+        deactivate Controller
+        
+        UI --> User: Hiển thị bình luận vừa đăng lên danh sách
+        deactivate UI
+
+    else 2.4: Chức năng Chia sẻ
+        User -> UI: Nhấn nút "Chia sẻ"
+        activate UI
+        UI -> UI: Chuyển hướng sang Use Case "Chia sẻ bài hát"
+        note right: Xem chi tiết tại Sequence Diagram "Chia sẻ bài hát"
+        deactivate UI
+
+    else 2.5: Chức năng Đăng lại (Repost)
+        User -> UI: Nhấn nút "Đăng lại"
+        activate UI
+        UI -> Controller: Gửi yêu cầu Đăng lại bài hát
+        activate Controller
+        Controller -> Service: Xử lý logic Đăng lại
+        activate Service
+        Service -> DB: Lưu bài hát vào hồ sơ cá nhân
+        activate DB
+        DB --> Service: Xác nhận lưu thành công
+        deactivate DB
+        Service --> UI: Trả về số lượt đăng lại mới
+        deactivate Service
+        deactivate Controller
+        UI --> User: Thông báo thành công và cập nhật số lượt đăng lại
+        deactivate UI
+    end
+end
+@enduml

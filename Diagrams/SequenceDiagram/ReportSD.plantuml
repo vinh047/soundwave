@@ -1,69 +1,69 @@
-@startuml Sequence Diagram - Báo Cáo Vi Phạm
+@startuml Sequence Diagram - Báo Cáo Vi Phạm (Thông điệp)
 
 title Sơ Đồ Tuần Tự - Báo Cáo Vi Phạm
 
 actor "Người dùng" as User
-participant ":GiaoDienBaiHat" as SongUI
-participant ":GiaoDienBaoCao" as ReportUI
-participant ":ReportController" as Controller
-participant ":ReportService" as Service
-participant ":ReportRepository" as DB
+participant ":Giao diện" as SongUI
+participant ":Form\nBáo cáo" as ReportUI
+participant ":Controller" as Controller
+participant ":Service" as Service
+participant ":Database" as DB
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM ===
-User -> SongUI: Nhấn nút "Báo cáo vi phạm"
+' === BƯỚC 1: HIỂN THỊ FORM (Dòng sự kiện chính 1) ===
+User -> SongUI: Nhấn nút "Báo cáo vi phạm" tại bài hát
 activate SongUI
-SongUI -> ReportUI: OpenModal(songId)
+
+SongUI -> ReportUI: Yêu cầu hiển thị biểu mẫu
 activate ReportUI
-ReportUI --> User: Hiển thị form (Lý do, Mô tả)
+note right: Form tự động điền sẵn tên bài hát hiện tại
+
+ReportUI --> User: Hiển thị Form nhập lý do báo cáo
 deactivate SongUI
 
-' === BƯỚC 2: GỬI BÁO CÁO ===
-User -> ReportUI: Điền lý do & Nhấn "Gửi"
-activate ReportUI
+' === BƯỚC 2: NGƯỜI DÙNG GỬI BÁO CÁO (Dòng sự kiện chính 2) ===
+User -> ReportUI: Nhập lý do và nhấn nút "Gửi báo cáo"
 
-' Dùng DTO để gói dữ liệu
-ReportUI -> Controller: createReport(req, createReportDto)
+ReportUI -> Controller: Gửi thông tin báo cáo (ID bài hát, Lý do)
 activate Controller
-
-' Lấy userId từ req.user (AuthGuard đã check account not locked)
-Controller -> Service: createReport(userId, createReportDto)
+Controller -> Service: Chuyển tiếp yêu cầu xử lý
 activate Service
 
-' === BƯỚC 3: GHI DATABASE ===
-alt Lỗi DB (Lỗi kết nối / Hệ thống)
-    Service -> DB: save(reportEntity)
-    activate DB
-    DB --> Service: Error
-    deactivate DB
-    
-    Service --> Controller: Throw InternalServerError
-    deactivate Service
-    Controller --> ReportUI: {status: 500, error: "Failed"}
-    deactivate Controller
-    
-    ReportUI --> User: Thông báo "Báo cáo thất bại"
+' === BƯỚC 3: GHI NHẬN VÀO CSDL (Dòng sự kiện chính 3) ===
+Service -> DB: Yêu cầu lưu báo cáo mới vào danh sách chờ xử lý
+activate DB
 
-else Thành công
-    Service -> DB: save(reportEntity)
-    activate DB
-    DB --> Service: newReport
+alt Dòng sự kiện phụ 3.1: Ghi nhận thất bại
+    DB --> Service: Phản hồi lỗi (Lỗi kết nối hoặc không thể ghi)
+    Service --> Controller: Báo lỗi xử lý
+    Controller --> ReportUI: Phản hồi trạng thái lỗi
+    
+    ReportUI --> User: Thông báo "Báo cáo thất bại, vui lòng thử lại"
+    ' (Form vẫn mở để người dùng thử lại)
+
+else Ghi nhận thành công (Dòng sự kiện chính 3 & 4)
+    DB --> Service: Xác nhận đã lưu thành công
     deactivate DB
     
-    Service --> Controller: {success: true}
+    Service --> Controller: Xác nhận quy trình hoàn tất
     deactivate Service
     
-    Controller --> ReportUI: {status: 201, success: true}
+    Controller --> ReportUI: Phản hồi thành công & Yêu cầu đóng form
     deactivate Controller
     
-    ' === BƯỚC 4 & 5: THÔNG BÁO & ĐÓNG ===
-    ReportUI --> User: Thông báo "Đã gửi báo cáo thành công"
+    ' === BƯỚC 4: THÔNG BÁO ===
+    ReportUI --> User: Thông báo "Đã báo cáo thành công"
     
-    ReportUI -> ReportUI: CloseModal()
-    ReportUI --> SongUI: Quay lại màn hình bài hát
+    ' === BƯỚC 5: TẮT FORM (Dòng sự kiện chính 5) ===
+    ReportUI -> ReportUI: Tắt form (Đóng cửa sổ)
+    
+    ReportUI --> SongUI: Quay lại màn hình bài hát ban đầu
     deactivate ReportUI
     activate SongUI
+    
+    SongUI --> User: Hiển thị lại giao diện bài hát
     deactivate SongUI
 end
+
 @enduml

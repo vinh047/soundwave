@@ -1,86 +1,83 @@
-@startuml Class Diagram Mức Phân Tích - Hệ Thống Nghe Nhạc Trực Tuyến
+@startuml Class Diagram Mức Phân Tích - Hệ Thống Nghe Nhạc Trực Tuyến (Updated)
 title Class Diagram Mức Phân Tích - Hệ Thống Nghe Nhạc Trực Tuyến
 
-' --- ENTITIES ---
-package "Database Entities" {
+' --- ENUMS (Định nghĩa các tập giá trị cố định) ---
+package "Enums" {
     enum Role {
         USER
-        ARTIST
         ADMIN
     }
 
-    enum ReportAction {
-        HIDE_SONG
-        WARN_USER
-        DISMISS
+    enum SongStatus {
+        ACTIVE
+        HIDDEN
     }
 
+    enum ReportStatus {
+        PENDING
+        PROCESSED
+        DISMISSED
+    }
+}
+
+' --- ENTITIES ---
+package "Database Entities" {
     class User {
-        + id: string
+        + id: number
         + name: string
         + email: string
-        + emailVerified: Date
         + password: string
-        + role: Role
         + imagePath: string
+        + isLocked: boolean = false
+        + role: Role
         + createdAt: Date = now()
         + updatedAt: Date
-        + isLocked: boolean = false
     }
 
     class Profile {
-        + id: string
+        + id: number
         + bio: string
-        + location: string
-        + userId: string
+        + userId: number
     }
 
     class Song {
-        + id: string
+        + id: number
         + title: string
         + description: string
+        + fileUrl: string
         + imagePath: string
-        + audioPath: string
-        + duration: number
-        + playCount: number
-        + waveform: json
-        + isPublic: boolean = false
+        + status: SongStatus
+        + userId: number
+        + listenCount: number
         + createdAt: Date = now()
-        + updatedAt: Date
-        + isBanned: boolean = false
-        + userId: string
     }
 
     class Playlist {
-        + id: string
+        + id: number
         + title: string
         + description: string
-        + isPublic: boolean = false
-        + createdAt: Date = now()
-        + updatedAt: Date
-        + userId: string
+        + isPublic: boolean = true
+        + userId: number
         + songs: Song[]
     }
 
     class Like {
-        + userId: string
-        + songId: string
+        + userId: number
+        + songId: number
         + createdAt: Date = now()
-        + songId: string
     }
 
     class Comment {
-        + id: string
+        + id: number
         + content: string
-        + userId: string
-        + songId: string
+        + userId: number
+        + songId: number
         + createdAt: Date = now()
-        + timestamp: number
     }
 
     class Follow {
-        + followerId: string
-        + followingId: string
+        + followerId: number
+        + followingId: number
         + createdAt: Date = now()
     }
 
@@ -89,7 +86,7 @@ package "Database Entities" {
         + songId: number
         + createdAt: Date = now()
     }
-    
+
     class Share {
         + userId: number
         + songId: number
@@ -99,52 +96,39 @@ package "Database Entities" {
 
     class Report {
         + id: number
-        + message: string
         + reason: string
-        + status: string
-        + action: ReportAction
+        + status: ReportStatus
+        + songId: number
+        + reporterId: number
         + createdAt: Date = now()
-        + songId: string
-        + reporterId: string
     }
 
     class Notification {
-        + id: string
-        + userId: string
+        + id: number
+        + userId: number
         + message: string
         + isRead: boolean = false
         + createdAt: Date = now()
-    }
-
-    class TokenBlacklist {
-        + id: string
-        + token: string
-    }
-
-    class PasswordResetToken {
-        + id: string
-        + userId: string
-        + expiresAt: Date
-        + code: string
     }
 }
 
 ' --- RELATIONSHIPS ---
 
-' 1. USER & PROFILE
+' 1. USER & AUTH
 User "1" -- "1" Profile : has >
 
 ' 2. FOLLOW
-User "1" -- "0..*" Follow : has followers (followerId) >
-User "1" -- "0..*" Follow : follows (followingId) >
+User "1" -- "0..*" Follow : has followers >
+User "1" -- "0..*" Follow : follows >
 
 ' 3. PLAYLIST & SONG
 User "1" -- "0..*" Playlist : owns >
-User "1" -- "0..*" Song : uploads (artist) >
+User "1" -- "0..*" Song : uploads >
 
+' Quan hệ tập hợp: Playlist chứa nhiều bài hát
 Playlist "0..*" o-- "0..*" Song : contains >
 
-' 4. INTERACTIONS (Like, Comment, Repost, Share)
+' 4. INTERACTIONS
 User "1" -- "0..*" Like : likes >
 Like "0..*" --> "1" Song : target >
 
@@ -160,10 +144,10 @@ Share "0..*" --> "1" Song : target >
 ' 5. REPORT SYSTEM
 User "1" -- "0..*" Report : creates (reporter) >
 Report "0..*" --> "1" Song : targets >
+' Admin xử lý báo cáo (User có role Admin)
 User "1" -- "0..*" Report : processes (admin) >
 
-' 6. NOTIFICATION & TOKEN (Bổ sung)
+' 6. NOTIFICATION
 User "1" -- "0..*" Notification : receives >
-User "1" -- "0..*" TokenBlacklist : invalidates >
 
 @enduml

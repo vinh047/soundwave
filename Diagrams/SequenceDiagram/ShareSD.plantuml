@@ -1,88 +1,94 @@
-@startuml Sequence Diagram - Chia Sẻ Bài Hát 
+@startuml Sequence Diagram - Chia Sẻ Bài Hát (Thông điệp)
 
-title Sơ Đồ Tuần Tự - Chia Sẻ Bài Hát 
+title Sơ Đồ Tuần Tự - Chia Sẻ Bài Hát
 
 actor "Người dùng" as User
-participant ":GiaoDienBaiHat" as SongUI
-participant ":GiaoDienChiaSe" as ShareUI
-participant ":ShareController" as ShareController
-participant ":ShareService" as ShareService
-participant ":HttpService (Axios)" as ExternalAPI
-participant ":ShareRepository" as DB
+participant ":Giao diện\nBài hát" as SongUI
+participant ":Form\nChia sẻ" as ShareUI
+participant ":Controller" as Controller
+participant ":Service" as Service
+participant ":API Nền tảng\n(Facebook/Zalo...)" as ExternalAPI
+participant ":Database" as DB
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ ===
-User -> SongUI: Nhấn "Chia sẻ"
+' === BƯỚC 1: HIỂN THỊ FORM (Dòng sự kiện chính 1) ===
+User -> SongUI: Nhấn nút "Chia sẻ"
 activate SongUI
-SongUI -> ShareUI: OpenModal(songId)
+SongUI -> ShareUI: Yêu cầu mở giao diện chia sẻ
 activate ShareUI
-ShareUI --> User: Hiển thị danh sách nền tảng (FB, Zalo...)
+ShareUI --> User: Hiển thị Form chọn nền tảng
 deactivate SongUI
 
-' === BƯỚC 2 & 3: LẤY DANH SÁCH BẠN BÈ/TK ===
-User -> ShareUI: Chọn nền tảng (VD: Facebook)
-ShareUI -> ShareController: getFriends(req, platform)
-activate ShareController
-ShareController -> ShareService: getFriends(userId, platform)
-activate ShareService
-
-' Gọi API bên thứ 3 để lấy danh sách bạn bè
-ShareService -> ExternalAPI: get('https://graph.facebook.com/me/friends...')
-activate ExternalAPI
-ExternalAPI --> ShareService: {data: [FriendList]}
-deactivate ExternalAPI
-
-ShareService --> ShareController: [FriendList]
-deactivate ShareService
-ShareController --> ShareUI: {accounts: [...]}
-deactivate ShareController
-ShareUI --> User: Hiển thị danh sách tài khoản để chọn
-
-' === BƯỚC 4: THỰC HIỆN CHIA SẺ ===
-User -> ShareUI: Chọn tài khoản & Nhấn "Chia sẻ"
+' === BƯỚC 2 & 3: CHỌN NỀN TẢNG & HIỆN TÀI KHOẢN ===
+User -> ShareUI: Chọn nền tảng muốn chia sẻ
 activate ShareUI
 
-' Dùng DTO
-UI -> ShareController: shareSong(req, shareSongDto)
-activate ShareController
-ShareController -> ShareService: shareSong(userId, shareSongDto)
-activate ShareService
+ShareUI -> Controller: Gửi yêu cầu lấy danh sách liên kết (Bạn bè/Nhóm)
+activate Controller
+Controller -> Service: Xử lý lấy danh sách từ nền tảng
+activate Service
 
-' === BƯỚC 5: GỌI API BÊN THỨ 3 ===
-alt Lỗi từ phía Nền tảng (VD: Token hết hạn / Mạng lỗi)
-    ShareService -> ExternalAPI: post('https://api.facebook.com/.../feed', body)
-    activate ExternalAPI
-    ExternalAPI --> ShareService: Error (4xx, 5xx)
-    deactivate ExternalAPI
+Service -> ExternalAPI: Gọi API lấy danh sách tài khoản/bạn bè
+activate ExternalAPI
+ExternalAPI --> Service: Trả về danh sách
+deactivate ExternalAPI
+
+Service --> Controller: Dữ liệu danh sách tài khoản
+deactivate Service
+Controller --> ShareUI: Hiển thị dữ liệu lên Form
+deactivate Controller
+
+ShareUI --> User: Hiển thị danh sách tài khoản/bạn bè trên nền tảng đó
+deactivate ShareUI
+
+' === BƯỚC 4: CHỌN TÀI KHOẢN & GỬI ===
+User -> ShareUI: Chọn tài khoản đích và nhấn "Chia sẻ"
+activate ShareUI
+
+ShareUI -> Controller: Gửi thông tin chia sẻ (Bài hát, Nền tảng, Người nhận)
+activate Controller
+Controller -> Service: Chuyển tiếp yêu cầu chia sẻ
+activate Service
+
+' === BƯỚC 5: GỌI API BÊN NGOÀI (QUAN TRỌNG) ===
+Service -> ExternalAPI: Gửi yêu cầu đăng bài/gửi tin nhắn chứa link bài hát
+activate ExternalAPI
+
+alt Dòng sự kiện phụ 5.1: Chia sẻ thất bại (Lỗi từ nền tảng)
+    ExternalAPI --> Service: Phản hồi lỗi (Token hết hạn / Lỗi mạng / Từ chối)
+    Service --> Controller: Báo lỗi chia sẻ
+    Controller --> ShareUI: Phản hồi trạng thái lỗi
     
-    ShareService --> ShareController: Throw ServiceUnavailableException
-    ShareController --> ShareUI: {status: 500, error: "Platform Error"}
-    ShareUI --> User: Thông báo "Chia sẻ thất bại"
+    ShareUI --> User: Thông báo "Chia sẻ thất bại, vui lòng thử lại"
+    ' (Form vẫn mở để người dùng thử lại)
 
-else Thành công
-    ShareService -> ExternalAPI: post(url, body)
-    activate ExternalAPI
-    ExternalAPI --> ShareService: {success: true, postId: 'xyz'}
+else Chia sẻ thành công (Dòng sự kiện chính 5)
+    ExternalAPI --> Service: Xác nhận đã đăng/gửi thành công
     deactivate ExternalAPI
 
-    ' === BƯỚC 6: GHI DB (Chỉ ghi khi API thành công) ===
-    ShareService -> DB: save({ userId, songId, platform, type: 'SHARE' })
+    ' === BƯỚC 6: GHI NHẬN VÀO CSDL ===
+    Service -> DB: Lưu lịch sử chia sẻ vào hệ thống
     activate DB
-    DB --> ShareService: savedRecord
+    DB --> Service: Xác nhận đã lưu
     deactivate DB
     
-    ShareService --> ShareController: {success: true}
-    deactivate ShareService
-    ShareController --> ShareUI: {status: 200, message: "Shared"}
-    deactivate ShareController
+    Service --> Controller: Xác nhận quy trình hoàn tất
+    deactivate Service
     
-    ' === BƯỚC 7 & 8: THÔNG BÁO & ĐÓNG ===
-    ShareUI --> User: Thông báo "Đã chia sẻ thành công"
-    ShareUI -> ShareUI: CloseModal()
-    ShareUI --> SongUI: Quay lại màn hình bài hát
+    Controller --> ShareUI: Phản hồi thành công
+    deactivate Controller
+    
+    ' === BƯỚC 7: THÔNG BÁO ===
+    ShareUI --> User: Thông báo "Đã chia sẻ"
+    
+    ' === BƯỚC 8: TẮT FORM ===
+    ShareUI -> ShareUI: Tắt form (Đóng cửa sổ chia sẻ)
+    
+    ShareUI --> SongUI: Quay lại màn hình bài hát ban đầu
     deactivate ShareUI
     activate SongUI
     deactivate SongUI
 end
+
 @enduml

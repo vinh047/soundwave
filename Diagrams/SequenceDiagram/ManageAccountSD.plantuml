@@ -1,84 +1,74 @@
-@startuml Sequence Diagram - Quản Lý Tài Khoản 
+@startuml Sequence Diagram - Quản Lý Tài Khoản (Thông điệp)
 
-title Sơ Đồ Tuần Tự - Quản Lý Tài Khoản 
+title Sơ Đồ Tuần Tự - Quản Lý Tài Khoản Người Dùng
 
 actor "Admin" as Admin
-participant ":NextJS Admin" as UI
-participant ":AccountController" as Controller
-participant ":UserService" as Service
-participant ":UserRepository" as DB
+participant ":Giao diện" as UI
+participant ":Controller" as Controller
+participant ":Service" as Service
+participant ":Database" as DB
 
 autonumber
 
-' === BƯỚC 1: TẢI DANH SÁCH ===
-Admin -> UI: Vào trang "Quản lý tài khoản"
+' === BƯỚC 1 & 2: TẢI DANH SÁCH ===
+Admin -> UI: Yêu cầu xem danh sách tài khoản
 activate UI
-UI -> Controller: getAccounts()
+UI -> Controller: Gửi yêu cầu lấy danh sách người dùng
 activate Controller
-Controller -> Service: getAccounts()
+Controller -> Service: Yêu cầu truy xuất tất cả tài khoản
 activate Service
 
-Service -> DB: find()
+Service -> DB: Truy vấn toàn bộ danh sách User
 activate DB
-DB --> Service: [UserEntities]
+DB --> Service: Trả về danh sách tài khoản
 deactivate DB
 
-Service --> Controller: {data: [...]}
+Service --> Controller: Dữ liệu danh sách tài khoản
 deactivate Service
-Controller --> UI: {status: 200, data: [...]}
+Controller --> UI: Hiển thị danh sách lên màn hình
 deactivate Controller
-UI --> Admin: Hiển thị danh sách User & trạng thái (Active/Locked)
+UI --> Admin: Danh sách tài khoản & Nút chức năng
 deactivate UI
 
-' === BƯỚC 2: THAY ĐỔI TRẠNG THÁI (KHÓA / MỞ KHÓA) ===
-' Use case nói: Khóa hoặc Mở khóa -> Ta dùng tham số status để đại diện cả 2
-Admin -> UI: Chọn User & Nhấn nút "Khóa/Mở khóa"
+' === BƯỚC 3: ADMIN THỰC HIỆN KHÓA/MỞ KHÓA ===
+Admin -> UI: Chọn 1 tài khoản và nhấn nút "Khóa/Mở khóa"
 activate UI
 
-' Gửi status ngược lại với hiện tại (VD: đang Active -> gửi Locked)
-UI -> Controller: updateStatus(userId, newStatus)
+UI -> Controller: Gửi yêu cầu cập nhật trạng thái mới
 activate Controller
+note right: (Gửi ID tài khoản và trạng thái mong muốn)
 
-Controller -> Service: updateStatus(userId, newStatus)
+Controller -> Service: Chuyển tiếp yêu cầu xử lý nghiệp vụ
 activate Service
 
-' === BƯỚC 3: CẬP NHẬT DB ===
-alt Cập nhật thất bại (User không tồn tại / Lỗi DB)
-    Service -> DB: update(userId, { isLocked: newStatus })
-    activate DB
-    DB --> Service: Error
-    deactivate DB
-    
-    Service --> Controller: Throw BadRequest/InternalError
-    deactivate Service
-    Controller --> UI: {status: 500, error: "Update Failed"}
-    deactivate Controller
-    
-    UI --> Admin: Thông báo "Cập nhật trạng thái thất bại"
-    deactivate UI
+' === BƯỚC 4: GHI NHẬN VÀO CSDL ===
+Service -> DB: Cập nhật trạng thái (Khóa/Mở) vào bản ghi
+activate DB
 
-else Cập nhật thành công
-    Service -> DB: update(userId, { isLocked: newStatus })
-    activate DB
-    DB --> Service: {affected: 1}
+alt Dòng sự kiện phụ 4.1: Cập nhật thất bại
+    DB --> Service: Phản hồi lỗi (Lỗi kết nối hoặc không tìm thấy)
+    Service --> Controller: Báo lỗi cập nhật
+    Controller --> UI: Phản hồi trạng thái lỗi
+    UI --> Admin: Thông báo "Khoá(Mở khoá) tài khoản thất bại"
+
+else Cập nhật thành công (Dòng sự kiện chính 4)
+    DB --> Service: Xác nhận cập nhật thành công
     deactivate DB
     
-    Service --> Controller: {success: true}
+    Service --> Controller: Xác nhận thao tác thành công
     deactivate Service
     
-    ' === BƯỚC 4: LÀM MỚI DỮ LIỆU ===
-    ' Cách tối ưu: Trả về success, Client tự reload hoặc update state
-    Controller --> UI: {status: 200, message: "Updated Successfully"}
+    ' === BƯỚC 5: CẬP NHẬT DANH SÁCH ===
+    Controller --> UI: Yêu cầu làm mới giao diện
     deactivate Controller
     
-    ' Client tự động gọi lại API lấy danh sách (hoặc tự sửa UI)
-    UI -> Controller: getAccounts() (Tự động refresh)
+    UI -> Controller: Gửi yêu cầu lấy lại danh sách mới
     activate Controller
-    ' ... (Lặp lại quy trình lấy danh sách như Bước 1) ...
-    Controller --> UI: [Danh sách mới]
+    note right: (Tự động tải lại danh sách để đồng bộ dữ liệu)
+    Controller --> UI: Danh sách mới (với trạng thái đã cập nhật)
     deactivate Controller
     
-    UI --> Admin: Cập nhật giao diện với trạng thái mới
+    UI --> Admin: Hiển thị danh sách cập nhật & Thông báo thành công
     deactivate UI
 end
 @enduml

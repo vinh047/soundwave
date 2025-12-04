@@ -9,8 +9,11 @@ title Sơ đồ phân rã chức năng (BFD) - Hệ thống nghe nhạc trực t
 **** Bình luận bài hát
 **** Chia sẻ bài hát
 **** Đăng lại bài hát
-*** Nghe nhạc
-** Quản lý Tài khoản
+**** Nghe nhạc
+*** Khám phá nghệ sĩ
+**** Xem và tìm kiếm danh sách nghệ sĩ
+**** Theo dõi Nghệ sĩ
+** Chức năng Tài khoản
 *** Đăng ký
 *** Đăng nhập
 *** Đăng xuất
@@ -20,23 +23,21 @@ title Sơ đồ phân rã chức năng (BFD) - Hệ thống nghe nhạc trực t
 **** Xem hồ sơ cá nhân
 **** Sửa hồ sơ cá nhân
 **** Xem danh sách và tìm kiếm bài hát yêu thích
+**** Xem danh sách và tìm kiếm bài hát đăng lại
 *** Quản lý Playlist cá nhân
-**** Xem danh sách Playlist cá nhân
+**** Xem danh sách và tìm kiếm Playlist cá nhân
 **** Tạo Playlist cá nhân
 **** Xóa Playlist cá nhân
-**** Sửa Playlist cá nhân
-***** Xem danh sách bài hát trong Playlist
+**** Quản lý chi tiết Playlist cá nhân
+***** Xem danh sách và tìm kiếm bài hát trong Playlist
 ***** Sửa thông tin Playlist
 ***** Thêm bài hát
 ***** Xóa bài hát
-*** Quản lý bài hát cá nhân 
-**** Xem danh sách bài hát đã tải lên
+*** Quản lý bài hát cá nhân
+**** Xem danh sách và tìm kiếm bài hát đã tải lên
 **** Tải lên bài hát
 **** Sửa thông tin bài hát
 **** Ẩn bài hát
-*** Khám phá nghệ sĩ
-**** Xem và tìm kiếm danh sách nghệ sĩ
-**** Theo dõi Nghệ sĩ
 *** Báo cáo vi phạm
 *** Cài đặt
 **** Sửa tài khoản cá nhân

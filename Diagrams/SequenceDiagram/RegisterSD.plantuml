@@ -1,0 +1,87 @@
+@startuml Sequence Diagram - Đăng Ký (Thông điệp)
+
+title Sơ Đồ Tuần Tự - Đăng Ký
+
+actor "Người dùng" as User
+participant ":Giao diện" as UI
+participant ":Controller" as Controller
+participant ":Service" as Service
+participant ":Database" as DB
+
+autonumber
+
+' === BƯỚC 1: HIỂN THỊ FORM ===
+User -> UI: Yêu cầu mở trang "Đăng ký"
+activate UI
+UI --> User: Hiển thị biểu mẫu (Email, Mật khẩu)
+deactivate UI
+
+' === BƯỚC 2: NHẬP LIỆU & GỬI ===
+User -> UI: Nhập Email, Mật khẩu và nhấn "Đăng ký"
+activate UI
+
+UI -> Controller: Gửi thông tin đăng ký
+activate Controller
+Controller -> Service: Chuyển tiếp yêu cầu xử lý
+activate Service
+
+' === BƯỚC 3: KIỂM TRA TÍNH HỢP LỆ (Các dòng sự kiện phụ) ===
+
+' --- Kiểm tra 3.1: Định dạng Email ---
+Service -> Service: Kiểm tra định dạng Email
+
+alt Dòng sự kiện phụ 3.1: Email không hợp lệ
+    Service --> Controller: Báo lỗi định dạng
+    Controller --> UI: Phản hồi lỗi
+    UI --> User: Thông báo "Email không hợp lệ, vui lòng nhập lại"
+
+else Email hợp lệ (Tiếp tục kiểm tra)
+
+    ' --- Kiểm tra 3.3: Độ mạnh mật khẩu ---
+    Service -> Service: Kiểm tra độ mạnh mật khẩu
+    
+    alt Dòng sự kiện phụ 3.3: Mật khẩu quá yếu
+        Service --> Controller: Báo lỗi mật khẩu
+        Controller --> UI: Phản hồi lỗi
+        UI --> User: Thông báo "Mật khẩu quá yếu, vui lòng nhập lại"
+        
+    else Mật khẩu hợp lệ (Tiếp tục kiểm tra DB)
+    
+        ' --- Kiểm tra 3.2: Tài khoản tồn tại ---
+        Service -> DB: Truy vấn tìm tài khoản theo Email
+        activate DB
+        DB --> Service: Kết quả tìm kiếm
+        deactivate DB
+        
+        alt Dòng sự kiện phụ 3.2: Tài khoản đã tồn tại
+            Service --> Controller: Báo lỗi trùng lặp
+            Controller --> UI: Phản hồi lỗi
+            UI --> User: Thông báo "Tài khoản đã tồn tại, đăng ký thất bại"
+            
+        else Tài khoản chưa tồn tại (Dòng sự kiện chính)
+            
+            ' === BƯỚC 4: GHI NHẬN VÀO CSDL ===
+            Service -> Service: Mã hóa mật khẩu (Bảo mật)
+            
+            Service -> DB: Yêu cầu lưu tài khoản mới
+            activate DB
+            DB --> Service: Xác nhận lưu thành công
+            deactivate DB
+            
+            Service --> Controller: Xác nhận đăng ký thành công
+            deactivate Service
+            
+            Controller --> UI: Phản hồi thành công
+            deactivate Controller
+            
+            UI --> User: Thông báo "Đăng ký thành công"
+            
+            ' === BƯỚC 5: CHUYỂN GIAO DIỆN ===
+            UI -> UI: Chuyển hướng sang giao diện "Đăng nhập"
+            deactivate UI
+            
+            UI --> User: Hiển thị màn hình Đăng nhập
+        end
+    end
+end
+@enduml

@@ -1,97 +1,84 @@
-@startuml Sequence Diagram - Sửa Thông Tin Bài Hát 
+@startuml Sequence Diagram - Sửa Thông Tin Bài Hát
 
-title Sơ Đồ Tuần Tự - Sửa Thông Tin Bài Hát 
+title Sơ Đồ Tuần Tự - Sửa Thông Tin Bài Hát
 
-actor "Nghệ sĩ" as Artist
-participant ":NextJS Client" as UI
-participant ":SongController" as Controller
-participant ":SongService" as Service
-participant ":FileStorageService" as Storage
-participant ":SongRepository" as DB
+actor "Người dùng" as User
+participant ":Giao diện" as UI
+participant ":Controller" as Controller
+participant ":Service" as Service
+participant ":File Storage" as FileStorage
+participant ":Database" as DB
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM (Implicit) ===
-UI --> Artist: Hiển thị form với dữ liệu cũ
-
-' === BƯỚC 2: NGHỆ SĨ SỬA & LƯU ===
-Artist -> UI: Thay đổi thông tin/File & Nhấn "Lưu"
+' === BƯỚC 1: HIỂN THỊ FORM (Dòng sự kiện chính 1) ===
+User -> UI: Yêu cầu mở trang "Sửa thông tin" (của 1 bài hát)
 activate UI
 
-' Gửi request API
-UI -> Controller: updateSongInfo(req, songId, updateSongDto, file)
+UI -> Controller: Yêu cầu lấy thông tin hiện tại của bài hát
 activate Controller
+Controller -> Service: Truy xuất dữ liệu bài hát cũ
+activate Service
+Service -> DB: Tìm bài hát theo ID
+activate DB
+DB --> Service: Trả về thông tin bài hát (Tên, Ảnh, File...)
+deactivate DB
+Service --> Controller: Dữ liệu bài hát
+deactivate Service
+Controller --> UI: Hiển thị dữ liệu lên Form
+deactivate Controller
 
-' Lấy userId từ Token (req.user)
-Controller -> Service: updateSongInfo(userId, songId, updateSongDto, file)
+UI --> User: Hiển thị Form với thông tin cũ đã điền sẵn
+deactivate UI
+
+' === BƯỚC 2: NGƯỜI DÙNG CHỈNH SỬA (Dòng sự kiện chính 2) ===
+User -> UI: Thay đổi thông tin (Tên, Mô tả...) \nhoặc Tải file nhạc mới
+activate UI
+User -> UI: Nhấn nút "Lưu"
+
+UI -> Controller: Gửi thông tin mới (kèm file nhạc nếu có)
+activate Controller
+Controller -> Service: Chuyển tiếp yêu cầu cập nhật
 activate Service
 
-' === BƯỚC 3: LẤY DỮ LIỆU CŨ & CHECK QUYỀN ===
-Service -> DB: findOne({ where: { id: songId, userId: userId } })
-activate DB
-DB --> Service: oldSongEntity
-deactivate DB
-
-alt Không tìm thấy (Sai ID hoặc Không phải chủ sở hữu)
-    Service --> Controller: Throw ForbiddenException
-    Controller --> UI: {status: 403, error: "Access Denied"}
-    UI --> Artist: Thông báo "Không có quyền sửa"
-    
-else Hợp lệ (Tiếp tục xử lý)
-
-    ' === BƯỚC 4: XỬ LÝ FILE (Logic File) ===
-    alt Có tải lên file nhạc mới
-        Service -> Storage: upload(file)
-        activate Storage
-        Storage --> Service: newFileUrl
-        deactivate Storage
-        
-        ' Xóa file cũ (Dọn rác)
-        Service -> Storage: delete(oldSongEntity.fileUrl)
-        activate Storage
-        deactivate Storage
-        
-        note right of Service: Gán fileUrl mới vào DTO
-    else Không tải file mới
-        note right of Service: Giữ nguyên fileUrl cũ
-    end
-
-    ' === BƯỚC 5: CẬP NHẬT DB & XỬ LÝ LỖI (Use Case 3 & 3.1) ===
-    Service -> Service: merge(oldSongEntity, updateSongDto)
-    
-    Service -> DB: save(updatedEntity)
-    activate DB
-    
-    alt Dòng sự kiện phụ 3.1: Ghi nhận thất bại (Lỗi DB)
-        DB --> Service: Error / Exception
-        deactivate DB
-        
-        Service --> Controller: Throw InternalServerError
-        deactivate Service
-        
-        Controller --> UI: {status: 500, error: "Database Error"}
-        deactivate Controller
-        
-        UI --> Artist: Thông báo "Cập nhật thông tin bài hát thất bại"
-        deactivate UI
-        
-    else Dòng sự kiện chính 3 & 4: Ghi nhận thành công
-        ' (DB đã activate ở trên)
-        DB --> Service: savedSong
-        deactivate DB
-        
-        Service --> Controller: {success: true, data: savedSong}
-        activate Service
-        deactivate Service
-        
-        Controller --> UI: {status: 200, message: "Update Success"}
-        activate Controller
-        deactivate Controller
-        
-        ' Client chuyển hướng
-        UI -> UI: Router.push('/manage-songs')
-        UI --> Artist: Chuyển sang giao diện Quản lý & Thông báo thành công
-        deactivate UI
-    end
+' === XỬ LÝ FILE NHẠC (NẾU CÓ) ===
+alt Người dùng có tải lên file nhạc mới
+    Service -> FileStorage: Lưu file nhạc mới vào ổ cứng/cloud
+    activate FileStorage
+    FileStorage -> FileStorage: Xóa file nhạc cũ (dọn dẹp)
+    FileStorage --> Service: Trả về đường dẫn (URL) mới
+    deactivate FileStorage
+    note right of Service: Cập nhật đường dẫn mới vào dữ liệu
+else Không thay đổi file nhạc
+    note right of Service: Giữ nguyên đường dẫn file cũ
 end
+
+' === BƯỚC 3: GHI NHẬN VÀO CSDL (Dòng sự kiện chính 3) ===
+Service -> DB: Cập nhật thông tin bài hát vào CSDL
+activate DB
+
+alt Dòng sự kiện phụ 3.1: Cập nhật thất bại
+    DB --> Service: Phản hồi lỗi (Lỗi kết nối hoặc dữ liệu sai)
+    Service --> Controller: Báo lỗi xử lý
+    Controller --> UI: Phản hồi trạng thái lỗi
+    
+    UI --> User: Thông báo "Cập nhật thông tin bài hát thất bại"
+
+else Cập nhật thành công (Dòng sự kiện chính 3 & 4)
+    DB --> Service: Xác nhận cập nhật thành công
+    deactivate DB
+    
+    Service --> Controller: Xác nhận quy trình hoàn tất
+    deactivate Service
+    
+    ' === BƯỚC 4: TẮT FORM/CHUYỂN GIAO DIỆN ===
+    Controller --> UI: Yêu cầu đóng form/chuyển hướng
+    deactivate Controller
+    
+    UI -> UI: Tắt form sửa thông tin
+    
+    UI --> User: Hiển thị lại danh sách (với thông tin đã sửa)
+    deactivate UI
+end
+
 @enduml

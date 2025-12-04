@@ -1,112 +1,99 @@
-@startuml Sequence Diagram - Nghe Nhạc 
+@startuml Sequence Diagram - Nghe Nhạc (Thông điệp)
 
-title Sơ Đồ Tuần Tự - Nghe Nhạc 
+title Sơ Đồ Tuần Tự - Nghe Nhạc
 
 actor "Người dùng" as User
-participant ":NextJS Client" as UI
-participant ":PlayerController" as Controller
-participant ":PlayerService" as Service
-participant ":SongRepository" as DB
-participant ":FileStorageService" as Storage
+participant ":Giao diện" as UI
+participant ":Controller" as Controller
+participant ":Service" as Service
+participant ":Database" as DB
 
 autonumber
 
-' === BƯỚC 1: BẮT ĐẦU PHÁT NHẠC ===
-User -> UI: Chọn bài hát (songId)
+' === BƯỚC 1: BẮT ĐẦU PHÁT NHẠC (Dòng sự kiện chính 1) ===
+User -> UI: Chọn một bài hát từ danh sách "Khám phá"
 activate UI
-UI -> Controller: getSongData(songId)
+
+UI -> Controller: Gửi yêu cầu phát bài hát đã chọn
 activate Controller
 
-' Controller gọi Service xử lý trọn gói
-Controller -> Service: getSongData(songId)
+Controller -> Service: Yêu cầu lấy dữ liệu bài hát và file nhạc
 activate Service
 
-' 1. Lấy Metadata từ DB
-Service -> DB: findOne({ where: { id: songId } })
+Service -> DB: Truy vấn thông tin và đường dẫn file nhạc
 activate DB
-DB --> Service: songEntity
-deactivate DB
 
-' 2. Lấy Stream URL từ Storage
-Service -> Storage: getStreamUrl(songEntity.fileKey)
-activate Storage
-
-alt File không tồn tại / Lỗi Storage
-    Storage --> Service: null / Error
-    deactivate Storage
-    Service --> Controller: Throw NotFoundException
-    Controller --> UI: {status: 404, error: "Song File Not Found"}
-    UI --> User: Thông báo lỗi
-else Thành công
-    Storage --> Service: streamUrl
-    deactivate Storage
+alt Dòng sự kiện phụ 1: Phát nhạc thất bại
+    DB --> Service: Phản hồi lỗi (File không tồn tại hoặc Lỗi mạng)
+    Service --> Controller: Báo lỗi không thể phát
+    Controller --> UI: Phản hồi trạng thái lỗi
     
-    Service --> Controller: {data: songEntity, streamUrl}
+    UI --> User: Thông báo "Phát nhạc thất bại, vui lòng thử lại"
+
+else Phát nhạc thành công
+    DB --> Service: Trả về thông tin bài hát và luồng nhạc (Stream)
+    deactivate DB
+    
+    Service --> Controller: Dữ liệu sẵn sàng để phát
     deactivate Service
     
-    Controller --> UI: {status: 200, data: ...}
+    Controller --> UI: Cung cấp luồng nhạc cho giao diện
     deactivate Controller
     
-    UI -> UI: Load Audio & Play
+    UI --> User: Hiển thị trình phát nhạc và Tự động phát
+    deactivate UI
 end
 
-' === BƯỚC 2: TƯƠNG TÁC NGƯỜI DÙNG ===
-group Tương tác Player
+' === BƯỚC 2: CÁC CHỨC NĂNG ĐIỀU KHIỂN (Dòng sự kiện chính 2) ===
+group Người dùng tương tác với trình phát nhạc
 
-    ' === KỊCH BẢN 2.1: PAUSE / RESUME (Client-side) ===
-    alt Pause/Resume
-        User -> UI: Nhấn "Tạm dừng"
-        UI -> UI: audio.pause() (Xử lý tại trình duyệt)
-        
-        ' (Optional) Gửi log thống kê ngầm
-        UI -->> Controller: logAction({ type: 'PAUSE', time: ... })
+    ' --- 2.1: Tạm dừng ---
+    alt Trường hợp: Tạm dừng
+        User -> UI: Nhấn nút "Tạm dừng"
+        activate UI
+        UI -> UI: Dừng phát âm thanh (Xử lý tại trình duyệt/App)
+        UI --> User: Nhạc dừng lại
+        deactivate UI
     
-    ' === KỊCH BẢN 2.2: CHUYỂN BÀI (Next/Prev) ===
-    else Chuyển bài (Next/Previous)
+    ' --- 2.2: Tiếp tục ---
+    else Trường hợp: Tiếp tục phát
+        User -> UI: Nhấn nút "Tiếp tục"
+        activate UI
+        UI -> UI: Tiếp tục phát âm thanh
+        UI --> User: Nhạc phát tiếp
+        deactivate UI
         
-        alt Chọn Next
-            User -> UI: Nhấn "Bài tiếp theo"
-            UI -> Controller: playNextSong(currentId)
-            activate Controller
-            Controller -> Service: playNextSong(currentId)
-            activate Service
-            
-            ' Logic tìm bài kế tiếp (VD: bài có ID lớn hơn hoặc order lớn hơn)
-            Service -> DB: findOne({ where: { id: MoreThan(currentId) }, order: { id: 'ASC' } })
-            activate DB
-            DB --> Service: nextSongEntity
-            deactivate DB
-            
-        else Chọn Previous
-            User -> UI: Nhấn "Bài trước"
-            UI -> Controller: playPreviousSong(currentId)
-            ' Controller đã activate từ nhánh Next/Prev chung
-            Controller -> Service: playPreviousSong(currentId)
-            activate Service
-            
-            ' Logic tìm bài trước đó
-            Service -> DB: findOne({ where: { id: LessThan(currentId) }, order: { id: 'DESC' } })
-            activate DB
-            DB --> Service: nextSongEntity (Là bài trước)
-            deactivate DB
-        end
-
-        ' === XỬ LÝ CHUNG SAU KHI TÌM ĐƯỢC BÀI MỚI ===
-        ' Service tự động lấy Stream URL cho bài mới tìm được (Tái sử dụng code)
-        Service -> Storage: getStreamUrl(nextSongEntity.fileKey)
-        activate Storage
-        Storage --> Service: newStreamUrl
-        deactivate Storage
+    ' --- 2.3: Chuyển bài (Tiến/Lùi) ---
+    else Trường hợp: Chuyển bài (Tiến/Lùi)
+        User -> UI: Nhấn nút "Mũi tên trái/phải" (Bài trước/sau)
+        activate UI
         
-        Service --> Controller: {data: nextSongEntity, streamUrl: newStreamUrl}
+        UI -> Controller: Gửi yêu cầu tìm bài hát kế tiếp/trước đó
+        activate Controller
+        
+        Controller -> Service: Tìm bài hát liền kề trong danh sách
+        activate Service
+        
+        Service -> DB: Truy vấn ID bài hát tiếp theo
+        activate DB
+        DB --> Service: Trả về ID bài hát mới
+        deactivate DB
+        
+        ' (Lặp lại quy trình lấy dữ liệu như Bước 1)
+        Service -> DB: Lấy dữ liệu của bài hát mới
+        activate DB
+        DB --> Service: Trả về dữ liệu bài hát mới
+        deactivate DB
+        
+        Service --> Controller: Dữ liệu bài mới sẵn sàng
         deactivate Service
         
-        Controller --> UI: {status: 200, song: nextSongEntity, url: ...}
+        Controller --> UI: Cập nhật giao diện với bài hát mới
         deactivate Controller
         
-        UI -> UI: Load bài mới & Tự động Play
+        UI --> User: Hiển thị và Tự động phát bài hát mới
+        deactivate UI
     end
 end
 
-deactivate UI
 @enduml

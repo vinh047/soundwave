@@ -1,62 +1,77 @@
-@startuml Sequence Diagram - Sửa Thông Tin Playlist Cá Nhân
+@startuml Sequence Diagram - Sửa Thông Tin Playlist
 
-title Sơ Đồ Tuần Tự - Sửa Thông Tin Playlist Cá Nhân 
+title Sơ Đồ Tuần Tự - Sửa Thông Tin Playlist
 
 actor "Người dùng" as User
-participant ":NextJS Client" as UI
-participant ":PlaylistController" as Controller
-participant ":PlaylistService" as Service
-participant ":PlaylistRepository" as DB
+participant ":Giao diện" as UI
+participant ":Controller" as Controller
+participant ":Service" as Service
+participant ":Database" as DB
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM ===
-UI --> User: Hiển thị form với thông tin cũ
-
-' === BƯỚC 2: GỬI YÊU CẦU ===
-User -> UI: Thay đổi thông tin & Nhấn "Lưu"
+' === BƯỚC 1: HIỂN THỊ FORM (Dòng sự kiện chính 1) ===
+User -> UI: Chọn chức năng "Sửa thông tin Playlist"
 activate UI
 
-' Dùng DTO
-UI -> Controller: updatePlaylist(req, playlistId, updatePlaylistDto)
+UI -> Controller: Yêu cầu lấy thông tin hiện tại của Playlist
 activate Controller
-
-' Lấy userId từ req.user
-Controller -> Service: updatePlaylist(userId, playlistId, updatePlaylistDto)
+Controller -> Service: Truy xuất dữ liệu Playlist theo ID
 activate Service
 
-' === BƯỚC 3: CẬP NHẬT DB ===
-' TypeORM: updatePlaylist(criteria, partialEntity)
-' Chỉ update nếu ID khớp VÀ userId khớp (Bảo mật)
-Service -> DB: update({ id: playlistId, userId: userId }, updatePlaylistDto)
+' Logic: Phải tìm đúng Playlist của User đó (Check Owner)
+Service -> DB: Truy vấn thông tin Playlist (Tên, Ảnh, Mô tả...)
 activate DB
-DB --> Service: result { affected: 1 }
+DB --> Service: Trả về thông tin chi tiết
 deactivate DB
 
-alt Thất bại (affected == 0 hoặc Lỗi DB)
-    ' affected = 0 nghĩa là Playlist không tồn tại hoặc không phải của User này
-    Service --> Controller: Throw Forbidden/NotFound
-    deactivate Service
-    Controller --> UI: {status: 403/404, error: "Update Failed"}
-    deactivate Controller
-    
-    UI --> User: Thông báo "Cập nhật thất bại (Không có quyền hoặc Lỗi)"
-    deactivate UI
+Service --> Controller: Dữ liệu Playlist
+deactivate Service
+Controller --> UI: Hiển thị dữ liệu lên biểu mẫu
+deactivate Controller
 
-else Thành công (affected > 0)
-    ' Đã activate Service ở trên
-    activate Service
-    Service --> Controller: {success: true}
+UI --> User: Hiển thị Form nhập liệu với thông tin cũ
+deactivate UI
+
+' === BƯỚC 2: NGƯỜI DÙNG CHỈNH SỬA (Dòng sự kiện chính 2) ===
+User -> UI: Thay đổi thông tin (Tên, Mô tả, Ảnh nền...)
+activate UI
+User -> UI: Nhấn nút "Lưu"
+
+UI -> Controller: Gửi thông tin cập nhật
+activate Controller
+Controller -> Service: Chuyển tiếp yêu cầu cập nhật
+activate Service
+
+' === BƯỚC 3: GHI NHẬN VÀO CSDL (Dòng sự kiện chính 3) ===
+' Service kiểm tra quyền sở hữu trước khi cập nhật
+Service -> DB: Yêu cầu cập nhật thông tin mới vào CSDL
+activate DB
+
+alt Dòng sự kiện phụ 1: Ghi nhận thất bại
+    DB --> Service: Phản hồi lỗi (Lỗi kết nối hoặc dữ liệu không hợp lệ)
+    Service --> Controller: Báo lỗi xử lý
+    Controller --> UI: Phản hồi trạng thái lỗi
+    
+    UI --> User: Thông báo "Sửa thông tin Playlist thất bại, vui lòng thử lại"
+    ' (Form vẫn mở để người dùng thử lại)
+
+else Ghi nhận thành công (Dòng sự kiện chính 3 & 4)
+    DB --> Service: Xác nhận cập nhật thành công
+    deactivate DB
+    
+    Service --> Controller: Xác nhận quy trình hoàn tất
     deactivate Service
     
-    Controller --> UI: {status: 200, message: "Updated Successfully"}
+    Controller --> UI: Phản hồi thành công & Yêu cầu đóng form
     deactivate Controller
     
-    ' === BƯỚC 4: CHUYỂN GIAO DIỆN ===
-    ' Client tự điều hướng
-    UI -> UI: Redirect to /edit-playlist/playlistId
+    ' === BƯỚC 4: TẮT FORM ===
+    UI -> UI: Tắt form (Đóng cửa sổ nhập liệu)
     
-    UI --> User: Chuyển sang giao diện Sửa Playlist
+    ' Cập nhật lại giao diện cha (danh sách hoặc chi tiết playlist)
+    UI --> User: Hiển thị Playlist với thông tin mới
     deactivate UI
 end
+
 @enduml
