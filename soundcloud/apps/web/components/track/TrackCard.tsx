@@ -14,10 +14,21 @@ interface TrackCardProps {
 
 export function TrackCard({ track }: TrackCardProps) {
   const { play } = usePlayerStore();
+
   return (
     <Link
       href={`/tracks/${track.id}`}
-      className="group cursor-pointer bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-all block"
+      className={`
+        group cursor-pointer rounded-lg p-4 transition-all block
+        
+        /* 🔥 Light mode */
+        bg-white hover:bg-gray-100 text-gray-900 
+        border border-gray-200 shadow-sm
+
+        /* 🌙 Dark mode */
+        dark:bg-gray-900 dark:hover:bg-gray-800 dark:text-white 
+        dark:border-gray-700
+      `}
     >
       <div className="relative">
         <Image
@@ -27,10 +38,23 @@ export function TrackCard({ track }: TrackCardProps) {
           height={400}
           className="w-full aspect-square object-cover rounded"
         />
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+
+        {/* overlay khi hover */}
+        <div
+          className="
+          absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity 
+          flex items-center justify-center
+
+          /* Light */
+          bg-black/20
+
+          /* Dark */
+          dark:bg-black/40
+        "
+        >
           <Button
             size="lg"
-            className="h-14 w-14 rounded-full p-0 cursor-pointer "
+            className="h-14 w-14 rounded-full p-0 cursor-pointer"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -41,9 +65,16 @@ export function TrackCard({ track }: TrackCardProps) {
           </Button>
         </div>
       </div>
-      <h3 className="font-semibold text-white mt-3 truncate">{track.title}</h3>
-      <p className="text-sm text-gray-400">{track.user.name}</p>
-      <div className="flex gap-2 mt-2 text-xs text-gray-500">
+
+      <h3 className="font-semibold mt-3 truncate text-gray-900 dark:text-white">
+        {track.title}
+      </h3>
+
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        {track.user.name}
+      </p>
+
+      <div className="flex gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400">
         <span>{formatPlayCount(track.playCount)}</span>
         <span>•</span>
         <span>{timeAgo(track.createdAt)}</span>
