@@ -1,6 +1,11 @@
 "use client";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui2/Dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../ui2/Dialog";
 import { Button } from "../ui/Button";
 import { Textarea } from "../ui2/Textarea";
 import axios from "axios";
@@ -24,7 +29,11 @@ export function ReportModal({ trackId, open, onOpenChange }: ReportModalProps) {
 
   const handleSubmit = async () => {
     if (!reasonId) return;
-    await axios.post("/api/reports", { trackId, reportReasonId: reasonId, description: note });
+    await axios.post("/api/reports", {
+      trackId,
+      reportReasonId: reasonId,
+      description: note,
+    });
     onOpenChange(false);
   };
 
@@ -56,7 +65,7 @@ export function ReportModal({ trackId, open, onOpenChange }: ReportModalProps) {
           />
 
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+            <Button onClick={() => onOpenChange(false)} className="flex-1">
               Hủy
             </Button>
             <Button
