@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import type { Track } from '@repo/database';
+import type { Prisma, Track, User } from '@repo/database';
 import { PaginatedResult } from '../dto/PaginatedResult';
 
 @Injectable()
@@ -89,5 +89,123 @@ export class TracksService {
     } catch {
       throw new NotFoundException(`Track with ID "${id}" not found to delete`);
     }
+  }
+
+  async getTrendingTopN({
+    days = 7,
+    limit = 20,
+  }: { days?: number; limit?: number } = {}): Promise<
+    (Track & { user: User })[]
+  > {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    // 1) group likes
+    const likes = await this.prisma.like.groupBy({
+      by: ['trackId'],
+      where: { createdAt: { gte: since } },
+      _count: { _all: true },
+    });
+    const likesMap = new Map(
+      likes.map((r) => [r.trackId, Number(r._count._all)]),
+    );
+
+    // 2) group reposts
+    const reposts = await this.prisma.repost.groupBy({
+      by: ['trackId'],
+      where: { createdAt: { gte: since } },
+      _count: { _all: true },
+    });
+    const repostsMap = new Map(
+      reposts.map((r) => [r.trackId, Number(r._count._all)]),
+    );
+
+    // 3) Determine candidates
+    const candidateTrackIds = Array.from(
+      new Set([
+        ...likes.map((l) => l.trackId),
+        ...reposts.map((r) => r.trackId),
+      ]),
+    );
+
+    let tracks;
+    if (candidateTrackIds.length > 0) {
+      tracks = await this.prisma.track.findMany({
+        where: {
+          id: { in: candidateTrackIds },
+          isPublic: true,
+          isBanned: false,
+        },
+        include: { user: true },
+      });
+    } else {
+      // fallback: use playCount
+      tracks = await this.prisma.track.findMany({
+        where: { isPublic: true, isBanned: false },
+        orderBy: { playCount: 'desc' },
+        take: limit,
+        include: { user: true },
+      });
+    }
+
+    // 4) compute score
+    const now = new Date();
+    const items = tracks.map((t) => {
+      const recentLikes = likesMap.get(t.id) || 0;
+      const recentReposts = repostsMap.get(t.id) || 0;
+
+      const ageDays = Math.max(
+        1,
+        (now.getTime() - t.createdAt.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      const score =
+        recentLikes * 3 +
+        recentReposts * 4 +
+        (t.playCount || 0) * Math.exp(-ageDays / 30);
+
+      return { track: t, score };
+    });
+
+    // 5) sort & return Track[]
+    items.sort((a, b) => b.score - a.score);
+    return items.slice(0, limit).map((i) => i.track);
+  }
+
+  async recordListen(userId: string | null, trackId: string) {
+    if (!userId) {
+      // anonymous: you can still insert Play log (if using Play), or ignore
+      return;
+    }
+
+    // Upsert RecentListen
+    await this.prisma.recentListen.upsert({
+      where: { userId_trackId: { userId, trackId } }, // needs @@unique([userId, trackId]) and a compound name
+      update: {
+        lastPlayedAt: new Date(),
+        playCount: { increment: 1 as any }, // Prisma numeric increment syntax may vary
+      },
+      create: {
+        userId,
+        trackId,
+        lastPlayedAt: new Date(),
+        playCount: 1,
+      },
+    });
+  }
+
+  async getUserRecentTracks(
+    userId: string,
+    limit = 20,
+  ): Promise<
+    Prisma.RecentListenGetPayload<{
+      include: { track: { include: { user: true } } };
+    }>[]
+  > {
+    return this.prisma.recentListen.findMany({
+      where: { userId },
+      orderBy: { lastPlayedAt: 'desc' },
+      take: limit,
+      include: { track: { include: { user: true } } },
+    });
   }
 }

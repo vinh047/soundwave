@@ -1,5 +1,5 @@
 import { PaginatedResult } from "@/types/common";
-import { Prisma, Track as TrackType } from "@repo/database";
+import { Prisma, Track, Track as TrackType, User } from "@repo/database";
 import axiosClient from "./apiClient";
 import { PaginationParams } from "@/type/PaginationParams";
 
@@ -31,6 +31,18 @@ const trackApi = {
     axiosClient.patch<TrackType>(`/tracks/${id}`, data),
 
   deleteTrack: (id: string) => axiosClient.delete<void>(`/tracks/${id}`),
+
+  getTrendingTracks: (limit: number) =>
+    axiosClient.get<Prisma.TrackGetPayload<{ include: { user: true } }>[]>(
+      `/tracks/trending?limit=${limit}`
+    ),
+
+  getRecentTracks: () =>
+    axiosClient.get<
+      Prisma.RecentListenGetPayload<{
+        include: { track: { include: { user: true } } };
+      }>[]
+    >(`/tracks/recent`),
 };
 
 export default trackApi;

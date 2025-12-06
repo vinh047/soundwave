@@ -8,11 +8,17 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
+  DefaultValuePipe,
+  ParseIntPipe,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { TracksService } from './tracks.service';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { Public } from 'src/decorator/customize';
+import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
 // import { JwtAuthGuard } from '../auth/jwt-auth.guard'; // <-- Ví dụ
 // import { AuthUser } from '../auth/auth-user.decorator'; // <-- Ví dụ
 
@@ -37,6 +43,46 @@ export class TracksController {
   @Get()
   findAll() {
     return this.tracksService.findAll();
+  }
+
+  // GET /tracks/trending?limit=5
+  @Public() // Bỏ nếu bạn muốn route này cần login
+  @Get('trending')
+  async getTrendingTopN(
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
+  ) {
+    // Gọi service
+    return this.tracksService.getTrendingTopN({ days, limit });
+  }
+
+  /**
+   * GET /tracks/recent?limit=20
+   * Lấy danh sách track gần đây của user
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('recent')
+  async getRecentTracks(@Req() req, @Query('limit') limit?: string) {
+    const userId = req.user.id;
+    const take = limit ? Number(limit) : 10;
+
+    const items = await this.tracksService.getUserRecentTracks(userId, take);
+
+    return items.map((i) => i.track);
+  }
+
+  /**
+   * POST /tracks/:id/listen
+   * Ghi nhận lượt nghe của user
+   */
+  @UseGuards(JwtAuthGuard) // nếu muốn yêu cầu token
+  @Post(':id/listen')
+  async recordListen(@Param('id') trackId: string, @Req() req) {
+    const userId = req.user?.id ?? null;
+
+    await this.tracksService.recordListen(userId, trackId);
+
+    return { message: 'Listen recorded' };
   }
 
   @Public()

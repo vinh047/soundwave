@@ -14,15 +14,14 @@ export default function MainSearch() {
           fullWidth
           rightAddon={<IoSearchOutline size={20} />}
         />
-
       </form>
 
-      <span className="text-gray-500">or</span>
+      {/* <span className="text-gray-500">or</span>
 
-      {/* Nút Upload */}
+      // Nút Upload 
       <Button dark >
         Upload your own
-      </Button>
+      </Button> */}
     </section>
   );
 }

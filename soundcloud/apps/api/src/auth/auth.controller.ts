@@ -44,8 +44,8 @@ export class AuthController {
     if (result.action === 'LOGIN_SUCCESS') {
       res.cookie('refresh_token', result.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: false,
+        sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
@@ -85,8 +85,8 @@ export class AuthController {
       // 2. Set Refresh Token vào HttpOnly Cookie
       res.cookie('refresh_token', verificationResult.tokens.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: false,
+        sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
@@ -153,8 +153,8 @@ export class AuthController {
       // 3. (QUAN TRỌNG) Set lại refresh token mới (nếu bạn dùng xoay vòng)
       res.cookie('refresh_token', result.tokens.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: false,
+        sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
@@ -167,8 +167,8 @@ export class AuthController {
       // Nếu refresh token không hợp lệ -> Xóa cookie
       res.clearCookie('refresh_token', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: false,
+        sameSite: 'lax',
       });
       throw new UnauthorizedException(
         'Refresh token không hợp lệ hoặc đã hết hạn.',
@@ -182,8 +182,8 @@ export class AuthController {
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('refresh_token', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: false,
+      sameSite: 'lax',
     });
 
     return { message: 'Đã đăng xuất thành công.' };
@@ -214,8 +214,8 @@ export class AuthController {
 
       res.cookie('refresh_token', tokens.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: false,
+        sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
