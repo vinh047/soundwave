@@ -16,9 +16,9 @@ activate Controller
 Controller -> Service: Yêu cầu hồ sơ cá nhân
 activate Service
 Service --> Controller: Trả về hồ sơ cá nhân
+deactivate Service
 Controller --> View: Hiển thị hồ sơ cá nhân
 deactivate Controller
-deactivate Service
 
 group Sửa hồ sơ cá nhân
     User -> View: Chọn chức năng Sửa hồ sơ (Chuyển sang Usecase Sửa hồ sơ cá nhân)

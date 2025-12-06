@@ -16,9 +16,9 @@ activate Controller
 Controller -> Service: Yêu cầu danh sách bài hát
 activate Service
 Service --> Controller: Trả về danh sách bài hát
+deactivate Service
 Controller --> View: Hiển thị danh sách bài hát
 deactivate Controller
-deactivate Service
 
 User -> View: Chọn chức năng Tải lên bài hát(Chuyển sang Usecase Tải lên bài hát)
 User -> View: Chọn chức năng Sửa thông tin bài hát(Chuyển sang Usecase Sửa thông tin bài hát)
