@@ -1,100 +1,43 @@
-@startuml Sequence Diagram - Xem Bài Hát Đăng Lại (Thông điệp)
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Xem danh sách & tìm kiếm bài hát đăng lại
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":Giao diện" as UI
-participant ":Controller" as Controller
-participant ":Service" as Service
-participant ":Database" as DB
+title Sequence Diagram: Xem danh sách và tìm kiếm bài hát đăng lại
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ DANH SÁCH (Dòng sự kiện chính 1) ===
-User -> UI: Chọn tab "Bài hát đăng lại" trong Hồ sơ
-activate UI
-
-UI -> Controller: Gửi yêu cầu lấy danh sách bài hát đã đăng lại
+User -> View: User chọn chức năng Xem danh sách và tìm kiếm bài hát đăng lại
+activate View
+View -> Controller: Yêu cầu danh sách bài hát đăng lại
 activate Controller
-Controller -> Service: Yêu cầu truy xuất dữ liệu theo ID người dùng
+Controller -> Service: Yêu cầu danh sách bài hát
 activate Service
-
-' Logic: Tìm trong bảng Repost, join sang bảng Song
-Service -> DB: Truy vấn danh sách bài hát đăng lại
-activate DB
-DB --> Service: Trả về danh sách bài hát
-deactivate DB
-
-Service --> Controller: Dữ liệu danh sách
+Service --> Controller: Trả về danh sách bài hát đăng lại
 deactivate Service
-Controller --> UI: Hiển thị danh sách lên màn hình
+Controller --> View: Trả về danh sách bài hát đăng lại
 deactivate Controller
+View --> View: Hiển thị danh sách bài hát đăng lại
 
-UI --> User: Hiển thị danh sách bài hát đăng lại & Ô tìm kiếm
-deactivate UI
-
-' === BƯỚC 2: TÌM KIẾM (Dòng sự kiện chính 2) ===
-group Người dùng tìm kiếm trong danh sách
-    User -> UI: Nhập từ khóa tìm kiếm
-    activate UI
-    UI -> Controller: Gửi yêu cầu lọc danh sách theo tên bài hát
+group Tương tác bài hát
+    User -> View: Chọn 1 bài hát và nhấn tương tác
+    View -> Controller: Yêu cầu xử lý tương tác bài hát
     activate Controller
-    Controller -> Service: Xử lý logic tìm kiếm
+    Controller -> Service: Yêu cầu xử lý tương tác bài hát
     activate Service
-    
-    Service -> DB: Truy vấn bài hát đăng lại khớp từ khóa
-    activate DB
-    DB --> Service: Kết quả tìm kiếm
-    deactivate DB
-    
-    Service --> Controller: Trả về danh sách lọc
+    Service --> Controller: Trả về kết quả xử lý tương tác bài hát
     deactivate Service
-    Controller --> UI: Cập nhật giao diện
-    deactivate Controller
-    
-    UI --> User: Hiển thị kết quả tìm kiếm
-    deactivate UI
-end
-
-' === BƯỚC 3, 4, 5: TƯƠNG TÁC (Chọn Hủy Đăng lại làm ví dụ) ===
-group Người dùng chọn bài hát và thực hiện chức năng
-
-    ' Ví dụ: Chọn Hủy Đăng lại (sẽ làm bài hát biến mất khỏi list)
-    User -> UI: Nhấn nút "Hủy Đăng lại" (Repost)
-    activate UI
-    
-    UI -> Controller: Gửi yêu cầu hủy đăng lại bài hát
-    activate Controller
-    Controller -> Service: Xử lý logic xóa tương tác đăng lại
-    activate Service
-    
-    ' Bước 4: Ghi nhận vào CSDL
-    Service -> DB: Yêu cầu xóa bản ghi đăng lại khỏi CSDL
-    activate DB
-    
-    ' --- Dòng sự kiện phụ 4.1 ---
-    alt Ghi nhận thất bại (Lỗi hệ thống/DB)
-        DB --> Service: Phản hồi lỗi (Không thể xóa)
-        Service --> Controller: Báo lỗi xử lý
-        Controller --> UI: Phản hồi trạng thái lỗi
-        UI --> User: Thông báo "Hành động thất bại, vui lòng thử lại"
-        
-    ' --- Dòng sự kiện chính 4, 5 ---
-    else Ghi nhận thành công
-        DB --> Service: Xác nhận đã xóa thành công
-        deactivate DB
-        
-        Service --> Controller: Xác nhận hoàn tất
-        deactivate Service
-        
-        Controller --> UI: Phản hồi thành công
-        deactivate Controller
-        
-        ' Bước 5: Cập nhật danh sách (Giao diện tự xóa dòng đó đi)
-        UI -> UI: Loại bỏ bài hát khỏi danh sách đang hiển thị
-        
-        UI --> User: Hiển thị danh sách mới (đã cập nhật)
-        deactivate UI
+    alt Tương tác thất bại
+        Controller --> View: Thông báo "Hành động thất bại, vui lòng thử lại"
+    else Tương tác thành công
+        Controller --> View: Thông báo "Hành động thành công"
     end
+    deactivate Controller
+    View --> User: Hiển thị thông báo
+    View --> View: Cập nhật số lượt tương tác
 end
+
+deactivate View
 @enduml

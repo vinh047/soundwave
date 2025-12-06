@@ -1,81 +1,40 @@
-@startuml Sequence Diagram - Đăng Nhập Admin
-
-title Sơ Đồ Tuần Tự - Đăng Nhập Admin
+@startuml SD
 
 actor "Admin" as Admin
-participant ":Giao diện" as UI
-participant ":AuthController" as Controller
-participant ":AuthService" as AuthService
-participant ":UserService" as UserService
-participant ":Database" as DB
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+
+title Sequence Diagram: Đăng Nhập Admin
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM ===
-Admin -> UI: Truy cập trang đăng nhập dành cho Admin
-activate UI
-UI --> Admin: Hiển thị biểu mẫu (Email, Mật khẩu)
-deactivate UI
-
-' === BƯỚC 2: NHẬP LIỆU ===
-Admin -> UI: Nhập Email, Mật khẩu và nhấn "Đăng nhập"
-activate UI
-
-UI -> Controller: Gửi thông tin đăng nhập
-activate Controller
-
-' === BƯỚC 3: KIỂM TRA LOGIC ===
-
-' --- Kiểm tra 3.1: Định dạng Email (Validation Pipe) ---
-Controller -> Controller: Kiểm tra định dạng Email
-
-alt Dòng sự kiện phụ 3.1: Email không hợp lệ
-    Controller --> UI: Phản hồi lỗi định dạng (Bad Request)
-    UI --> Admin: Thông báo "Email không hợp lệ, vui lòng nhập lại"
-
-else Định dạng hợp lệ (Tiếp tục xử lý)
-    Controller -> AuthService: Yêu cầu xác thực thông tin Admin
-    activate AuthService
-
-    ' --- Kiểm tra thông tin trong DB ---
-    AuthService -> UsersService: Yêu cầu tìm tài khoản theo Email
-    activate UsersService
-    
-    UsersService -> DB: Truy vấn tìm bản ghi Admin
-    activate DB
-    DB --> UsersService: Kết quả tìm kiếm (Thông tin Admin hoặc Null)
-    deactivate DB
-    
-    UsersService --> AuthService: Trả về thông tin tài khoản
-    deactivate UsersService
-    
-    ' --- Kiểm tra 3.2: So sánh mật khẩu & Tồn tại ---
-    
-    alt Dòng sự kiện phụ 3.2: Tài khoản không tồn tại HOẶC Sai mật khẩu
-        ' (Gộp chung để bảo mật, hoặc tách ra tùy logic)
-        AuthService --> Controller: Báo lỗi xác thực (Unauthorized)
-        Controller --> UI: Phản hồi trạng thái lỗi
-        UI --> Admin: Thông báo "Sai email hoặc mật khẩu, vui lòng nhập lại"
-        
-    else Đăng nhập thành công (Dòng sự kiện chính 4)
-        ' Logic kiểm tra mật khẩu khớp diễn ra tại đây
-        AuthService -> AuthService: So sánh mật khẩu và tạo Token truy cập
-        
-        AuthService --> Controller: Trả về Token đăng nhập
-        deactivate AuthService
-        
-        Controller --> UI: Xác nhận thành công & Gửi Token
-        deactivate Controller
-        
-        ' === BƯỚC 4 & 5: THÔNG BÁO & CHUYỂN TRANG ===
-        UI -> UI: Lưu Token vào trình duyệt
-        
-        UI --> Admin: Thông báo "Đăng nhập thành công"
-        
-        UI -> UI: Chuyển hướng sang giao diện\n"Dashboard Quản trị"
-        
-        UI --> Admin: Hiển thị màn hình Dashboard
-        deactivate UI
+Admin -> View: Admin chọn chức năng Đăng Nhập
+activate View
+View --> View: Hiển thị form đăng nhập
+Admin -> View: Nhập thông tin đăng nhập
+View --> View: Kiểm tra thông tin đăng nhập
+alt Thông tin không hợp lệ
+    View --> View: Thông báo "Thông tin không hợp lệ, vui lòng thử lại"
+else Thông tin hợp lệ
+    View -> Controller: Yêu cầu đăng nhập
+    activate Controller
+    Controller -> Service: Yêu cầu đăng nhập
+    activate Service
+    Service --> Service: Xử lý đăng nhập
+    Service --> Controller: Trả về kết quả đăng nhập
+    deactivate Service
+    alt Đăng nhập thành công
+        Controller --> View: Thông báo "Đăng nhập thành công"
+        View --> View: Tắt form đăng nhập
+        View --> Admin: Hiển thị thông báo
+        View --> Admin: Chuyển sang giao diện Admin
+    else Đăng nhập thất bại
+        Controller --> View: Thông báo "Sai email hoặc mật khẩu, vui lòng thử lại"
+        View --> Admin: Hiển thị thông báo
     end
+    deactivate Controller
 end
+
+deactivate View
 @enduml

@@ -1,69 +1,33 @@
-@startuml Sequence Diagram - Báo Cáo Vi Phạm (Thông điệp)
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Báo Cáo Vi Phạm
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":Giao diện" as SongUI
-participant ":Form\nBáo cáo" as ReportUI
-participant ":Controller" as Controller
-participant ":Service" as Service
-participant ":Database" as DB
+title Sequence Diagram: Báo cáo vi phạm
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM (Dòng sự kiện chính 1) ===
-User -> SongUI: Nhấn nút "Báo cáo vi phạm" tại bài hát
-activate SongUI
+User -> View: User chọn chức năng Báo cáo vi phạm
+activate View
+View --> View: Hiển thị form thông tin báo cáo
 
-SongUI -> ReportUI: Yêu cầu hiển thị biểu mẫu
-activate ReportUI
-note right: Form tự động điền sẵn tên bài hát hiện tại
-
-ReportUI --> User: Hiển thị Form nhập lý do báo cáo
-deactivate SongUI
-
-' === BƯỚC 2: NGƯỜI DÙNG GỬI BÁO CÁO (Dòng sự kiện chính 2) ===
-User -> ReportUI: Nhập lý do và nhấn nút "Gửi báo cáo"
-
-ReportUI -> Controller: Gửi thông tin báo cáo (ID bài hát, Lý do)
+User -> View: Nhập thông tin báo cáo
+View --> View: Kiểm tra thông tin báo cáo
+View -> Controller: Gửi yêu cầu nhận báo cáo
 activate Controller
-Controller -> Service: Chuyển tiếp yêu cầu xử lý
+Controller -> Service: Lưu báo cáo
 activate Service
-
-' === BƯỚC 3: GHI NHẬN VÀO CSDL (Dòng sự kiện chính 3) ===
-Service -> DB: Yêu cầu lưu báo cáo mới vào danh sách chờ xử lý
-activate DB
-
-alt Dòng sự kiện phụ 3.1: Ghi nhận thất bại
-    DB --> Service: Phản hồi lỗi (Lỗi kết nối hoặc không thể ghi)
-    Service --> Controller: Báo lỗi xử lý
-    Controller --> ReportUI: Phản hồi trạng thái lỗi
-    
-    ReportUI --> User: Thông báo "Báo cáo thất bại, vui lòng thử lại"
-    ' (Form vẫn mở để người dùng thử lại)
-
-else Ghi nhận thành công (Dòng sự kiện chính 3 & 4)
-    DB --> Service: Xác nhận đã lưu thành công
-    deactivate DB
-    
-    Service --> Controller: Xác nhận quy trình hoàn tất
-    deactivate Service
-    
-    Controller --> ReportUI: Phản hồi thành công & Yêu cầu đóng form
-    deactivate Controller
-    
-    ' === BƯỚC 4: THÔNG BÁO ===
-    ReportUI --> User: Thông báo "Đã báo cáo thành công"
-    
-    ' === BƯỚC 5: TẮT FORM (Dòng sự kiện chính 5) ===
-    ReportUI -> ReportUI: Tắt form (Đóng cửa sổ)
-    
-    ReportUI --> SongUI: Quay lại màn hình bài hát ban đầu
-    deactivate ReportUI
-    activate SongUI
-    
-    SongUI --> User: Hiển thị lại giao diện bài hát
-    deactivate SongUI
+Service --> Controller: Trả về kết quả lưu báo cáo
+deactivate Service
+alt Lưu báo cáo thành công
+    Controller --> View: Thông báo "Báo cáo thành công"
+    View --> View: Tắt form thông tin báo cáo
+else Lưu báo cáo thất bại
+    Controller --> View: Thông báo "Báo cáo thất bại, vui lòng thử lại"
 end
-
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

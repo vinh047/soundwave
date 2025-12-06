@@ -1,65 +1,32 @@
-@startuml Sequence Diagram - Tạo Playlist (Thông điệp)
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Tạo Playlist Cá Nhân
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":Giao diện" as UI_List
-participant ":Form\nTạo Playlist" as UI_Form
-participant ":Controller" as Controller
-participant ":Service" as Service
-participant ":Database" as DB
+title Sequence Diagram: Tạo Playlist cá nhân
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM (Dòng sự kiện chính 1) ===
-User -> UI_List: Nhấn nút "Tạo Playlist cá nhân"
-activate UI_List
-
-UI_List -> UI_Form: Yêu cầu hiển thị biểu mẫu nhập liệu
-activate UI_Form
-UI_Form --> User: Hiển thị Form (Ảnh nền, Tên, Mô tả)
-deactivate UI_List
-
-' === BƯỚC 2: NGƯỜI DÙNG NHẬP LIỆU (Dòng sự kiện chính 2) ===
-User -> UI_Form: Nhập thông tin và nhấn nút "Tạo Playlist"
-activate UI_Form
-
-UI_Form -> Controller: Gửi thông tin Playlist mới
+User -> View: User chọn chức năng Tạo Playlist cá nhân
+activate View
+View --> View: Hiển thị form tạo Playlist
+User -> View: Nhập thông tin Playlist
+View --> View: Kiểm tra thông tin Playlist
+View -> Controller: Gửi yêu cầu tạo Playlist
 activate Controller
-Controller -> Service: Chuyển tiếp yêu cầu tạo mới
+Controller -> Service: Xử lý yêu cầu tạo Playlist
 activate Service
-
-' === BƯỚC 3: GHI NHẬN VÀO CSDL (Dòng sự kiện chính 3) ===
-Service -> DB: Yêu cầu lưu Playlist mới vào danh sách của người dùng
-activate DB
-
-alt Dòng sự kiện phụ 3.1: Ghi nhận thất bại
-    DB --> Service: Phản hồi lỗi (Lỗi kết nối hoặc không thể ghi)
-    Service --> Controller: Báo lỗi xử lý
-    Controller --> UI_Form: Phản hồi trạng thái lỗi
-    
-    UI_Form --> User: Thông báo "Tạo Playlist thất bại, vui lòng thử lại"
-    ' (Form vẫn mở để người dùng thử lại)
-
-else Ghi nhận thành công (Dòng sự kiện chính 3 & 4)
-    DB --> Service: Xác nhận đã lưu thành công
-    deactivate DB
-    
-    Service --> Controller: Xác nhận quy trình hoàn tất
-    deactivate Service
-    
-    Controller --> UI_Form: Phản hồi thành công & Yêu cầu tắt form
-    deactivate Controller
-    
-    ' === BƯỚC 4: TẮT FORM & CẬP NHẬT ===
-    UI_Form -> UI_Form: Tắt form (Đóng cửa sổ nhập liệu)
-    
-    UI_Form --> UI_List: Quay lại màn hình danh sách
-    deactivate UI_Form
-    activate UI_List
-    
-    UI_List --> User: Hiển thị danh sách Playlist (đã có Playlist mới)
-    deactivate UI_List
+Service --> Controller: Trả về kết quả tạo Playlist
+deactivate Service
+alt Tạo Playlist thành công
+    Controller --> View: Thông báo "Tạo Playlist thành công"
+    View --> View: Tắt form tạo Playlist
+else Tạo Playlist thất bại
+    Controller --> View: Thông báo "Tạo Playlist thất bại, vui lòng thử lại"
 end
-
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

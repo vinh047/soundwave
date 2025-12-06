@@ -1,63 +1,25 @@
-@startuml Sequence Diagram - Đăng Xuất (Thông điệp)
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Đăng Xuất (Dạng Thông điệp)
-skinparam sequenceActorStyle awesome
-skinparam responseMessageBelowArrow true
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng/Admin" as User
-participant ":Giao diện\n(Website/App)" as UI
-participant ":Bộ điều khiển\n(Controller)" as Controller
-participant ":Dịch vụ Xác thực\n(AuthService)" as Service
-participant ":Kho lưu trữ Phiên\n(Session/Token DB)" as DB
+title Sequence Diagram: Đăng Xuất
 
 autonumber
 
-' === BƯỚC 1: GỬI YÊU CẦU ===
-User -> UI: Nhấn nút "Đăng xuất"
-activate UI
-
-UI -> Controller: Gửi yêu cầu đăng xuất (kèm thông tin phiên hiện tại)
+User -> View: User chọn chức năng Đăng Xuất
+activate View
+View -> Controller: Gửi yêu cầu đăng xuất
 activate Controller
-
-Controller -> Service: Chuyển tiếp yêu cầu hủy phiên làm việc
+Controller -> Service: Xử lý yêu cầu đăng xuất
 activate Service
-
-' === BƯỚC 2: XỬ LÝ SERVER (HỦY PHIÊN) ===
-Service -> DB: Yêu cầu xóa hoặc vô hiệu hóa Token/Session
-activate DB
-
-alt Dòng sự kiện phụ 1.1: Đăng xuất thất bại (Lỗi hệ thống)
-    DB --> Service: Phản hồi lỗi (Lỗi kết nối hoặc không thể ghi)
-    Service --> Controller: Báo lỗi xử lý
-    Controller --> UI: Phản hồi trạng thái lỗi
-    
-    UI --> User: Thông báo "Đăng xuất thất bại, vui lòng thử lại"
-
-else Đăng xuất thành công (Dòng sự kiện chính)
-    DB --> Service: Xác nhận đã hủy phiên thành công
-    deactivate DB
-    
-    Service --> Controller: Xác nhận quy trình hoàn tất
-    deactivate Service
-    
-    Controller --> UI: Phản hồi thành công
-    deactivate Controller
-    
-    ' === BƯỚC 3: XỬ LÝ TẠI CLIENT & PHẢN HỒI ===
-    UI -> UI: Xóa thông tin đăng nhập lưu trên trình duyệt\n(Cookie/LocalStorage)
-    
-    UI --> User: Thông báo "Bạn đã đăng xuất thành công"
-    
-    ' === BƯỚC 4: CHUYỂN HƯỚNG (Theo Hậu điều kiện) ===
-    alt Nếu là Người dùng (User/Artist)
-        UI -> UI: Chuyển hướng về trang chủ (Chế độ Khách)
-        UI --> User: Hiển thị giao diện dành cho Khách
-    else Nếu là Quản trị viên (Admin)
-        UI -> UI: Chuyển hướng về trang Đăng nhập Admin
-        UI --> User: Hiển thị form đăng nhập Admin
-    end
-    
-    deactivate UI
-end
-
+Service --> Controller: Trả về kết quả đăng xuất
+deactivate Service
+Controller --> View: Thông báo "Đăng xuất thành công"
+deactivate Controller
+View --> User: Hiển thị thông báo
+View --> User: Chuyển sang giao diện Khách
+deactivate View
 @enduml

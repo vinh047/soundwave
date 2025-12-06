@@ -1,72 +1,42 @@
-@startuml Sequence Diagram - Sửa Hồ Sơ (Thông điệp)
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Sửa hồ sơ cá nhân
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":Form\nSửa hồ sơ" as UI_Form
-participant ":Controller" as Controller
-participant ":Service" as Service
-participant ":Database" as DB
+title Sequence Diagram: Sửa hồ sơ cá nhân
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM (Dòng sự kiện chính 1) ===
-User -> UI_Form: Chọn chức năng "Sửa hồ sơ cá nhân"
-activate UI_Form
-
-' (Hệ thống cần lấy thông tin cũ để hiện lên form cho người dùng sửa)
-UI_Form -> Controller: Yêu cầu lấy thông tin hiện tại của hồ sơ
+User -> View: User chọn chức năng Sửa hồ sơ cá nhân
+activate View
+View --> View: Hiển thị form sửa thông tin hồ sơ cá nhân
+View -> Controller: Yêu cầu thông tin hồ sơ cá nhân cần sửa
 activate Controller
-Controller -> Service: Truy xuất dữ liệu người dùng
+Controller -> Service: Yêu cầu thông tin hồ sơ cá nhân
 activate Service
-Service -> DB: Tìm kiếm thông tin theo ID người dùng
-activate DB
-DB --> Service: Trả về thông tin hiện tại (Tên, Ảnh...)
-deactivate DB
-Service --> Controller: Dữ liệu hồ sơ
+Service --> Controller: Trả về thông tin hồ sơ cá nhân
 deactivate Service
-Controller --> UI_Form: Hiển thị dữ liệu lên biểu mẫu
+Controller --> View: Trả về thông tin hồ sơ cá nhân trên form
 deactivate Controller
-
-UI_Form --> User: Hiển thị Form nhập liệu với thông tin cũ
-deactivate UI_Form
-
-' === BƯỚC 2: NGƯỜI DÙNG NHẬP LIỆU (Dòng sự kiện chính 2) ===
-User -> UI_Form: Nhập thông tin mới (Tên, Ảnh...)
-activate UI_Form
-User -> UI_Form: Nhấn nút "Lưu"
-
-UI_Form -> Controller: Gửi thông tin cập nhật
+View --> View: Hiển thị thông tin hồ sơ cá nhân trên form
+User -> View: Nhập thông tin mới cho hồ sơ
+View --> View: Kiểm tra thông tin nhập
+View -> Controller: Gửi yêu cầu sửa thông tin hồ sơ cá nhân
 activate Controller
-Controller -> Service: Chuyển tiếp yêu cầu cập nhật hồ sơ
+Controller -> Service: Xử lý yêu cầu sửa thông tin hồ sơ cá nhân
 activate Service
-
-' === BƯỚC 3: GHI NHẬN VÀO CSDL (Dòng sự kiện chính 3) ===
-Service -> DB: Yêu cầu lưu thông tin mới vào CSDL
-activate DB
-
-alt Dòng sự kiện phụ 3.1: Ghi nhận thất bại
-    DB --> Service: Phản hồi lỗi (Lỗi kết nối hoặc không thể ghi)
-    Service --> Controller: Báo lỗi cập nhật
-    Controller --> UI_Form: Phản hồi trạng thái lỗi
-    
-    UI_Form --> User: Thông báo "Cập nhật hồ sơ thất bại, vui lòng thử lại"
-
-else Ghi nhận thành công (Dòng sự kiện chính 3 & 4)
-    DB --> Service: Xác nhận đã lưu thành công
-    deactivate DB
-    
-    Service --> Controller: Xác nhận quy trình hoàn tất
-    deactivate Service
-    
-    Controller --> UI_Form: Phản hồi thành công
-    deactivate Controller
-    
-    ' === BƯỚC 4: TẮT FORM (Dòng sự kiện chính 4) ===
-    UI_Form -> UI_Form: Tắt form (Đóng cửa sổ nhập liệu)
-    
-    UI_Form --> User: Hiển thị lại màn hình Quản lý hồ sơ (đã cập nhật)
-    deactivate UI_Form
+Service --> Controller: Trả về kết quả sửa thông tin hồ sơ cá nhân
+deactivate Service
+alt Sửa thông tin thành công
+    Controller --> View: Thông báo "Sửa thông tin hồ sơ cá nhân thành công"
+    View --> View: Tắt form sửa thông tin hồ sơ cá nhân
+    View --> View: Cập nhật hồ sơ cá nhân mới
+else Sửa thông tin thất bại
+    Controller --> View: Thông báo "Sửa thông tin hồ sơ cá nhân thất bại, vui lòng thử lại"
 end
-
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

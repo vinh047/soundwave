@@ -1,94 +1,35 @@
-@startuml Sequence Diagram - Chia Sẻ Bài Hát (Thông điệp)
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Chia Sẻ Bài Hát
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+participant "Share Platform" as SharePlatform
 
-actor "Người dùng" as User
-participant ":Giao diện\nBài hát" as SongUI
-participant ":Form\nChia sẻ" as ShareUI
-participant ":Controller" as Controller
-participant ":Service" as Service
-participant ":API Nền tảng\n(Facebook/Zalo...)" as ExternalAPI
-participant ":Database" as DB
+title Sequence Diagram: Chia sẻ bài hát
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM (Dòng sự kiện chính 1) ===
-User -> SongUI: Nhấn nút "Chia sẻ"
-activate SongUI
-SongUI -> ShareUI: Yêu cầu mở giao diện chia sẻ
-activate ShareUI
-ShareUI --> User: Hiển thị Form chọn nền tảng
-deactivate SongUI
-
-' === BƯỚC 2 & 3: CHỌN NỀN TẢNG & HIỆN TÀI KHOẢN ===
-User -> ShareUI: Chọn nền tảng muốn chia sẻ
-activate ShareUI
-
-ShareUI -> Controller: Gửi yêu cầu lấy danh sách liên kết (Bạn bè/Nhóm)
+User -> View: User chọn chức năng Chia sẻ bài hát
+activate View
+View --> View: Hiển thị form chọn nền tảng chia sẻ
+User -> View: Chọn nền tảng và nhấn Chia sẻ
+View -> Controller: Yêu cầu chia sẻ bài hát
 activate Controller
-Controller -> Service: Xử lý lấy danh sách từ nền tảng
+Controller -> Service: Yêu cầu chia sẻ bài hát
 activate Service
-
-Service -> ExternalAPI: Gọi API lấy danh sách tài khoản/bạn bè
-activate ExternalAPI
-ExternalAPI --> Service: Trả về danh sách
-deactivate ExternalAPI
-
-Service --> Controller: Dữ liệu danh sách tài khoản
+Service -> SharePlatform: Gửi yêu cầu chia sẻ lên nền tảng
+activate SharePlatform
+SharePlatform --> Service: Trả về kết quả chia sẻ
+deactivate SharePlatform
+Service --> Controller: Trả về kết quả chia sẻ
 deactivate Service
-Controller --> ShareUI: Hiển thị dữ liệu lên Form
-deactivate Controller
-
-ShareUI --> User: Hiển thị danh sách tài khoản/bạn bè trên nền tảng đó
-deactivate ShareUI
-
-' === BƯỚC 4: CHỌN TÀI KHOẢN & GỬI ===
-User -> ShareUI: Chọn tài khoản đích và nhấn "Chia sẻ"
-activate ShareUI
-
-ShareUI -> Controller: Gửi thông tin chia sẻ (Bài hát, Nền tảng, Người nhận)
-activate Controller
-Controller -> Service: Chuyển tiếp yêu cầu chia sẻ
-activate Service
-
-' === BƯỚC 5: GỌI API BÊN NGOÀI (QUAN TRỌNG) ===
-Service -> ExternalAPI: Gửi yêu cầu đăng bài/gửi tin nhắn chứa link bài hát
-activate ExternalAPI
-
-alt Dòng sự kiện phụ 5.1: Chia sẻ thất bại (Lỗi từ nền tảng)
-    ExternalAPI --> Service: Phản hồi lỗi (Token hết hạn / Lỗi mạng / Từ chối)
-    Service --> Controller: Báo lỗi chia sẻ
-    Controller --> ShareUI: Phản hồi trạng thái lỗi
-    
-    ShareUI --> User: Thông báo "Chia sẻ thất bại, vui lòng thử lại"
-    ' (Form vẫn mở để người dùng thử lại)
-
-else Chia sẻ thành công (Dòng sự kiện chính 5)
-    ExternalAPI --> Service: Xác nhận đã đăng/gửi thành công
-    deactivate ExternalAPI
-
-    ' === BƯỚC 6: GHI NHẬN VÀO CSDL ===
-    Service -> DB: Lưu lịch sử chia sẻ vào hệ thống
-    activate DB
-    DB --> Service: Xác nhận đã lưu
-    deactivate DB
-    
-    Service --> Controller: Xác nhận quy trình hoàn tất
-    deactivate Service
-    
-    Controller --> ShareUI: Phản hồi thành công
-    deactivate Controller
-    
-    ' === BƯỚC 7: THÔNG BÁO ===
-    ShareUI --> User: Thông báo "Đã chia sẻ"
-    
-    ' === BƯỚC 8: TẮT FORM ===
-    ShareUI -> ShareUI: Tắt form (Đóng cửa sổ chia sẻ)
-    
-    ShareUI --> SongUI: Quay lại màn hình bài hát ban đầu
-    deactivate ShareUI
-    activate SongUI
-    deactivate SongUI
+alt Chia sẻ thành công
+    Controller --> View: Thông báo "Chia sẻ thành công"
+else Chia sẻ thất bại
+    Controller --> View: Thông báo "Chia sẻ thất bại, vui lòng thử lại"
 end
-
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

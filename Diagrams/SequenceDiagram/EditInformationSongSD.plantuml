@@ -1,84 +1,42 @@
-@startuml Sequence Diagram - Sửa Thông Tin Bài Hát
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Sửa Thông Tin Bài Hát
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":Giao diện" as UI
-participant ":Controller" as Controller
-participant ":Service" as Service
-participant ":File Storage" as FileStorage
-participant ":Database" as DB
+title Sequence Diagram: Sửa thông tin bài hát
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM (Dòng sự kiện chính 1) ===
-User -> UI: Yêu cầu mở trang "Sửa thông tin" (của 1 bài hát)
-activate UI
-
-UI -> Controller: Yêu cầu lấy thông tin hiện tại của bài hát
+User -> View: User chọn chức năng Sửa thông tin bài hát
+activate View
+View --> View: Hiển thị form sửa thông tin bài hát
+View -> Controller: Yêu cầu thông tin bài hát cần sửa
 activate Controller
-Controller -> Service: Truy xuất dữ liệu bài hát cũ
+Controller -> Service: Yêu cầu thông tin bài hát
 activate Service
-Service -> DB: Tìm bài hát theo ID
-activate DB
-DB --> Service: Trả về thông tin bài hát (Tên, Ảnh, File...)
-deactivate DB
-Service --> Controller: Dữ liệu bài hát
+Service --> Controller: Trả về thông tin bài hát
 deactivate Service
-Controller --> UI: Hiển thị dữ liệu lên Form
+Controller --> View: Trả về thông tin bài hát trên form
 deactivate Controller
-
-UI --> User: Hiển thị Form với thông tin cũ đã điền sẵn
-deactivate UI
-
-' === BƯỚC 2: NGƯỜI DÙNG CHỈNH SỬA (Dòng sự kiện chính 2) ===
-User -> UI: Thay đổi thông tin (Tên, Mô tả...) \nhoặc Tải file nhạc mới
-activate UI
-User -> UI: Nhấn nút "Lưu"
-
-UI -> Controller: Gửi thông tin mới (kèm file nhạc nếu có)
+View --> View: Hiển thị thông tin bài hát trên form
+User -> View: Nhập thông tin mới cho bài hát
+View --> View: Kiểm tra thông tin bài hát
+View -> Controller: Gửi yêu cầu sửa thông tin bài hát
 activate Controller
-Controller -> Service: Chuyển tiếp yêu cầu cập nhật
+Controller -> Service: Xử lý yêu cầu sửa thông tin bài hát
 activate Service
-
-' === XỬ LÝ FILE NHẠC (NẾU CÓ) ===
-alt Người dùng có tải lên file nhạc mới
-    Service -> FileStorage: Lưu file nhạc mới vào ổ cứng/cloud
-    activate FileStorage
-    FileStorage -> FileStorage: Xóa file nhạc cũ (dọn dẹp)
-    FileStorage --> Service: Trả về đường dẫn (URL) mới
-    deactivate FileStorage
-    note right of Service: Cập nhật đường dẫn mới vào dữ liệu
-else Không thay đổi file nhạc
-    note right of Service: Giữ nguyên đường dẫn file cũ
+Service --> Controller: Trả về kết quả sửa thông tin bài hát
+deactivate Service
+alt Sửa thông tin bài hát thành công
+    Controller --> View: Thông báo "Sửa thông tin bài hát thành công"
+    View --> View: Tắt form sửa thông tin bài hát
+    View --> View: Cập nhật thông tin bài hát mới
+else Sửa thông tin bài hát thất bại
+    Controller --> View: Thông báo "Sửa thông tin bài hát thất bại, vui lòng thử lại"
 end
-
-' === BƯỚC 3: GHI NHẬN VÀO CSDL (Dòng sự kiện chính 3) ===
-Service -> DB: Cập nhật thông tin bài hát vào CSDL
-activate DB
-
-alt Dòng sự kiện phụ 3.1: Cập nhật thất bại
-    DB --> Service: Phản hồi lỗi (Lỗi kết nối hoặc dữ liệu sai)
-    Service --> Controller: Báo lỗi xử lý
-    Controller --> UI: Phản hồi trạng thái lỗi
-    
-    UI --> User: Thông báo "Cập nhật thông tin bài hát thất bại"
-
-else Cập nhật thành công (Dòng sự kiện chính 3 & 4)
-    DB --> Service: Xác nhận cập nhật thành công
-    deactivate DB
-    
-    Service --> Controller: Xác nhận quy trình hoàn tất
-    deactivate Service
-    
-    ' === BƯỚC 4: TẮT FORM/CHUYỂN GIAO DIỆN ===
-    Controller --> UI: Yêu cầu đóng form/chuyển hướng
-    deactivate Controller
-    
-    UI -> UI: Tắt form sửa thông tin
-    
-    UI --> User: Hiển thị lại danh sách (với thông tin đã sửa)
-    deactivate UI
-end
-
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

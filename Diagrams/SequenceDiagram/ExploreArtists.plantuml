@@ -1,106 +1,39 @@
-@startuml Sequence Diagram - Khám Phá Nghệ Sĩ
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Khám Phá Nghệ Sĩ
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":Giao diện" as UI
-participant ":Controller" as Controller
-participant ":Service" as Service
-participant ":Database" as DB
+title Sequence Diagram: Khám phá nghệ sĩ
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ DANH SÁCH (Dòng sự kiện chính 1) ===
-User -> UI: Chọn chức năng "Khám phá nghệ sĩ"
-activate UI
-UI -> Controller: Gửi yêu cầu lấy danh sách nghệ sĩ
+User -> View: User chọn chức năng Khám phá nghệ sĩ
+activate View
+View -> Controller: Yêu cầu danh sách nghệ sĩ
 activate Controller
-Controller -> Service: Yêu cầu truy xuất dữ liệu
+Controller -> Service: Yêu cầu danh sách nghệ sĩ
 activate Service
-
-' Logic quan trọng: Lấy danh sách KÈM trạng thái theo dõi hiện tại
-Service -> DB: Truy vấn danh sách nghệ sĩ \nvà trạng thái (Đã theo dõi / Chưa theo dõi)
-activate DB
-DB --> Service: Trả về danh sách kết quả
-deactivate DB
-
-Service --> Controller: Dữ liệu danh sách nghệ sĩ
+Service --> Controller: Trả về danh sách nghệ sĩ
 deactivate Service
-Controller --> UI: Hiển thị danh sách lên màn hình
+Controller --> View: Trả về danh sách nghệ sĩ
 deactivate Controller
+View --> View: Hiển thị danh sách nghệ sĩ
 
-UI --> User: Hiển thị danh sách nghệ sĩ\nvới nút tương ứng ("Theo dõi" hoặc "Bỏ theo dõi")
-deactivate UI
-
-' === BƯỚC 2: TÌM KIẾM (Dòng sự kiện chính 2) ===
-group Người dùng tìm kiếm và xem danh sách
-    User -> UI: Nhập từ khóa tìm kiếm
-    activate UI
-    UI -> Controller: Gửi yêu cầu tìm kiếm
-    activate Controller
-    Controller -> Service: Xử lý tìm kiếm
-    activate Service
-    Service -> DB: Truy vấn nghệ sĩ theo tên
-    activate DB
-    DB --> Service: Kết quả tìm kiếm
-    deactivate DB
-    Service --> UI: Cập nhật danh sách hiển thị
-    deactivate Service
-    deactivate Controller
-    deactivate UI
-end
-
-' === BƯỚC 3, 4, 5: TƯƠNG TÁC THEO DÕI (Logic Toggle) ===
-User -> UI: Nhấn nút "Theo dõi" hoặc "Bỏ theo dõi"
-activate UI
-
-UI -> Controller: Gửi yêu cầu thay đổi trạng thái theo dõi
+User -> View: Chọn nghệ sĩ để (Bỏ)Theo dõi
+View -> Controller: Yêu cầu (Bỏ)theo dõi nghệ sĩ
 activate Controller
-Controller -> Service: Kiểm tra trạng thái hiện tại và xử lý
+Controller -> Service: Yêu cầu cập nhật trạng thái theo dõi
 activate Service
-
-' === RẼ NHÁNH XỬ LÝ (Theo dõi hoặc Bỏ theo dõi) ===
-alt Trường hợp 1: Người dùng muốn THEO DÕI (Hiện tại chưa theo dõi)
-    Service -> DB: Thêm nghệ sĩ vào danh sách "Đã theo dõi"
-    activate DB
-    
-    alt Dòng sự kiện phụ 1.1: Theo dõi thất bại
-        DB --> Service: Lỗi (Không thể ghi dữ liệu)
-        Service --> UI: Báo lỗi xử lý
-        UI --> User: Thông báo "Theo dõi thất bại, vui lòng thử lại"
-    
-    else Thành công
-        DB --> Service: Xác nhận đã lưu thành công
-        deactivate DB
-        Service --> UI: Xác nhận trạng thái mới là "Đã theo dõi"
-        
-        ' Bước 6: Cập nhật giao diện
-        UI -> UI: Đổi nút thành "Bỏ theo dõi"
-        UI --> User: Hiển thị trạng thái "Đang theo dõi"
-    end
-
-else Trường hợp 2: Người dùng muốn BỎ THEO DÕI (Hiện tại đang theo dõi)
-    Service -> DB: Xóa nghệ sĩ khỏi danh sách "Đã theo dõi"
-    activate DB
-    
-    alt Dòng sự kiện phụ 1.2: Bỏ theo dõi thất bại
-        DB --> Service: Lỗi (Không thể xóa dữ liệu)
-        deactivate DB
-        Service --> UI: Báo lỗi xử lý
-        UI --> User: Thông báo "Bỏ theo dõi thất bại, vui lòng thử lại"
-    
-    else Thành công
-        DB --> Service: Xác nhận đã xóa thành công
-        activate DB
-        deactivate DB
-        Service --> UI: Xác nhận trạng thái mới là "Không theo dõi"
-        
-        ' Bước 6: Cập nhật giao diện
-        UI -> UI: Đổi nút thành "Theo dõi"
-        UI --> User: Hiển thị trạng thái "Không theo dõi"
-        deactivate UI
-    end
-end
+Service --> Controller: Trả về kết quả cập nhật trạng thái theo dõi
 deactivate Service
+alt Cập nhật trạng thái theo dõi thành công
+    Controller --> View: Thông báo "(Bỏ)Theo dõi nghệ sĩ thành công"
+else Cập nhật trạng thái theo dõi thất bại
+    Controller --> View: Thông báo "(Bỏ)Theo dõi nghệ sĩ thất bại, vui lòng thử lại"
+end
 deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

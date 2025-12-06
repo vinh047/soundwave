@@ -1,99 +1,49 @@
-@startuml Sequence Diagram - Nghe Nhạc (Thông điệp)
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Nghe Nhạc
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":Giao diện" as UI
-participant ":Controller" as Controller
-participant ":Service" as Service
-participant ":Database" as DB
+title Sequence Diagram: Nghe nhạc
 
 autonumber
 
-' === BƯỚC 1: BẮT ĐẦU PHÁT NHẠC (Dòng sự kiện chính 1) ===
-User -> UI: Chọn một bài hát từ danh sách "Khám phá"
-activate UI
-
-UI -> Controller: Gửi yêu cầu phát bài hát đã chọn
+User -> View: User chọn chức năng Nghe nhạc
+activate View
+View -> Controller: Yêu cầu phát bài hát
 activate Controller
-
-Controller -> Service: Yêu cầu lấy dữ liệu bài hát và file nhạc
+Controller -> Service: Yêu cầu phát bài hát
 activate Service
-
-Service -> DB: Truy vấn thông tin và đường dẫn file nhạc
-activate DB
-
-alt Dòng sự kiện phụ 1: Phát nhạc thất bại
-    DB --> Service: Phản hồi lỗi (File không tồn tại hoặc Lỗi mạng)
-    Service --> Controller: Báo lỗi không thể phát
-    Controller --> UI: Phản hồi trạng thái lỗi
-    
-    UI --> User: Thông báo "Phát nhạc thất bại, vui lòng thử lại"
-
-else Phát nhạc thành công
-    DB --> Service: Trả về thông tin bài hát và luồng nhạc (Stream)
-    deactivate DB
-    
-    Service --> Controller: Dữ liệu sẵn sàng để phát
-    deactivate Service
-    
-    Controller --> UI: Cung cấp luồng nhạc cho giao diện
-    deactivate Controller
-    
-    UI --> User: Hiển thị trình phát nhạc và Tự động phát
-    deactivate UI
+Service --> Controller: Trả về kết quả phát bài hát
+deactivate Service
+Controller --> View: Trả về kết quả phát bài hát
+deactivate Controller
+alt Phát bài hát thành công
+    View --> View: Hiển thị bài hát đang phát
+else Phát bài hát thất bại
+    View --> User: Hiển thị thông báo lỗi
 end
 
-' === BƯỚC 2: CÁC CHỨC NĂNG ĐIỀU KHIỂN (Dòng sự kiện chính 2) ===
-group Người dùng tương tác với trình phát nhạc
+User -> View: Chọn chức năng Phát/Tạm dừng
+View -> Controller: Yêu cầu cập nhật trạng thái phát nhạc
+activate Controller
+Controller -> Service: Yêu cầu cập nhật trạng thái phát nhạc
+activate Service
+Service --> Controller: Trả về kết quả cập nhật trạng thái
+deactivate Service
+deactivate Controller
+Controller --> View: Cập nhật trạng thái phát nhạc
 
-    ' --- 2.1: Tạm dừng ---
-    alt Trường hợp: Tạm dừng
-        User -> UI: Nhấn nút "Tạm dừng"
-        activate UI
-        UI -> UI: Dừng phát âm thanh (Xử lý tại trình duyệt/App)
-        UI --> User: Nhạc dừng lại
-        deactivate UI
-    
-    ' --- 2.2: Tiếp tục ---
-    else Trường hợp: Tiếp tục phát
-        User -> UI: Nhấn nút "Tiếp tục"
-        activate UI
-        UI -> UI: Tiếp tục phát âm thanh
-        UI --> User: Nhạc phát tiếp
-        deactivate UI
-        
-    ' --- 2.3: Chuyển bài (Tiến/Lùi) ---
-    else Trường hợp: Chuyển bài (Tiến/Lùi)
-        User -> UI: Nhấn nút "Mũi tên trái/phải" (Bài trước/sau)
-        activate UI
-        
-        UI -> Controller: Gửi yêu cầu tìm bài hát kế tiếp/trước đó
-        activate Controller
-        
-        Controller -> Service: Tìm bài hát liền kề trong danh sách
-        activate Service
-        
-        Service -> DB: Truy vấn ID bài hát tiếp theo
-        activate DB
-        DB --> Service: Trả về ID bài hát mới
-        deactivate DB
-        
-        ' (Lặp lại quy trình lấy dữ liệu như Bước 1)
-        Service -> DB: Lấy dữ liệu của bài hát mới
-        activate DB
-        DB --> Service: Trả về dữ liệu bài hát mới
-        deactivate DB
-        
-        Service --> Controller: Dữ liệu bài mới sẵn sàng
-        deactivate Service
-        
-        Controller --> UI: Cập nhật giao diện với bài hát mới
-        deactivate Controller
-        
-        UI --> User: Hiển thị và Tự động phát bài hát mới
-        deactivate UI
-    end
-end
-
+User -> View: Chọn chức năng Bài tiếp theo/Trước đó
+View -> Controller: Yêu cầu chuyển bài hát
+activate Controller
+Controller -> Service: Yêu cầu chuyển bài hát
+activate Service
+Service --> Controller: Trả về bài hát mới
+deactivate Service
+Controller --> View: Trả về bài hát mới
+deactivate Controller
+View --> User: Hiển thị bài hát mới đang phát
+deactivate View
 @enduml
