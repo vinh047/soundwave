@@ -1,94 +1,42 @@
-@startuml Sequence Diagram - Quản Lý Playlist 
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Quản Lý Playlist 
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":NextJS Client" as UI
-participant ":PlaylistController" as Controller
-participant ":PlaylistService" as Service
-participant ":PlaylistRepository" as DB
+title Sequence Diagram: Quản lý Playlist cá nhân
 
 autonumber
 
-' === BƯỚC 1: TẢI DANH SÁCH ===
-User -> UI: Vào trang "Quản lý Playlist"
-activate UI
-UI -> Controller: getPlaylists(req)
+User -> View: User chọn chức năng Quản lý Playlist cá nhân
+activate View
+View -> Controller: Yêu cầu danh sách Playlist
 activate Controller
-
-' Lấy userId từ token (req.user.id)
-Controller -> Service: getPlaylists(userId)
+Controller -> Service: Yêu cầu danh sách Playlist
 activate Service
-
-Service -> DB: find({ where: { userId } })
-activate DB
-DB --> Service: [PlaylistEntities]
-deactivate DB
-
-Service --> Controller: {data: [...]}
+Service --> Controller: Trả về danh sách Playlist
 deactivate Service
-Controller --> UI: {status: 200, data: [...]}
+Controller --> View: Trả về danh sách Playlist
 deactivate Controller
-UI --> User: Hiển thị danh sách & các nút chức năng
-deactivate UI
+View --> View: Hiển thị danh sách Playlist
 
-' === KỊCH BẢN 3.2: Tạo Playlist cá nhân cá nhân ===
-    User -> UI: Nhấn "Tạo Playlist"
-    activate UI
-    note right: Chuyển sang Usecase "Tạo Playlist cá nhân"
-    deactivate UI
+User -> View: Chọn chức năng Tạo Playlist cá nhân (Chuyển sang Usecase Tạo Playlist cá nhân)
+User -> View: Chọn chức năng Quản lý chi tiết Playlist cá nhân (Chuyển sang Usecase Sửa thông tin Playlist cá nhân)
 
-' === KỊCH BẢN 3.2: Sửa Playlist cá nhân ===
-    User -> UI: Chọn 1 Playlist và Nhấn "Sửa Playlist"
-    activate UI
-    note right: Chuyển sang Usecase "Sửa Playlist cá nhân"
-    deactivate UI
-
-' === BƯỚC 3.3: XÓA PLAYLIST ===
-User -> UI: Chọn Playlist & Nhấn "Xóa"
-activate UI
-UI -> Controller: deletePlaylist(req, playlistId)
+User -> View: Chọn 1 Playlist và nhấn Xoá
+View -> Controller: Yêu cầu xoá Playlist
 activate Controller
-
-' Luôn truyền userId để check quyền
-Controller -> Service: deletePlaylist(userId, playlistId)
+Controller -> Service: Yêu cầu xoá Playlist
 activate Service
-
-' === XỬ LÝ XÓA AN TOÀN (Check Owner) ===
-' Cách 1: Dùng delete với điều kiện userId (Nhanh gọn)
-Service -> DB: delete({ id: playlistId, userId: userId })
-activate DB
-DB --> Service: deleteResult { affected: 1 }
-deactivate DB
-
-alt Xóa thất bại (affected == 0 hoặc Lỗi DB)
-    ' affected = 0 nghĩa là ID không tồn tại hoặc không phải của User này
-    Service --> Controller: Throw NotFound/Forbidden
-    deactivate Service
-    Controller --> UI: {status: 400/500, error: "Delete Failed"}
-    deactivate Controller
-    
-    UI --> User: Thông báo "Xóa thất bại"
-    deactivate UI
-
-else Xóa thành công (affected > 0)
-    ' Đã activate Service ở trên
-    activate Service
-    Service --> Controller: {success: true}
-    deactivate Service
-
-    ' === BƯỚC 4: LÀM MỚI DANH SÁCH ===
-    ' Client tự gọi lại API lấy danh sách (Logic React/NextJS chuẩn)
-    Controller --> UI: {status: 200, message: "Deleted"}
-    deactivate Controller
-    
-    UI -> Controller: getPlaylists(req) (Auto Refresh)
-    activate Controller
-    ' ... (Lặp lại quy trình lấy danh sách như Bước 1) ...
-    Controller --> UI: [Danh sách mới]
-    deactivate Controller
-    
-    UI --> User: Hiển thị danh sách sau khi cập nhật
-    deactivate UI
+Service --> Controller: Trả về kết quả xoá Playlist
+deactivate Service
+alt Xoá Playlist thành công
+Controller --> View: Thông báo "Xoá Playlist thành công"
+else Xoá Playlist thất bại
+Controller --> View: Thông báo "Xoá Playlist thất bại, vui lòng thử lại"
 end
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

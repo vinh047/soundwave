@@ -1,0 +1,39 @@
+@startuml SD
+
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+
+title Sequence Diagram: Khám phá nghệ sĩ
+
+autonumber
+
+User -> View: User chọn chức năng Khám phá nghệ sĩ
+activate View
+View -> Controller: Yêu cầu danh sách nghệ sĩ
+activate Controller
+Controller -> Service: Yêu cầu danh sách nghệ sĩ
+activate Service
+Service --> Controller: Trả về danh sách nghệ sĩ
+deactivate Service
+Controller --> View: Trả về danh sách nghệ sĩ
+deactivate Controller
+View --> View: Hiển thị danh sách nghệ sĩ
+
+User -> View: Chọn nghệ sĩ để (Bỏ)Theo dõi
+View -> Controller: Yêu cầu (Bỏ)theo dõi nghệ sĩ
+activate Controller
+Controller -> Service: Yêu cầu cập nhật trạng thái theo dõi
+activate Service
+Service --> Controller: Trả về kết quả cập nhật trạng thái theo dõi
+deactivate Service
+alt Cập nhật trạng thái theo dõi thành công
+    Controller --> View: Thông báo "(Bỏ)Theo dõi nghệ sĩ thành công"
+else Cập nhật trạng thái theo dõi thất bại
+    Controller --> View: Thông báo "(Bỏ)Theo dõi nghệ sĩ thất bại, vui lòng thử lại"
+end
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
+@enduml

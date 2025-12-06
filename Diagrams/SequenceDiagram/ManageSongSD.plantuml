@@ -1,94 +1,43 @@
-@startuml Sequence Diagram - Quản Lý Bài Hát 
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Quản Lý Bài Hát 
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Nghệ sĩ" as Artist
-participant ":NextJS Client" as UI
-participant ":SongController" as Controller
-participant ":SongService" as Service
-participant ":SongRepository" as DB
+title Sequence Diagram: Quản lý bài hát cá nhân
 
 autonumber
 
-' === BƯỚC 1: TẢI DANH SÁCH ===
-Artist -> UI: Vào trang "Quản lý bài hát"
-activate UI
-UI -> Controller: getSongs(req)
+User -> View: User chọn chức năng Quản lý bài hát cá nhân
+activate View
+View -> Controller: Yêu cầu danh sách bài hát
 activate Controller
-
-' Lấy artistId từ req.user.id
-Controller -> Service: getSongs(artistId)
+Controller -> Service: Yêu cầu danh sách bài hát
 activate Service
-
-Service -> DB: find({ where: { userId: artistId } })
-activate DB
-DB --> Service: [SongEntities]
-deactivate DB
-
-Service --> Controller: {data: [...]}
+Service --> Controller: Trả về danh sách bài hát
 deactivate Service
-Controller --> UI: {status: 200, data: [...]}
+Controller --> View: Trả về danh sách bài hát
 deactivate Controller
-UI --> Artist: Hiển thị danh sách & nút chức năng
-deactivate UI
+View --> View: Hiển thị danh sách bài hát cá nhân
 
-' === BƯỚC 3: CÁC CHỨC NĂNG ===
-group Chọn chức năng
+User -> View: Chọn chức năng Tải lên bài hát(Chuyển sang Usecase Tải lên bài hát)
+User -> View: Chọn chức năng Sửa thông tin bài hát(Chuyển sang Usecase Sửa thông tin bài hát)
 
-    alt Kịch bản 3.1: Tải lên
-        Artist -> UI: Nhấn "Tải lên"
-        UI -> UI: Redirect to /upload-song
-        note right: Chuyển sang UC "Tải lên bài hát"
-
-    else Kịch bản 3.2: Sửa thông tin
-        Artist -> UI: Nhấn "Sửa"
-        UI -> UI: Redirect to /edit-song/{id}
-        note right: Chuyển sang UC "Sửa thông tin"
-
-    else Kịch bản 3.3: Ẩn/Hiện bài hát
-        Artist -> UI: Chọn bài & Nhấn "Ẩn/Hiện"
-        activate UI
-        UI -> Controller: toggleStatus(req, songId)
-        activate Controller
-
-        ' Truyền userId để check quyền sở hữu
-        Controller -> Service: toggleStatus(artistId, songId)
-        activate Service
-
-        ' Logic: Tìm bài hát -> Đảo trạng thái -> Lưu lại
-        Service -> DB: findOne({ where: { userId: artistId, id: songId } })
-        activate DB
-        DB --> Service: songEntity
-        deactivate DB
-        
-        alt Bài hát không tìm thấy (hoặc không phải của Artist)
-            Service --> Controller: Throw ForbiddenException
-            Controller --> UI: {status: 403, error: "Access Denied"}
-            UI --> Artist: Thông báo lỗi quyền truy cập
-        else Hợp lệ
-            ' Đảo trạng thái (ACTIVE <-> HIDDEN)
-            Service -> DB: save(updatedSong)
-            activate DB
-            DB --> Service: savedSong
-            deactivate DB
-            
-            Service --> Controller: {success: true}
-            deactivate Service
-            
-            ' === BƯỚC 4: LÀM MỚI DANH SÁCH ===
-            Controller --> UI: {status: 200, message: "Updated"}
-            deactivate Controller
-            
-            ' Client tự gọi lại API lấy danh sách (Auto Refresh)
-            UI -> Controller: getSongs(req)
-            activate Controller
-            ' ... (Lặp lại quy trình load danh sách) ...
-            Controller --> UI: [Danh sách mới]
-            deactivate Controller
-            
-            UI --> Artist: Cập nhật trạng thái trên giao diện
-            deactivate UI
-        end
-    end
+User -> View: Chọn chức năng Ẩn/Hiện bài hát
+View -> Controller: Yêu cầu cập nhật trạng thái bài hát
+activate Controller
+Controller -> Service: Yêu cầu cập nhật trạng thái bài hát
+activate Service
+Service --> Controller: Trả về kết quả cập nhật trạng thái bài hát
+deactivate Service
+alt Cập nhật trạng thái bài hát thành công
+Controller --> View: Thông báo "Cập nhật trạng thái thành công"
+View --> View: Cập nhật danh sách bài hát
+else Cập nhật trạng thái bài hát thất bại
+Controller --> View: Thông báo "Cập nhật trạng thái thất bại, vui lòng thử lại"
 end
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

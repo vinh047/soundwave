@@ -8,10 +8,10 @@ export default function HomeLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-black text-white min-h-screen">
+    <div className="flex flex-col min-h-screen max-w-screen">
       <Navbar />
-      <div className="flex">
-        <main className="flex-1 ">{children}</main>
+      <div className="flex flex-1 pt-10">
+        <main className="flex-1 w-full">{children}</main>
       </div>
       <GlobalPlayer />
     </div>

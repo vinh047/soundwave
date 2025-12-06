@@ -30,7 +30,7 @@ rectangle "Hệ thống nghe nhạc trực tuyến" {
 
   ' -- Mối quan hệ --
   ' Quan hệ <<extends>>
-  UC_ForgetPassword ..> UC_Login : <<extends>>
+  UC_ForgetPassword ..> UC_Login : <<extend>>
 
   ' Quan hệ <<include>>
   UC_ManageProfile ..> UC_Login : <<include>>

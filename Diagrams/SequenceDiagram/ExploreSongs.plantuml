@@ -1,0 +1,78 @@
+@startuml SD
+
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+
+title Sequence Diagram: Khám phá bài hát
+
+autonumber
+
+User -> View: User chọn chức năng Khám phá bài hát
+activate View
+View -> Controller: Yêu cầu danh sách bài hát
+activate Controller
+Controller -> Service: Yêu cầu danh sách bài hát
+activate Service
+Service --> Controller: Trả về danh sách bài hát
+deactivate Service
+Controller --> View: Trả về danh sách bài hát
+alt Lấy danh sách bài hát thành công
+    View --> View: Hiển thị danh sách bài hát
+else Lấy danh sách bài hát thất bại
+    View --> User: Hiển thị thông báo lỗi
+end
+deactivate Controller
+
+group Thích bài hát
+User -> View: Chọn 1 bài hát và nhấn Nghe nhạc (Chuyển sang Usecase Nghe nhạc)
+User -> View: Chọn 1 bài hát và nhấn Thích
+View -> Controller: Yêu cầu Thêm bài hát vào danh sách yêu thích
+activate Controller
+Controller -> Service: Yêu cầu Thêm bài hát vào danh sách yêu thích
+activate Service
+Service --> Controller: Trả về kết quả Thêm bài hát vào danh sách yêu thích
+deactivate Service
+Controller --> View: Thông báo "Thích bài hát thành công"
+deactivate Controller
+View --> User: Hiển thị thông báo
+View --> View: Cập nhật số lượt thích
+end
+
+group Bình luận
+User -> View: Chọn 1 bài hát và nhấn Bình luận
+View --> View: Hiển thị form nhập bình luận
+User -> View: Nhập bình luận và nhấn Gửi
+View -> Controller: Yêu cầu Thêm bình luận cho bài hát
+activate Controller
+Controller -> Service: Yêu cầu Thêm bình luận cho bài hát
+activate Service
+Service --> Controller: Trả về kết quả Thêm bình luận cho bài hát
+deactivate Service
+Controller --> View: Thông báo "Bình luận thành công"
+deactivate Controller
+View --> User: Hiển thị thông báo
+View --> View: Cập nhật số lượt bình luận
+end
+
+group Chia sẻ
+User -> View: Chọn 1 bài hát và nhấn Chia sẻ (Chuyển sang Usecase Chia sẻ bài hát)
+end
+
+group Đăng lại
+User -> View: Chọn 1 bài hát và nhấn Đăng lại
+View -> Controller: Yêu cầu Thêm bài hát vào hồ sơ cá nhân
+activate Controller
+Controller -> Service: Yêu cầu Thêm bài hát vào hồ sơ cá nhân
+activate Service
+Service --> Controller: Trả về kết quả Thêm bài hát vào hồ sơ cá nhân
+deactivate Service
+Controller --> View: Thông báo "Đăng lại thành công"
+deactivate Controller
+View --> User: Hiển thị thông báo
+View --> View: Cập nhật số lượt đăng lại
+end
+
+deactivate View
+@enduml

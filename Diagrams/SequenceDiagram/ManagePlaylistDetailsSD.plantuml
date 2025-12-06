@@ -1,0 +1,43 @@
+@startuml SD
+
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+
+title Sequence Diagram: Quản lý chi tiết Playlist cá nhân
+
+autonumber
+
+User -> View: User chọn chức năng Quản lý chi tiết Playlist cá nhân
+activate View
+View -> Controller: Yêu cầu danh sách bài hát và thông tin Playlist
+activate Controller
+Controller -> Service: Yêu cầu danh sách bài hát và thông tin Playlist
+activate Service
+Service --> Controller: Trả về danh sách bài hát và thông tin Playlist
+deactivate Service
+Controller --> View: Trả về danh sách bài hát và thông tin Playlist
+deactivate Controller
+View --> View: Hiển thị danh sách bài hát và thông tin Playlist
+
+User -> View: Chọn chức năng Thêm bài hát vào Playlist (Chuyển sang Usecase Thêm bài hát vào Playlist cá nhân)
+User -> View: Chọn chức năng Sửa thông tin Playlist (Chuyển sang Usecase Sửa thông tin Playlist cá nhân)
+
+User -> View: Chọn 1 bài hát và nhấn Xoá khỏi Playlist
+View -> Controller: Yêu cầu xoá bài hát khỏi Playlist
+activate Controller
+Controller -> Service: Yêu cầu xoá bài hát khỏi Playlist
+activate Service
+Service --> Controller: Trả về kết quả xoá bài hát khỏi Playlist
+deactivate Service
+alt Xoá bài hát thành công
+    Controller --> View: Thông báo "Xoá bài hát khỏi Playlist thành công"
+    View --> View: Cập nhật danh sách bài hát trong Playlist
+else Xoá bài hát thất bại
+    Controller --> View: Thông báo "Xoá bài hát khỏi Playlist thất bại, vui lòng thử lại"
+end
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
+@enduml

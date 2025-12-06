@@ -1,0 +1,858 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SoundWave - Artist Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f2f2f2;
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #b3b3b3;
+      }
+
+      /* Sound Wave Animation Mockup */
+      .waveform-bar {
+        width: 3px;
+        background-color: #999;
+        margin-right: 1px;
+        border-radius: 2px;
+        transition:
+          height 0.2s,
+          background-color 0.2s;
+      }
+      .track-card:hover .waveform-bar {
+        background-color: #666;
+      }
+      .track-card.playing .waveform-bar {
+        background-color: #ff5500;
+        animation: bounce 1s infinite ease-in-out;
+      }
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: scaleY(1);
+        }
+        50% {
+          transform: scaleY(1.5);
+        }
+      }
+
+      /* Custom Range Slider for Player */
+      input[type="range"] {
+        -webkit-appearance: none;
+        background: transparent;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 12px;
+        width: 12px;
+        border-radius: 50%;
+        background: #ff5500;
+        cursor: pointer;
+        margin-top: -5px;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      .player-progress:hover input[type="range"]::-webkit-slider-thumb {
+        opacity: 1;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 2px;
+        cursor: pointer;
+        background: #e5e5e5;
+        border-radius: 1px;
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                orange: "#ff5500",
+                dark: "#333333",
+                gray: "#999999",
+                light: "#f2f2f2",
+              },
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="text-gray-800 pb-20">
+    <!-- HEADER / NAVIGATION (Giống hình ảnh của bạn) -->
+    <header
+      class="bg-[#333] text-white h-12 fixed w-full top-0 z-50 flex items-center px-4 justify-between shadow-md"
+    >
+      <div class="flex items-center gap-6">
+        <div class="flex items-center gap-2 cursor-pointer">
+          <!-- Logo giả lập -->
+          <div
+            class="w-8 h-8 bg-linear-to-b from-orange-400 to-orange-600 rounded flex items-center justify-center"
+          >
+            <i class="fa-solid fa-cloud text-white text-sm"></i>
+          </div>
+          <span class="font-bold text-lg tracking-tight">SoundWave</span>
+        </div>
+        <nav class="hidden md:flex gap-4 text-sm font-medium text-gray-300">
+          <a href="#" class="hover:text-white transition">Home</a>
+          <a href="#" class="hover:text-white transition">Feed</a>
+          <a href="#" class="hover:text-white transition">Library</a>
+        </nav>
+      </div>
+
+      <div class="flex-1 max-w-xl mx-4 relative">
+        <input
+          type="text"
+          placeholder="Search for artists, bands, tracks, podcasts"
+          class="w-full bg-[#e5e5e5] text-black text-sm py-1.5 px-3 rounded-[4px] focus:outline-none focus:ring-2 focus:ring-gray-400"
+        />
+        <i
+          class="fa-solid fa-magnifying-glass absolute right-3 top-2 text-gray-500 text-xs"
+        ></i>
+      </div>
+
+      <div class="flex items-center gap-4 text-sm">
+        <a href="#" class="text-gray-300 hover:text-white hidden sm:block"
+          >Try Pro</a
+        >
+        <a href="#" class="text-gray-300 hover:text-white">Upload</a>
+        <div class="flex items-center gap-3">
+          <div
+            class="w-7 h-7 bg-gray-600 rounded-full bg-cover bg-center cursor-pointer border border-gray-500"
+            style="
+              background-image: url(&quot;https://i.pravatar.cc/150?u=me&quot;);
+            "
+          ></div>
+          <i
+            class="fa-solid fa-bell text-gray-400 cursor-pointer hover:text-white"
+          ></i>
+          <i
+            class="fa-solid fa-envelope text-gray-400 cursor-pointer hover:text-white"
+          ></i>
+          <i
+            class="fa-solid fa-ellipsis text-gray-400 cursor-pointer hover:text-white"
+          ></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- ARTIST HERO SECTION -->
+    <div class="mt-12 bg-[#2a2a2a] relative group">
+      <!-- Cover Image -->
+      <div
+        class="h-64 w-full bg-cover bg-center relative"
+        style="
+          background-image: url(&quot;https://images.unsplash.com/photo-1493225255756-d9584f8606e9?q=80&w=2070&auto=format&fit=crop&quot;);
+        "
+      >
+        <div
+          class="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition"
+        ></div>
+      </div>
+
+      <!-- Artist Info Overlay -->
+      <div class="absolute top-8 left-8 flex items-start gap-6">
+        <!-- Avatar -->
+        <div class="relative">
+          <div
+            class="w-48 h-48 rounded-full border-4 border-white bg-gray-800 bg-cover bg-center shadow-lg"
+            style="
+              background-image: url(&quot;https://i.pravatar.cc/300?u=artist&quot;);
+            "
+          ></div>
+          <!-- Pro Badge -->
+          <div
+            class="absolute bottom-2 right-4 bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full border border-white shadow-sm"
+          >
+            <i class="fa-solid fa-star mr-1"></i>Pro
+          </div>
+        </div>
+
+        <!-- Text Info -->
+        <div class="mt-4">
+          <div
+            class="bg-black/60 backdrop-blur-sm px-4 py-2 rounded inline-block mb-2"
+          >
+            <h1 class="text-3xl text-white font-bold flex items-center gap-2">
+              SOOBIN
+              <i
+                class="fa-solid fa-circle-check text-blue-400 text-xl"
+                title="Verified Artist"
+              ></i>
+            </h1>
+            <p class="text-gray-300 text-sm mt-1">Hanoi, Vietnam</p>
+          </div>
+
+          <!-- Tag / Genre -->
+          <div class="mt-2">
+            <span
+              class="bg-gray-800/80 text-gray-300 text-xs px-2 py-1 rounded-full border border-gray-600"
+              >R&B / Soul</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Bar (Follow/Share) -->
+      <div class="absolute bottom-8 right-8 flex gap-3">
+        <button
+          class="bg-brand-orange hover:bg-orange-600 text-white px-4 py-1.5 rounded-[3px] text-sm font-medium transition shadow-md"
+        >
+          Follow
+        </button>
+        <button
+          class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-[3px] text-sm font-medium hover:bg-gray-50 transition shadow-sm"
+        >
+          <i class="fa-solid fa-user-plus mr-1"></i>
+        </button>
+        <button
+          class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-[3px] text-sm font-medium hover:bg-gray-50 transition shadow-sm"
+        >
+          <i class="fa-solid fa-share-nodes mr-1"></i> Share
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT LAYOUT -->
+    <div
+      class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col lg:flex-row gap-8"
+    >
+      <!-- LEFT COLUMN: Content (Tabs & Tracks) -->
+      <div class="flex-1 min-w-0">
+        <!-- Navigation Tabs -->
+        <div
+          class="border-b border-gray-200 mb-6 sticky top-12 bg-[#f2f2f2] z-40 pt-2"
+        >
+          <ul class="flex gap-6 text-sm font-medium text-gray-500">
+            <li
+              class="pb-3 border-b-2 border-brand-orange text-brand-orange cursor-pointer"
+            >
+              All
+            </li>
+            <li
+              class="pb-3 border-b-2 border-transparent hover:border-gray-300 cursor-pointer hover:text-gray-800"
+            >
+              Popular Tracks
+            </li>
+            <li
+              class="pb-3 border-b-2 border-transparent hover:border-gray-300 cursor-pointer hover:text-gray-800"
+            >
+              Tracks
+            </li>
+            <li
+              class="pb-3 border-b-2 border-transparent hover:border-gray-300 cursor-pointer hover:text-gray-800"
+            >
+              Albums
+            </li>
+            <li
+              class="pb-3 border-b-2 border-transparent hover:border-gray-300 cursor-pointer hover:text-gray-800"
+            >
+              Playlists
+            </li>
+            <li
+              class="pb-3 border-b-2 border-transparent hover:border-gray-300 cursor-pointer hover:text-gray-800"
+            >
+              Reposts
+            </li>
+          </ul>
+        </div>
+
+        <!-- Spotlight Section (Featured Track) -->
+        <div class="mb-8">
+          <h3
+            class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3"
+          >
+            Spotlight
+          </h3>
+          <div
+            class="bg-white p-4 rounded border border-gray-200 flex gap-4 hover:shadow-md transition cursor-pointer group"
+          >
+            <div class="w-40 h-40 bg-gray-200 shrink-0 relative">
+              <img
+                src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=2070&auto=format&fit=crop"
+                class="w-full h-full object-cover rounded-sm"
+              />
+              <!-- Play Overlay -->
+              <div
+                class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition"
+              >
+                <div
+                  class="w-12 h-12 bg-brand-orange rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition transform scale-90 group-hover:scale-100 shadow-lg"
+                >
+                  <i class="fa-solid fa-play ml-1 text-lg"></i>
+                </div>
+              </div>
+            </div>
+            <div class="flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div
+                      class="bg-brand-orange w-8 h-8 rounded-full flex items-center justify-center text-white cursor-pointer hover:bg-orange-600"
+                    >
+                      <i class="fa-solid fa-play ml-0.5 text-xs"></i>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-500">SOOBIN</p>
+                      <h2 class="text-lg font-bold text-gray-900 leading-tight">
+                        Mất Kết Nối (Disconnected)
+                      </h2>
+                    </div>
+                  </div>
+                  <span class="text-xs text-gray-400">2 months ago</span>
+                </div>
+
+                <!-- Dummy Waveform Visual -->
+                <div
+                  class="mt-6 h-12 flex items-end gap-0.5 opacity-60 overflow-hidden mask-linear"
+                >
+                  <!-- JS will generate bars here normally, doing static html for demo -->
+                  <div class="w-1 bg-gray-800 h-4"></div>
+                  <div class="w-1 bg-gray-800 h-8"></div>
+                  <div class="w-1 bg-gray-800 h-6"></div>
+                  <div class="w-1 bg-gray-800 h-10"></div>
+                  <div class="w-1 bg-brand-orange h-12"></div>
+                  <div class="w-1 bg-brand-orange h-8"></div>
+                  <div class="w-1 bg-gray-800 h-5"></div>
+                  <div class="w-1 bg-gray-800 h-3"></div>
+                  <div class="w-1 bg-gray-800 h-7"></div>
+                  <div class="w-1 bg-gray-800 h-9"></div>
+                  <div class="w-1 bg-gray-800 h-4"></div>
+                  <div class="w-1 bg-gray-800 h-2"></div>
+                  <div class="w-1 bg-gray-800 h-6"></div>
+                  <div class="w-1 bg-gray-800 h-8"></div>
+                  <div class="w-1 bg-gray-800 h-10"></div>
+                  <div class="w-1 bg-gray-800 h-5"></div>
+                  <div class="w-1 bg-gray-800 h-3"></div>
+                  <div class="w-1 bg-gray-800 h-7"></div>
+                  <div class="w-1 bg-gray-800 h-4"></div>
+                  <div class="w-1 bg-gray-800 h-8"></div>
+                  <div class="w-1 bg-gray-800 h-6"></div>
+                  <div class="w-1 bg-gray-800 h-10"></div>
+                  <div class="w-1 bg-gray-800 h-5"></div>
+                  <div class="w-1 bg-gray-800 h-3"></div>
+                  <div class="w-1 bg-gray-800 h-7"></div>
+                  <div class="w-1 bg-gray-800 h-9"></div>
+                  <div class="w-1 bg-gray-800 h-4"></div>
+                  <div class="w-1 bg-gray-800 h-2"></div>
+                  <div class="w-1 bg-gray-800 h-6"></div>
+                  <div class="w-1 bg-gray-800 h-8"></div>
+                  <div class="w-1 bg-gray-800 h-10"></div>
+                  <div class="w-1 bg-gray-800 h-5"></div>
+                  <div class="w-1 bg-gray-800 h-3"></div>
+                  <div class="w-1 bg-gray-800 h-7"></div>
+                  <div class="w-1 bg-gray-800 h-4"></div>
+                  <div class="w-1 bg-gray-800 h-8"></div>
+                  <div class="w-1 bg-gray-800 h-6"></div>
+                  <div class="w-1 bg-gray-800 h-10"></div>
+                  <div class="w-1 bg-gray-800 h-5"></div>
+                  <div class="w-1 bg-gray-800 h-3"></div>
+                  <div class="w-1 bg-gray-800 h-7"></div>
+                  <div class="w-1 bg-gray-800 h-9"></div>
+                  <div class="w-1 bg-gray-800 h-4"></div>
+                  <div class="w-1 bg-gray-800 h-2"></div>
+                  <div class="w-1 bg-gray-800 h-6"></div>
+                  <div class="w-1 bg-gray-800 h-8"></div>
+                  <div class="w-1 bg-gray-800 h-10"></div>
+                  <div class="w-1 bg-gray-800 h-5"></div>
+                  <div class="w-1 bg-gray-800 h-3"></div>
+                  <div class="w-1 bg-gray-800 h-7"></div>
+                  <div class="w-1 bg-gray-800 h-6"></div>
+                  <div class="w-1 bg-gray-800 h-10"></div>
+                  <div class="w-1 bg-brand-orange h-12"></div>
+                  <div class="w-1 bg-brand-orange h-8"></div>
+                  <div class="w-1 bg-gray-800 h-5"></div>
+                  <div class="w-1 bg-gray-800 h-3"></div>
+                  <div class="w-1 bg-gray-800 h-7"></div>
+                </div>
+              </div>
+
+              <!-- Track Actions -->
+              <div class="flex items-center justify-between mt-2">
+                <div class="flex gap-2">
+                  <button
+                    class="border border-gray-300 rounded px-2 py-1 text-xs font-medium text-gray-600 hover:border-gray-400"
+                  >
+                    <i class="fa-solid fa-heart mr-1"></i> 154K
+                  </button>
+                  <button
+                    class="border border-gray-300 rounded px-2 py-1 text-xs font-medium text-gray-600 hover:border-gray-400"
+                  >
+                    <i class="fa-solid fa-retweet mr-1"></i> 2.1K
+                  </button>
+                  <button
+                    class="border border-gray-300 rounded px-2 py-1 text-xs font-medium text-gray-600 hover:border-gray-400"
+                  >
+                    <i class="fa-solid fa-share mr-1"></i> Share
+                  </button>
+                  <button
+                    class="border border-gray-300 rounded px-2 py-1 text-xs font-medium text-gray-600 hover:border-gray-400"
+                  >
+                    <i class="fa-solid fa-link"></i>
+                  </button>
+                </div>
+                <div class="flex items-center gap-3 text-gray-500 text-xs">
+                  <span class="flex items-center"
+                    ><i class="fa-solid fa-play mr-1"></i> 5.2M</span
+                  >
+                  <span class="flex items-center"
+                    ><i class="fa-solid fa-comment mr-1"></i> 842</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- List of Tracks -->
+        <div class="space-y-4">
+          <h3
+            class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2"
+          >
+            Recent
+          </h3>
+
+          <!-- Track Item 1 -->
+          <div
+            class="track-card flex gap-3 p-2 rounded hover:bg-white transition group"
+          >
+            <div
+              class="w-12 h-12 bg-gray-300 shrink-0 relative rounded overflow-hidden"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=2070&auto=format&fit=crop"
+                class="w-full h-full object-cover"
+              />
+              <div
+                class="absolute inset-0 bg-black/30 hidden group-hover:flex items-center justify-center cursor-pointer"
+              >
+                <i class="fa-solid fa-play text-white text-xs"></i>
+              </div>
+            </div>
+            <div class="flex-1 border-b border-gray-200 pb-2">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p
+                    class="text-xs text-gray-500 hover:underline cursor-pointer"
+                  >
+                    SOOBIN
+                  </p>
+                  <h4
+                    class="text-sm font-normal text-gray-800 cursor-pointer hover:text-black"
+                  >
+                    Cao Gót (High Heels)
+                  </h4>
+                </div>
+                <span class="text-xs text-gray-400">5 days ago</span>
+              </div>
+
+              <!-- Mini Waveform & Controls -->
+              <div class="mt-2 flex items-center justify-between">
+                <!-- JS for waveform would go here, simple visual placeholder -->
+                <div class="h-6 flex items-end gap-px opacity-40">
+                  <div class="w-0.5 h-3 bg-gray-600"></div>
+                  <div class="w-0.5 h-5 bg-gray-600"></div>
+                  <div class="w-0.5 h-2 bg-gray-600"></div>
+                  <div class="w-0.5 h-4 bg-gray-600"></div>
+                  <div class="w-0.5 h-6 bg-gray-600"></div>
+                  <div class="w-0.5 h-3 bg-gray-600"></div>
+                  <div class="w-0.5 h-5 bg-gray-600"></div>
+                  <div class="w-0.5 h-2 bg-gray-600"></div>
+                </div>
+
+                <div
+                  class="flex items-center gap-4 text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition"
+                >
+                  <button class="hover:text-black">
+                    <i class="fa-solid fa-heart"></i> 12K
+                  </button>
+                  <button class="hover:text-black">
+                    <i class="fa-solid fa-retweet"></i> 500
+                  </button>
+                  <button class="hover:text-black">
+                    <i class="fa-solid fa-share-nodes"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Track Item 2 -->
+          <div
+            class="track-card flex gap-3 p-2 rounded hover:bg-white transition group"
+          >
+            <div
+              class="w-12 h-12 bg-gray-300 shrink-0 relative rounded overflow-hidden"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=2070&auto=format&fit=crop"
+                class="w-full h-full object-cover"
+              />
+              <div
+                class="absolute inset-0 bg-black/30 hidden group-hover:flex items-center justify-center cursor-pointer"
+              >
+                <i class="fa-solid fa-play text-white text-xs"></i>
+              </div>
+            </div>
+            <div class="flex-1 border-b border-gray-200 pb-2">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p
+                    class="text-xs text-gray-500 hover:underline cursor-pointer"
+                  >
+                    SOOBIN
+                  </p>
+                  <h4
+                    class="text-sm font-normal text-gray-800 cursor-pointer hover:text-black"
+                  >
+                    Beautiful Monster
+                  </h4>
+                </div>
+                <span class="text-xs text-gray-400">1 year ago</span>
+              </div>
+              <div class="mt-2 flex items-center justify-between">
+                <div class="h-6 flex items-end gap-px opacity-40">
+                  <div class="w-0.5 h-4 bg-gray-600"></div>
+                  <div class="w-0.5 h-2 bg-gray-600"></div>
+                  <div class="w-0.5 h-5 bg-gray-600"></div>
+                  <div class="w-0.5 h-3 bg-gray-600"></div>
+                  <div class="w-0.5 h-6 bg-gray-600"></div>
+                  <div class="w-0.5 h-4 bg-gray-600"></div>
+                </div>
+                <div
+                  class="flex items-center gap-4 text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition"
+                >
+                  <button class="hover:text-black">
+                    <i class="fa-solid fa-heart"></i> 45K
+                  </button>
+                  <button class="hover:text-black">
+                    <i class="fa-solid fa-retweet"></i> 3.2K
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Track Item 3 -->
+          <div
+            class="track-card flex gap-3 p-2 rounded hover:bg-white transition group"
+          >
+            <div
+              class="w-12 h-12 bg-gray-300 shrink-0 relative rounded overflow-hidden"
+            >
+              <img
+                src="https://images.unsplash.com/photo-1514525253440-b393452e8d03?q=80&w=2070&auto=format&fit=crop"
+                class="w-full h-full object-cover"
+              />
+              <div
+                class="absolute inset-0 bg-black/30 hidden group-hover:flex items-center justify-center cursor-pointer"
+              >
+                <i class="fa-solid fa-play text-white text-xs"></i>
+              </div>
+            </div>
+            <div class="flex-1 border-b border-gray-200 pb-2">
+              <div class="flex justify-between items-start">
+                <div>
+                  <p
+                    class="text-xs text-gray-500 hover:underline cursor-pointer"
+                  >
+                    SOOBIN
+                  </p>
+                  <h4
+                    class="text-sm font-normal text-gray-800 cursor-pointer hover:text-black"
+                  >
+                    The Playah (Special Performance)
+                  </h4>
+                </div>
+                <span class="text-xs text-gray-400">2 years ago</span>
+              </div>
+              <div class="mt-2 flex items-center justify-between">
+                <div class="h-6 flex items-end gap-px opacity-40">
+                  <div class="w-0.5 h-2 bg-gray-600"></div>
+                  <div class="w-0.5 h-5 bg-gray-600"></div>
+                  <div class="w-0.5 h-6 bg-gray-600"></div>
+                  <div class="w-0.5 h-2 bg-gray-600"></div>
+                  <div class="w-0.5 h-4 bg-gray-600"></div>
+                  <div class="w-0.5 h-3 bg-gray-600"></div>
+                </div>
+                <div
+                  class="flex items-center gap-4 text-xs text-gray-500 opacity-0 group-hover:opacity-100 transition"
+                >
+                  <button class="hover:text-black">
+                    <i class="fa-solid fa-heart"></i> 112K
+                  </button>
+                  <button class="hover:text-black">
+                    <i class="fa-solid fa-retweet"></i> 10K
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: Sidebar -->
+      <div class="w-full lg:w-80 shrink-0 flex flex-col gap-6 pt-4">
+        <!-- Stats -->
+        <div
+          class="flex justify-between text-gray-600 border-b border-gray-200 pb-4"
+        >
+          <div class="text-left">
+            <span class="block text-xs uppercase text-gray-400">Followers</span>
+            <span class="text-xl font-light text-black">1.4M</span>
+          </div>
+          <div class="text-left">
+            <span class="block text-xs uppercase text-gray-400">Following</span>
+            <span class="text-xl font-light text-black">42</span>
+          </div>
+          <div class="text-left">
+            <span class="block text-xs uppercase text-gray-400">Tracks</span>
+            <span class="text-xl font-light text-black">18</span>
+          </div>
+        </div>
+
+        <!-- Bio -->
+        <div>
+          <div
+            class="text-sm text-gray-700 leading-relaxed max-h-40 overflow-hidden relative"
+          >
+            <p>
+              SOOBIN is a Vietnamese singer, songwriter, and producer under
+              SpaceSpeakers Group. Known for his versatility in R&B, Pop, and
+              Ballad. "The Prince of Ballad" has now transformed into a
+              "Playah".
+            </p>
+          </div>
+          <a
+            href="#"
+            class="text-xs text-gray-500 hover:text-black mt-1 inline-block"
+            >Show more</a
+          >
+        </div>
+
+        <!-- Social Web Profiles (From Schema) -->
+        <div class="flex gap-2">
+          <a
+            href="#"
+            class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-blue-600 hover:text-white transition text-gray-500"
+          >
+            <i class="fa-brands fa-facebook-f"></i>
+          </a>
+          <a
+            href="#"
+            class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-pink-600 hover:text-white transition text-gray-500"
+          >
+            <i class="fa-brands fa-instagram"></i>
+          </a>
+          <a
+            href="#"
+            class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-red-600 hover:text-white transition text-gray-500"
+          >
+            <i class="fa-brands fa-youtube"></i>
+          </a>
+          <a
+            href="#"
+            class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-black hover:text-white transition text-gray-500"
+          >
+            <i class="fa-brands fa-tiktok"></i>
+          </a>
+        </div>
+
+        <!-- Related Artists -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h3
+              class="text-xs font-semibold text-gray-400 flex items-center gap-1"
+            >
+              <i class="fa-solid fa-users"></i> Related Artists
+            </h3>
+            <a href="#" class="text-xs text-gray-500 hover:text-black"
+              >View all</a
+            >
+          </div>
+
+          <div class="flex flex-wrap gap-3">
+            <!-- Artist 1 -->
+            <div class="group w-20 cursor-pointer">
+              <div
+                class="w-20 h-20 rounded-full bg-gray-300 overflow-hidden mb-1 relative"
+              >
+                <img
+                  src="https://i.pravatar.cc/150?u=binz"
+                  class="w-full h-full object-cover group-hover:opacity-90"
+                />
+              </div>
+              <p
+                class="text-xs text-center truncate text-gray-700 font-medium group-hover:text-black"
+              >
+                Binz
+              </p>
+              <div class="flex justify-center text-[10px] text-gray-400">
+                <i class="fa-solid fa-user-group mr-1"></i> 2.1M
+              </div>
+            </div>
+            <!-- Artist 2 -->
+            <div class="group w-20 cursor-pointer">
+              <div
+                class="w-20 h-20 rounded-full bg-gray-300 overflow-hidden mb-1 relative"
+              >
+                <img
+                  src="https://i.pravatar.cc/150?u=rhym"
+                  class="w-full h-full object-cover group-hover:opacity-90"
+                />
+              </div>
+              <p
+                class="text-xs text-center truncate text-gray-700 font-medium group-hover:text-black"
+              >
+                Rhymastic
+              </p>
+              <div class="flex justify-center text-[10px] text-gray-400">
+                <i class="fa-solid fa-user-group mr-1"></i> 900K
+              </div>
+            </div>
+            <!-- Artist 3 -->
+            <div class="group w-20 cursor-pointer">
+              <div
+                class="w-20 h-20 rounded-full bg-gray-300 overflow-hidden mb-1 relative"
+              >
+                <img
+                  src="https://i.pravatar.cc/150?u=tou"
+                  class="w-full h-full object-cover group-hover:opacity-90"
+                />
+              </div>
+              <p
+                class="text-xs text-center truncate text-gray-700 font-medium group-hover:text-black"
+              >
+                Touliver
+              </p>
+              <div class="flex justify-center text-[10px] text-gray-400">
+                <i class="fa-solid fa-user-group mr-1"></i> 500K
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Widgets -->
+        <div class="border-t border-gray-200 pt-4 mt-2">
+          <div class="flex items-center gap-2 text-xs text-gray-400 mb-2">
+            <i class="fa-solid fa-heart"></i>
+            <span>Likes 281 tracks</span>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-gray-400">
+            <i class="fa-solid fa-comment"></i>
+            <span>32 Comments</span>
+          </div>
+        </div>
+
+        <div class="text-[10px] text-gray-300 pt-8">
+          Legal - Privacy - Cookies - Imprint - Creator Resources - Blog -
+          Charts <br />
+          Language: English (US)
+        </div>
+      </div>
+    </div>
+
+    <!-- PERSISTENT PLAYER FOOTER -->
+    <div
+      class="fixed bottom-0 left-0 right-0 bg-[#f2f2f2] border-t border-gray-300 h-12 flex items-center px-4 z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]"
+    >
+      <!-- Controls -->
+      <div class="flex items-center gap-4 w-1/4">
+        <i
+          class="fa-solid fa-backward-step text-black cursor-pointer text-sm"
+        ></i>
+        <i
+          class="fa-solid fa-play text-brand-orange text-lg cursor-pointer hover:scale-110 transition"
+        ></i>
+        <i
+          class="fa-solid fa-forward-step text-black cursor-pointer text-sm"
+        ></i>
+        <i
+          class="fa-solid fa-shuffle text-gray-500 text-xs cursor-pointer hover:text-black"
+        ></i>
+        <i
+          class="fa-solid fa-repeat text-gray-500 text-xs cursor-pointer hover:text-black"
+        ></i>
+      </div>
+
+      <!-- Progress -->
+      <div class="flex-1 flex items-center gap-3 px-4 group player-progress">
+        <span class="text-[10px] text-brand-orange font-medium w-8 text-right"
+          >0:32</span
+        >
+        <div
+          class="relative w-full h-1 bg-gray-300 rounded overflow-hidden cursor-pointer"
+        >
+          <div
+            class="absolute top-0 left-0 h-full bg-brand-orange w-[20%]"
+          ></div>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value="20"
+            class="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-10"
+          />
+        </div>
+        <span class="text-[10px] text-gray-500 font-medium w-8">3:45</span>
+      </div>
+
+      <!-- Track Info & Volume -->
+      <div
+        class="w-1/4 flex items-center justify-end gap-4 border-l border-gray-300 pl-4 h-8"
+      >
+        <div class="flex items-center gap-2 mr-auto">
+          <img
+            src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=100&auto=format&fit=crop"
+            class="w-8 h-8 bg-gray-300 object-cover rounded-sm"
+          />
+          <div class="flex flex-col justify-center">
+            <span class="text-[11px] text-gray-500 leading-none">SOOBIN</span>
+            <span
+              class="text-[12px] text-black font-medium leading-tight truncate max-w-[120px]"
+              >Mất Kết Nối</span
+            >
+          </div>
+          <i
+            class="fa-regular fa-heart text-xs ml-2 cursor-pointer hover:text-brand-orange"
+          ></i>
+          <i class="fa-solid fa-list-ul text-xs ml-2 cursor-pointer"></i>
+        </div>
+
+        <div class="flex items-center gap-2 group w-24">
+          <i class="fa-solid fa-volume-high text-xs text-gray-600"></i>
+          <div class="relative w-full h-1 bg-gray-300 rounded overflow-hidden">
+            <div
+              class="absolute top-0 left-0 h-full bg-gray-600 w-[70%] group-hover:bg-brand-orange transition"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

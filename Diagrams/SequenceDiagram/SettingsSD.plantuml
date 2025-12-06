@@ -1,0 +1,44 @@
+@startuml SD
+
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+
+title Sequence Diagram: Cài đặt
+
+autonumber
+
+User -> View: User chọn chức năng Cài đặt
+activate View
+User -> View: User chọn chức năng Sửa tài khoản cá nhân
+View --> View: Hiển thị form sửa tài khoản cá nhân
+View -> Controller: Yêu cầu thông tin tài khoản
+activate Controller
+Controller -> Service: Yêu cầu thông tin tài khoản
+activate Service
+Service --> Controller: Trả về thông tin tài khoản
+deactivate Service
+Controller --> View: Trả về thông tin tài khoản trên form
+deactivate Controller
+View --> View: Hiển thị thông tin tài khoản trên form
+
+User -> View: Nhập thông tin mới cho tài khoản
+View --> View: Kiểm tra thông tin nhập
+View -> Controller: Gửi yêu cầu sửa thông tin tài khoản
+activate Controller
+Controller -> Service: Xử lý yêu cầu sửa thông tin tài khoản
+activate Service
+Service --> Controller: Trả về kết quả sửa thông tin tài khoản
+deactivate Service
+alt Sửa tài khoản thành công
+    Controller --> View: Thông báo "Sửa tài khoản thành công"
+    View --> View: Tắt form sửa thông tin tài khoản
+    View --> View: Cập nhật thông tin tài khoản mới
+else Sửa tài khoản thất bại
+    Controller --> View: Thông báo "Sửa tài khoản thất bại, vui lòng thử lại"
+end
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
+@enduml

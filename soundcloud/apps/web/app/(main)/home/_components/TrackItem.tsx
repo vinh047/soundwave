@@ -1,68 +1,38 @@
-import { Track as TrackType } from "@repo/database";
-import Image from "next/image";
-import { PlayCircle } from "lucide-react"; // 🎵 Thêm icon Play (cần cài lucide-react)
+// import { Track as TrackType } from "@repo/database";
+// import Image from "next/image";
+// import { PlayCircle } from "lucide-react";
 
-interface TrackItemProps {
-  track: TrackType;
-}
+// interface TrackItemProps {
+//   track: TrackType;
+// }
 
-/** 🎯 Thành phần hiển thị 1 track (tối ưu hóa) */
-const TrackItem = ({ track }: TrackItemProps) => {
-  // Thay thế tên tác giả cứng bằng dữ liệu thực tế nếu có, hoặc để trống
-  const artistName = track.userId || "Nghệ sĩ ẩn danh";
+// /** 🎯 Thành phần hiển thị 1 track (Chuẩn Dark Mode) */
+// const TrackItem = ({ track }: TrackItemProps) => {
+//   const artistName = track.userId || "Unknown Artist";
 
-  return (
-    // group: Đánh dấu là 1 nhóm để dùng group-hover bên trong
-    <div className="w-40 shrink-0 cursor-pointer group">
-      {/* Khu vực ảnh và hiệu ứng hover */}
-      <div className="relative w-full aspect-square rounded-lg mb-3 overflow-hidden shadow-md">
-        {/* Vùng Ảnh */}
-        <Image
-          src={track.imagePath || "/default-track-cover.jpg"}
-          alt={track.title}
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          fill
-          sizes="160px" // Chiều rộng cố định, nên dùng sizes nhỏ để tối ưu
-        />
+//   return (
+//     <div className="w-44 shrink-0 cursor-pointer group">
+//       {/* Khu vực ảnh */}
+//       <div className="relative w-full aspect-square rounded-lg mb-3 overflow-hidden bg-gray-200 dark:bg-zinc-800 shadow-sm hover:shadow-md transition-all">
+//         <Image
+//           src={track.imagePath || "/default-track-cover.jpg"}
+//           alt={track.title}
+//           className="object-cover transition-transform duration-500 group-hover:scale-110"
+//           fill
+//         />
+//         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+//           <PlayCircle className="text-white w-12 h-12 drop-shadow-lg" />
+//         </div>
+//       </div>
 
-        {/* Lớp phủ & Icon Play */}
-        {/* opacity-0 -> opacity-100 khi hover | scale-75 -> scale-100 khi hover */}
-        <div
-          className="
-          absolute inset-0 
-          bg-black/30 
-          opacity-0 group-hover:opacity-100 
-          transition-opacity duration-300
-          flex items-center justify-center
-        "
-        >
-          <PlayCircle className="text-white fill-white/80 w-10 h-10 transition-transform duration-300 group-hover:scale-100 scale-75" />
-        </div>
-      </div>
-
-      {/* Tiêu đề */}
-      <p
-        className="
-        truncate font-bold text-sm 
-        text-gray-900 dark:text-gray-100 
-        hover:text-blue-600 transition-colors
-      "
-      >
-        {track.title}
-      </p>
-
-      {/* Tác giả */}
-      <p
-        className="
-        truncate text-xs 
-        text-gray-500 dark:text-gray-400 
-        hover:text-gray-700 dark:hover:text-gray-300 transition-colors
-      "
-      >
-        {artistName}
-      </p>
-    </div>
-  );
-};
-
-export default TrackItem;
+//       {/* Tiêu đề & Tác giả: Text color thay đổi theo theme */}
+//       <p className="truncate font-bold text-sm mt-2 text-gray-900 dark:text-gray-100 group-hover:text-orange-600 dark:group-hover:text-white transition-colors">
+//         {track.title}
+//       </p>
+//       <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+//         {artistName}
+//       </p>
+//     </div>
+//   );
+// };
+// export default TrackItem;

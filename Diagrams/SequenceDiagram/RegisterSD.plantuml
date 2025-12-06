@@ -1,0 +1,39 @@
+@startuml SD
+
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+
+title Sequence Diagram: Đăng Ký
+
+autonumber
+
+User -> View: User chọn chức năng Đăng Ký
+activate View
+View --> View: Hiển thị form đăng ký
+User -> View: Nhập thông tin đăng ký
+View --> View: Kiểm tra thông tin đăng ký
+alt Thông tin không hợp lệ
+    View --> View: Thông báo "Thông tin không hợp lệ, vui lòng thử lại"
+else Thông tin hợp lệ
+    View -> Controller: Yêu cầu đăng ký
+    activate Controller
+    Controller -> Service: Yêu cầu đăng ký
+    activate Service
+    Service --> Service: Xử lý đăng ký
+    Service --> Controller: Trả về kết quả đăng ký
+    deactivate Service
+    alt Đăng ký thành công
+        Controller --> View: Thông báo "Đăng ký thành công"
+        View --> View: Tắt form đăng ký
+        View --> View: Chuyển sang giao diện Đăng Nhập
+    else Đăng ký thất bại
+        Controller --> View: Thông báo "Đăng ký thất bại, vui lòng thử lại"
+    end
+    deactivate Controller
+    View --> User: Hiển thị thông báo
+end
+
+deactivate View
+@enduml

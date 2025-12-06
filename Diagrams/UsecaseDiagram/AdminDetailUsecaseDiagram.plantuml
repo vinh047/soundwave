@@ -38,9 +38,9 @@ rectangle "Quản trị hệ thống" {
     UC_HandleReport ..> UC_Login : <<include>>
     UC_ManageUserAccount ..> UC_Login: <<include>>
 
-    UC_ViewSearchSongs ..> UC_ExploreSongs: <<extends>>
+    UC_ViewSearchSongs ..> UC_ExploreSongs: <<extend>>
+    UC_Play ..> UC_ExploreSongs: <<extend>>
     ' Admin
-    Admin --> UC_Play
     Admin --> UC_Login
     Admin --> UC_ExploreSongs
     Admin --> UC_Logout

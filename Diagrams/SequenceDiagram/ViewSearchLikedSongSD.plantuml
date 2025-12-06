@@ -1,87 +1,43 @@
-@startuml Sequence Diagram - Xem Danh Sách Và Tìm Kiếm Bài Hát Yêu Thích 
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Xem Danh Sách Và Tìm Kiếm Bài Hát Yêu Thích 
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":NextJS Client" as UI
-participant ":InteractionController" as Controller
-participant ":InteractionService" as Service
-participant ":InteractionRepository" as DB
+title Sequence Diagram: Xem danh sách và tìm kiếm bài hát yêu thích
 
 autonumber
 
-' === BƯỚC 1: TẢI DANH SÁCH YÊU THÍCH ===
-User -> UI: Vào trang "Bài hát yêu thích"
-activate UI
-UI -> Controller: getFavoriteSongs(req)
+User -> View: User chọn chức năng Xem danh sách và tìm kiếm bài hát yêu thích
+activate View
+View -> Controller: Yêu cầu danh sách bài hát yêu thích
 activate Controller
-
-' Lấy userId từ token
-Controller -> Service: getFavoriteSongs(userId)
+Controller -> Service: Yêu cầu danh sách bài hát
 activate Service
-
-' TypeORM: Tìm bảng Likes, Join sang bảng Songs
-Service -> DB: find({ where: { userId }, relations: ['song'] })
-activate DB
-DB --> Service: [LikeEntities + SongData]
-deactivate DB
-
-Service --> Controller: {data: songList}
+Service --> Controller: Trả về danh sách bài hát yêu thích
 deactivate Service
-Controller --> UI: {status: 200, data: songList}
+Controller --> View: Trả về danh sách bài hát yêu thích
 deactivate Controller
-UI --> User: Hiển thị danh sách yêu thích
-deactivate UI
+View --> View: Hiển thị danh sách bài hát yêu thích
 
-' === BƯỚC 2: TÌM KIẾM TRONG YÊU THÍCH ===
-User -> UI: Nhập từ khóa (VD: "Mưa")
-activate UI
-UI -> Controller: searchFavoriteSongs(req, keyword)
-activate Controller
-Controller -> Service: searchFavoriteSongs(userId, keyword)
-activate Service
-
-' Query phức tạp hơn một chút: Tìm Like của User này MÀ Song Title có chứa Keyword
-Service -> DB: find({ where: { userId, song: { title: ILike(%k%) } } })
-activate DB
-DB --> Service: [SearchResults]
-deactivate DB
-
-Service --> Controller: {data: SearchResults}
-deactivate Service
-Controller --> UI: {status: 200, data: SearchResults}
-deactivate Controller
-UI --> User: Hiển thị kết quả
-deactivate UI
-
-' === BƯỚC 3 & 4: HỦY THÍCH (Xóa khỏi danh sách) ===
-User -> UI: Nhấn "Hủy Thích" (songId)
-activate UI
-
-UI -> Controller: unlikeSong(req, songId)
-activate Controller
-Controller -> Service: unlikeSong(userId, songId)
-activate Service
-
-Service -> DB: delete({ userId, songId })
-activate DB
-DB --> Service: result { affected: 1 }
-deactivate DB
-
-alt Lỗi (affected == 0 hoặc DB Error)
-    Service --> Controller: Throw Error
-    Controller --> UI: {status: 500, error: "Failed"}
-    UI --> User: Thông báo lỗi
-else Thành công (Bước 4 & 5)
-    Service --> Controller: {success: true}
+group Tương tác bài hát
+    User -> View: Chọn 1 bài hát và nhấn tương tác
+    View -> Controller: Yêu cầu xử lý tương tác bài hát
+    activate Controller
+    Controller -> Service: Yêu cầu xử lý tương tác bài hát
+    activate Service
+    Service --> Controller: Trả về kết quả xử lý tương tác bài hát
     deactivate Service
-    
-    ' Client tự bỏ dòng đó khỏi giao diện (Optimistic UI)
-    Controller --> UI: {status: 200, success: true}
+    alt Tương tác thất bại
+        Controller --> View: Thông báo "Hành động thất bại, vui lòng thử lại"
+    else Tương tác thành công
+        Controller --> View: Thông báo "Hành động thành công"
+    end
     deactivate Controller
-    
-    UI -> UI: Xóa bài hát khỏi danh sách đang hiện
-    UI --> User: Cập nhật giao diện
-    deactivate UI
+    View --> User: Hiển thị thông báo
+    View --> View: Cập nhật số lượt tương tác
 end
+
+deactivate View
 @enduml

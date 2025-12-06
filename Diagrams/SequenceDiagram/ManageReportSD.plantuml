@@ -1,100 +1,37 @@
-@startuml Sequence Diagram - Quản Lý Báo Cáo 
-
-title Sơ Đồ Tuần Tự - Quản Lý Báo Cáo 
+@startuml SD
 
 actor "Admin" as Admin
-participant ":NextJS Admin" as UI
-participant ":ReportController" as Controller
-participant ":ReportService" as Service
-participant ":ReportRepository" as DB
-participant ":ExternalServices" as ExtService
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+participant "User" as User
+
+title Sequence Diagram: Quản lý báo cáo vi phạm
 
 autonumber
 
-' === BƯỚC 1: TẢI DANH SÁCH ===
-Admin -> UI: Vào trang "Quản lý Báo cáo"
-activate UI
-UI -> Controller: getReports()
+Admin -> View: Admin chọn chức năng Quản lý báo cáo vi phạm
+activate View
+View -> Controller: Yêu cầu danh sách báo cáo vi phạm
 activate Controller
-Controller -> Service: getReports()
+Controller -> Service: Yêu cầu danh sách báo cáo vi phạm
 activate Service
-
-Service -> DB: find()
-activate DB
-DB --> Service: reportList
-deactivate DB
-
-Service --> Controller: {data: reportList}
+Service --> Controller: Trả về danh sách báo cáo vi phạm
 deactivate Service
-Controller --> UI: {status: 200, data: reportList}
+Controller --> View: Trả về danh sách báo cáo vi phạm
 deactivate Controller
-UI --> Admin: Hiển thị danh sách
-deactivate UI
+View --> View: Hiển thị danh sách báo cáo vi phạm
 
-' === BƯỚC 2, 3, 4: XỬ LÝ BÁO CÁO ===
-Admin -> UI: Chọn báo cáo & Hành động (Ẩn/Cảnh cáo/Bỏ qua)
-activate UI
-
-' DTO chứa reportId và action (HIDE_SONG | WARN_USER | DISMISS)
-UI -> Controller: processReport(reportId, reportDTO)
+Admin -> View: Xem báo cáo vi phạm và chọn phương thức xử lý
+View -> Controller: Yêu cầu xử lý và cập nhật trạng thái báo cáo vi phạm
 activate Controller
-Controller -> Service: processReport(reportId, reportDTO)
+Controller -> Service: Yêu cầu xử lý và cập nhật trạng thái báo cáo
 activate Service
-
-' === BƯỚC 5: CẬP NHẬT TRẠNG THÁI REPORT (Bước chung) ===
-Service -> DB: update(reportId, { status: 'PROCESSED' })
-activate DB
-DB --> Service: updateResult
-deactivate DB
-
-alt 5.1: Cập nhật thất bại
-    Service --> Controller: Throw InternalError
-    Controller --> UI: {status: 500, error: "DB Error"}
-    UI --> Admin: Thông báo "Cập nhật trạng thái thất bại"
-else Cập nhật thành công
-    ' === BƯỚC 6: THỰC HIỆN HÀNH ĐỘNG (Rẽ nhánh) ===
-    
-    alt reportDTO.action == HIDE_SONG
-        Service -> ExtService: SongService.hideSong(songId)
-        activate ExtService
-        ExtService --> Service: Result
-        deactivate ExtService
-        
-    else reportDTO.action == WARN_USER
-        Service -> ExtService: UserService.warnUser(userId)
-        activate ExtService
-        ExtService --> Service: Result
-        deactivate ExtService
-        
-    else reportDTO.action == DISMISS
-        note right of Service: Không cần gọi Service nào khác
-    end
-
-    alt 6.1: Hành động thất bại (Lỗi Service liên quan)
-        Service --> Controller: Throw Error
-        Controller --> UI: {status: 500, error: "Action Failed"}
-        UI --> Admin: Thông báo "Xử lý thất bại"
-    else Hành động thành công
-        ' === BƯỚC 8: GỬI THÔNG BÁO (Bước chung) ===
-        Service -> ExtService: NotificationService.sendNotification(userId, msg)
-        activate ExtService
-        deactivate ExtService
-
-        Service --> Controller: {success: true}
-        deactivate Service
-        
-        ' === BƯỚC 7: LÀM MỚI DANH SÁCH (Client Trigger) ===
-        Controller --> UI: {status: 200, message: "Processed"}
-        deactivate Controller
-        
-        UI -> Controller: getReports()
-        activate Controller
-        ' ... (Lặp lại quy trình lấy danh sách) ...
-        Controller --> UI: [Danh sách mới]
-        deactivate Controller
-        
-        UI --> Admin: Danh sách đã cập nhật
-        deactivate UI
-    end
-end
+Service -> User: Gửi thông báo kết quả xử lý báo cáo
+Service --> Controller: Trả về kết quả xử lý và cập nhật trạng thái
+deactivate Service
+Controller --> View: Thông báo kết quả xử lý và cập nhật trạng thái báo cáo
+deactivate Controller
+View --> Admin: Hiển thị thông báo
+deactivate View
 @enduml

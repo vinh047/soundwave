@@ -1,5 +1,5 @@
 import { PaginatedResult } from "@/types/common";
-import { User } from "@repo/database";
+import { Prisma, User } from "@repo/database";
 import axiosClient from "./apiClient";
 import { PaginationParams } from "@/type/PaginationParams";
 
@@ -19,7 +19,22 @@ const userApi = {
     });
   },
 
-  getUserById: (id: string) => axiosClient.get<User>(`/users/${id}`),
+  getUserById: (id: string) =>
+    axiosClient.get<
+      Prisma.UserGetPayload<{
+        include: {
+          tracks: true;
+          playlists: true;
+          likes: true;
+          reposts: true;
+          reports: true;
+          comments: true;
+          following: true;
+          followers: true;
+          profile: true;
+        };
+      }>
+    >(`/users/${id}`),
 
   createUser: (data: CreateUserPayload) =>
     axiosClient.post<User>("/users", data),

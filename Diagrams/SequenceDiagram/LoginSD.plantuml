@@ -1,82 +1,40 @@
-@startuml Sequence Diagram - Đăng Nhập 
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Đăng Nhập 
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":NextJS Client" as UI
-participant ":AuthController" as Controller
-participant ":AuthService" as AuthService
-participant ":UserService" as UserService
-participant ":UserRepository" as DB
+title Sequence Diagram: Đăng Nhập
 
 autonumber
 
-' === BƯỚC 1 & 2: GỬI YÊU CẦU ===
-User -> UI: Nhập (email, pass) & Nhấn "Đăng nhập"
-activate UI
-
-' NestJS dùng DTO để hứng dữ liệu
-UI -> Controller: login(loginDto)
-activate Controller
-
-' === BƯỚC 3: XỬ LÝ LOGIC ===
-
-' --- CHECK 1: ĐỊNH DẠNG EMAIL (Validation Pipe) ---
-Controller -> Controller: ValidationPipe(loginDto.email)
-alt 3.1: Email không hợp lệ (Validation Failed)
-    Controller --> UI: {status: 400, error: "Bad Request - Invalid Email"}
-    UI --> User: Thông báo "Email không hợp lệ"
-
-else Format OK
-    ' Controller gọi AuthService để xử lý nghiệp vụ
-    Controller -> AuthService: validateUser(email, pass)
-    activate AuthService
-
-    ' --- CHECK 2: TÌM USER (Gọi sang UserService) ---
-    AuthService -> UserService: findOneByEmail(email)
-    activate UserService
-    
-    ' Service gọi Repository (TypeORM)
-    UserService -> DB: findOne({ where: { email } })
-    activate DB
-    DB --> UserService: userEntity
-    deactivate DB
-    
-    UserService --> AuthService: userEntity
-    deactivate UserService
-    
-    alt 3.3: Tài khoản không tồn tại (userEntity == null)
-        AuthService --> Controller: Throw NotFoundException
-        deactivate AuthService
-        Controller --> UI: {status: 404, error: "User Not Found"}
-        UI --> User: Thông báo "Tài khoản không tồn tại"
-        
-    else User Tồn tại
-        activate AuthService
-        ' --- CHECK 3: MẬT KHẨU ---
-        ' Sử dụng bcrypt để so sánh
-        AuthService -> AuthService: verifyPassword(pass, user.hash)
-        
-        alt 3.2: Sai mật khẩu
-            AuthService --> Controller: Throw UnauthorizedException
-            Controller --> UI: {status: 401, error: "Wrong Password"}
-            UI --> User: Thông báo "Sai mật khẩu"
-            
-        else Đăng nhập thành công
-            ' --- TẠO TOKEN (JWT) ---
-            AuthService -> AuthService: generateJwtToken(user)
-            
-            AuthService --> Controller: { accessToken: "eyJh..." }
-            deactivate AuthService
-            
-            Controller --> UI: {status: 200, accessToken: "..."}
-            deactivate Controller
-            
-            ' NextJS lưu token và chuyển trang
-            UI -> UI: Lưu Token (Cookies/Storage)
-            UI --> User: Thông báo thành công & Chuyển trang
-            deactivate UI
-        end
+User -> View: User chọn chức năng Đăng Nhập
+activate View
+View --> View: Hiển thị form đăng nhập
+User -> View: Nhập thông tin đăng nhập
+View --> View: Kiểm tra thông tin đăng nhập
+alt Thông tin không hợp lệ
+    View --> View: Thông báo "Thông tin không hợp lệ, vui lòng thử lại"
+else Thông tin hợp lệ
+    View -> Controller: Yêu cầu đăng nhập
+    activate Controller
+    Controller -> Service: Yêu cầu đăng nhập
+    activate Service
+    Service --> Service: Xử lý đăng nhập
+    Service --> Controller: Trả về kết quả đăng nhập
+    deactivate Service
+    alt Đăng nhập thành công
+        Controller --> View: Thông báo "Đăng nhập thành công"
+        View --> View: Tắt form đăng nhập
+        View --> User: Hiển thị thông báo
+        View --> User: Chuyển sang giao diện Chính
+    else Đăng nhập thất bại
+        Controller --> View: Thông báo "Sai email hoặc mật khẩu, vui lòng thử lại"
+        View --> User: Hiển thị thông báo
     end
+    deactivate Controller
 end
+
+deactivate View
 @enduml

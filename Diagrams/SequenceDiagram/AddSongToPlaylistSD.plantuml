@@ -1,67 +1,41 @@
-@startuml Sequence Diagram - Thêm Bài Hát Vào Playlist Cá Nhân
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Thêm Bài Hát Vào Playlist Cá Nhân 
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":NextJS Client" as UI
-participant ":PlaylistController" as Controller
-participant ":PlaylistService" as Service
-participant ":PlaylistRepository" as DB
+title Sequence Diagram: Thêm bài hát vào Playlist
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ DANH SÁCH ===
-UI --> User: Hiển thị giao diện & danh sách bài hát
-
-' === BƯỚC 2: GỬI YÊU CẦU ===
-User -> UI: Chọn (songId) & Nhấn "Thêm"
-activate UI
-
-' Request: POST /playlists/:id/songs (Body: { songId: 123 })
-UI -> Controller: addSongToPlaylist(req, playlistId, addSongDto)
+User -> View: User chọn chức năng Thêm bài hát vào Playlist
+activate View
+View --> View: Hiển thị form thêm bài hát vào Playlist
+View -> Controller: Yêu cầu danh sách bài hát
 activate Controller
-
-' Lấy userId từ req.user
-Controller -> Service: addSongToPlaylist(userId, playlistId, addSongDto)
+Controller -> Service: Yêu cầu danh sách bài hát
 activate Service
-
-' === BƯỚC 3: CHECK QUYỀN SỞ HỮU & LẤY PLAYLIST ===
-' Tìm playlist của user này để đảm bảo quyền sở hữu (Owner Check)
-Service -> DB: findOne({ where: { id: playlistId, userId: userId }, relations: ['songs'] })
-activate DB
-DB --> Service: playlistEntity
-deactivate DB
-
-alt Playlist không tìm thấy (hoặc không phải chủ sở hữu)
-    Service --> Controller: Throw NotFoundException
-    deactivate Service
-    Controller --> UI: {status: 404, error: "Playlist not found or access denied"}
-    deactivate Controller
-    
-    UI --> User: Thông báo lỗi
-    deactivate UI
-
-else Playlist Hợp lệ
-    ' === BƯỚC 4: THỰC HIỆN THÊM ===
-    ' Logic: Lấy songId từ DTO, push vào mảng songs của playlist
-    note right of Service: playlist.songs.push({ id: addSongDto.songId })
-    
-    Service -> DB: save(playlistEntity)
-    activate DB
-    DB --> Service: updatedPlaylist
-    deactivate DB
-    
-    Service --> Controller: {success: true}
-    deactivate Service
-    
-    Controller --> UI: {status: 201, message: "Added successfully"}
-    deactivate Controller
-    
-    ' === BƯỚC 5: CHUYỂN GIAO DIỆN ===
-    ' Client tự điều hướng
-    UI -> UI: Router.push(`/edit-playlist/${playlistId}`)
-    
-    UI --> User: Chuyển sang giao diện Sửa Playlist cá nhân
-    deactivate UI
+Service --> Controller: Trả về danh sách bài hát
+deactivate Service
+Controller --> View: Trả về danh sách bài hát trên form
+deactivate Controller
+View --> View: Hiển thị form thêm bài hát vào Playlist với danh sách bài hát
+User -> View: Chọn bài hát và nhấn Thêm vào Playlist
+View -> Controller: Yêu cầu thêm bài hát vào Playlist
+activate Controller
+Controller -> Service: Xử lý yêu cầu thêm bài hát vào Playlist
+activate Service
+Service --> Controller: Trả về kết quả thêm bài hát vào Playlist
+deactivate Service
+alt Thêm bài hát vào Playlist thành công
+    Controller --> View: Thông báo "Thêm bài hát vào Playlist thành công"
+    View --> View: Tắt form thêm bài hát vào Playlist
+    View --> View: Cập nhật danh sách bài hát trong Playlist
+else Thêm bài hát vào Playlist thất bại
+    Controller --> View: Thông báo "Thêm bài hát vào Playlist thất bại, vui lòng thử lại"
 end
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

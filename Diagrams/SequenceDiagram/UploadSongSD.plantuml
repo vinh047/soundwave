@@ -1,70 +1,33 @@
-@startuml Sequence Diagram - Tải Lên Bài Hát 
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Tải Lên Bài Hát 
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Nghệ sĩ" as Artist
-participant ":NextJS Client" as UI
-participant ":SongController" as Controller
-participant ":SongService" as Service
-participant ":FileStorageService" as Storage
-participant ":SongRepository" as DB
+title Sequence Diagram: Tải lên bài hát
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ ===
-UI --> Artist: Hiển thị form upload
-
-' === BƯỚC 2: GỬI DỮ LIỆU ===
-Artist -> UI: Điền thông tin, chọn File & Nhấn "Tải lên"
-activate UI
-
-' NestJS dùng Interceptor để hứng File (Multer)
-UI -> Controller: uploadSong(req, createSongDto, file)
+User -> View: User chọn chức năng Tải lên bài hát
+activate View
+View --> View: Hiển thị form tải lên bài hát
+User -> View: Nhập thông tin và chọn file bài hát
+View --> View: Kiểm tra thông tin bài hát
+View -> Controller: Gửi yêu cầu tải lên bài hát
 activate Controller
-
-' Lấy artistId từ req.user
-Controller -> Service: uploadSong(artistId, createSongDto, file)
+Controller -> Service: Xử lý yêu cầu tải lên bài hát
 activate Service
-
-' === BƯỚC 3: XỬ LÝ FILE (QUAN TRỌNG) ===
-Service -> Storage: upload(file)
-activate Storage
-
-alt Lỗi Upload File (Dung lượng lớn / Sai định dạng)
-    Storage --> Service: Error
-    deactivate Storage
-    Service --> Controller: Throw BadRequestException
-    Controller --> UI: {status: 400, error: "File Error"}
-    UI --> Artist: Thông báo lỗi file
-else Upload thành công
-    Storage --> Service: fileUrl (VD: /uploads/song.mp3)
-    deactivate Storage
-
-    ' === BƯỚC 4: LƯU VÀO DATABASE ===
-    ' Lúc này mới có fileUrl để lưu vào DB
-    Service -> DB: save({ ...createSongDto, userId: artistId, fileUrl })
-    activate DB
-    
-    alt Lỗi Database
-        DB --> Service: Error
-        deactivate DB
-        Service --> Controller: Throw InternalServerError
-        Controller --> UI: {status: 500, error: "DB Error"}
-        UI --> Artist: Thông báo "Tải lên thất bại"
-    else Lưu thành công
-        DB --> Service: newSongEntity
-        deactivate DB
-        
-        Service --> Controller: {success: true, data: newSongEntity}
-        deactivate Service
-        
-        Controller --> UI: {status: 201, message: "Uploaded Successfully"}
-        deactivate Controller
-        
-        ' === BƯỚC 5: CHUYỂN TRANG ===
-        UI --> Artist: Thông báo thành công
-        UI --> Artist: Chuyển sang Quản lý bài hát
-        deactivate UI
-    end
+Service --> Controller: Trả về kết quả tải lên bài hát
+deactivate Service
+alt Tải lên thành công
+    Controller --> View: Thông báo "Tải lên bài hát thành công"
+    View --> View: Tắt form tải lên bài hát
+    View --> View: Cập nhật danh sách bài hát mới
+else Tải lên thất bại
+    Controller --> View: Thông báo "Tải lên bài hát thất bại, vui lòng thử lại"
 end
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

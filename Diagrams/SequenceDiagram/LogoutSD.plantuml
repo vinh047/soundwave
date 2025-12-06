@@ -1,60 +1,25 @@
-@startuml Sequence Diagram - Đăng Xuất 
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Chức Năng Đăng Xuất 
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":NextJS Client" as UI
-participant ":AuthController" as Controller
-participant ":AuthService" as Service
-participant ":TokenBlacklistRepository" as DB
+title Sequence Diagram: Đăng Xuất
 
 autonumber
 
-' === BƯỚC 1: GỬI YÊU CẦU ===
-User -> UI: Nhấn nút "Đăng xuất"
-activate UI
-UI -> Controller: logout(logoutDto)
+User -> View: User chọn chức năng Đăng Xuất
+activate View
+View -> Controller: Gửi yêu cầu đăng xuất
 activate Controller
-note right of UI: Header: Authorization: Bearer <token>
-
-' Controller lấy token từ Header
-Controller -> Service: logout(token)
+Controller -> Service: Xử lý yêu cầu đăng xuất
 activate Service
-
-' === BƯỚC 2: XỬ LÝ SERVER (Blacklist Token) ===
-' Logic: Lưu token vào bảng TokenBlacklist
-alt Đăng xuất thất bại (Lỗi DB)
-    Service -> DB: save({ token, expiresAt })
-    activate DB
-    DB --> Service: Error
-    deactivate DB
-    
-    Service --> Controller: Throw InternalServerError
-    deactivate Service
-    Controller --> UI: {status: 500, error: "Logout Failed"}
-    deactivate Controller
-    
-    UI --> User: Thông báo "Đăng xuất thất bại, vui lòng thử lại"
-
-else Đăng xuất thành công
-    Service -> DB: save({ token, expiresAt })
-    activate DB
-    DB --> Service: savedRecord
-    deactivate DB
-    
-    Service --> Controller: {success: true}
-    deactivate Service
-    Controller --> UI: {status: 200, success: true}
-    deactivate Controller
-    
-    ' === BƯỚC 3: XỬ LÝ CLIENT (NextJS Cleanup) ===
-    ' Quan trọng: Xóa dấu vết ở Client
-    UI -> UI: removeToken(LocalStorage / Cookies)
-    
-    UI --> User: Thông báo "Bạn đã đăng xuất thành công"
-    
-    ' Chuyển hướng
-    UI --> User: Chuyển về trang Login
-    deactivate UI
-end
+Service --> Controller: Trả về kết quả đăng xuất
+deactivate Service
+Controller --> View: Thông báo "Đăng xuất thành công"
+deactivate Controller
+View --> User: Hiển thị thông báo
+View --> User: Chuyển sang giao diện Khách
+deactivate View
 @enduml

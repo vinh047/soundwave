@@ -1,0 +1,43 @@
+@startuml SD
+
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+
+title Sequence Diagram: Xem danh sách và tìm kiếm bài hát đăng lại
+
+autonumber
+
+User -> View: User chọn chức năng Xem danh sách và tìm kiếm bài hát đăng lại
+activate View
+View -> Controller: Yêu cầu danh sách bài hát đăng lại
+activate Controller
+Controller -> Service: Yêu cầu danh sách bài hát
+activate Service
+Service --> Controller: Trả về danh sách bài hát đăng lại
+deactivate Service
+Controller --> View: Trả về danh sách bài hát đăng lại
+deactivate Controller
+View --> View: Hiển thị danh sách bài hát đăng lại
+
+group Tương tác bài hát
+    User -> View: Chọn 1 bài hát và nhấn tương tác
+    View -> Controller: Yêu cầu xử lý tương tác bài hát
+    activate Controller
+    Controller -> Service: Yêu cầu xử lý tương tác bài hát
+    activate Service
+    Service --> Controller: Trả về kết quả xử lý tương tác bài hát
+    deactivate Service
+    alt Tương tác thất bại
+        Controller --> View: Thông báo "Hành động thất bại, vui lòng thử lại"
+    else Tương tác thành công
+        Controller --> View: Thông báo "Hành động thành công"
+    end
+    deactivate Controller
+    View --> User: Hiển thị thông báo
+    View --> View: Cập nhật số lượt tương tác
+end
+
+deactivate View
+@enduml

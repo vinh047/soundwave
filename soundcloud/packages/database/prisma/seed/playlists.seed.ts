@@ -13,8 +13,8 @@ export async function seedPlaylists(prisma: PrismaClient) {
       userId: "user_fan1",
       tracks: {
         create: [
-          { order: 1, trackId: "track_1" },
-          { order: 2, trackId: "track_2" },
+          { order: 1, trackId: "track_A1" },
+          { order: 2, trackId: "track_A2" },
         ],
       },
     },

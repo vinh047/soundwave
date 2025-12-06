@@ -1,62 +1,42 @@
-@startuml Sequence Diagram - Sửa Thông Tin Playlist Cá Nhân
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Sửa Thông Tin Playlist Cá Nhân 
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":NextJS Client" as UI
-participant ":PlaylistController" as Controller
-participant ":PlaylistService" as Service
-participant ":PlaylistRepository" as DB
+title Sequence Diagram: Sửa thông tin Playlist
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM ===
-UI --> User: Hiển thị form với thông tin cũ
-
-' === BƯỚC 2: GỬI YÊU CẦU ===
-User -> UI: Thay đổi thông tin & Nhấn "Lưu"
-activate UI
-
-' Dùng DTO
-UI -> Controller: updatePlaylist(req, playlistId, updatePlaylistDto)
+User -> View: User chọn chức năng Sửa thông tin Playlist
+activate View
+View --> View: Hiển thị form sửa thông tin Playlist
+View -> Controller: Yêu cầu thông tin Playlist cần sửa
 activate Controller
-
-' Lấy userId từ req.user
-Controller -> Service: updatePlaylist(userId, playlistId, updatePlaylistDto)
+Controller -> Service: Yêu cầu thông tin Playlist
 activate Service
-
-' === BƯỚC 3: CẬP NHẬT DB ===
-' TypeORM: updatePlaylist(criteria, partialEntity)
-' Chỉ update nếu ID khớp VÀ userId khớp (Bảo mật)
-Service -> DB: update({ id: playlistId, userId: userId }, updatePlaylistDto)
-activate DB
-DB --> Service: result { affected: 1 }
-deactivate DB
-
-alt Thất bại (affected == 0 hoặc Lỗi DB)
-    ' affected = 0 nghĩa là Playlist không tồn tại hoặc không phải của User này
-    Service --> Controller: Throw Forbidden/NotFound
-    deactivate Service
-    Controller --> UI: {status: 403/404, error: "Update Failed"}
-    deactivate Controller
-    
-    UI --> User: Thông báo "Cập nhật thất bại (Không có quyền hoặc Lỗi)"
-    deactivate UI
-
-else Thành công (affected > 0)
-    ' Đã activate Service ở trên
-    activate Service
-    Service --> Controller: {success: true}
-    deactivate Service
-    
-    Controller --> UI: {status: 200, message: "Updated Successfully"}
-    deactivate Controller
-    
-    ' === BƯỚC 4: CHUYỂN GIAO DIỆN ===
-    ' Client tự điều hướng
-    UI -> UI: Redirect to /edit-playlist/playlistId
-    
-    UI --> User: Chuyển sang giao diện Sửa Playlist
-    deactivate UI
+Service --> Controller: Trả về thông tin Playlist
+deactivate Service
+Controller --> View: Trả về thông tin Playlist trên form
+deactivate Controller
+View --> View: Hiển thị thông tin Playlist trên form
+User -> View: Nhập thông tin mới cho Playlist
+View --> View: Kiểm tra thông tin Playlist
+View -> Controller: Gửi yêu cầu sửa thông tin Playlist
+activate Controller
+Controller -> Service: Xử lý yêu cầu sửa thông tin Playlist
+activate Service
+Service --> Controller: Trả về kết quả sửa thông tin Playlist
+deactivate Service
+alt Sửa thông tin Playlist thành công
+    Controller --> View: Thông báo "Sửa thông tin Playlist thành công"
+    View --> View: Tắt form sửa thông tin Playlist
+    View --> View: Cập nhật thông tin Playlist mới
+else Sửa thông tin Playlist thất bại
+    Controller --> View: Thông báo "Sửa thông tin Playlist thất bại, vui lòng thử lại"
 end
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

@@ -1,66 +1,42 @@
-@startuml Sequence Diagram - Sửa Hồ Sơ Cá Nhân
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Sửa Hồ Sơ Cá Nhân 
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":NextJS Client" as UI
-participant ":ProfileController" as Controller
-participant ":ProfileService" as Service
-participant ":ProfileRepository" as DB
+title Sequence Diagram: Sửa hồ sơ cá nhân
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM ===
-' (Dòng sự kiện chính 1)
-User -> UI: Vào trang "Sửa hồ sơ"
-activate UI
-UI --> User: Hiển thị form (Tên, Ảnh đại diện...)
-
-' === BƯỚC 2: GỬI DỮ LIỆU ===
-' (Dòng sự kiện chính 2)
-User -> UI: Nhập thông tin mới & Nhấn "Lưu"
-activate UI
-
-' Dùng DTO
-UI -> Controller: updateProfile(req, updateProfileDto)
+User -> View: User chọn chức năng Sửa hồ sơ cá nhân
+activate View
+View --> View: Hiển thị form sửa thông tin hồ sơ cá nhân
+View -> Controller: Yêu cầu thông tin hồ sơ cá nhân cần sửa
 activate Controller
-
-' Lấy userId từ req.user
-Controller -> Service: updateProfile(userId, updateProfileDto)
+Controller -> Service: Yêu cầu thông tin hồ sơ cá nhân
 activate Service
-
-' === BƯỚC 3: CẬP NHẬT DB ===
-' TypeORM: update(criteria, partialEntity)
-Service -> DB: update({ userId: userId }, updateProfileDto)
-activate DB
-DB --> Service: result { affected: N }
-deactivate DB
-
-' === PHÂN NHÁNH KẾT QUẢ (Main Flow vs Alternative Flow) ===
-alt Dòng sự kiện phụ 3.1: Cập nhật thất bại (affected == 0 hoặc Lỗi DB)
-    Service --> Controller: Throw InternalServerError / NotFound
-    deactivate Service
-    
-    Controller --> UI: {status: 500, error: "Update Failed"}
-    deactivate Controller
-    
-    ' [KHỚP ĐẶC TẢ 3.1]
-    UI --> User: Thông báo "Cập nhật hồ sơ thất bại, vui lòng thử lại"
-    deactivate UI
-
-else Dòng sự kiện chính 3 & 4: Cập nhật thành công (affected > 0)
-    ' Đã activate Service ở trên
-    Service --> Controller: {success: true}
-    deactivate Service
-    
-    Controller --> UI: {status: 200, message: "Updated Successfully"}
-    deactivate Controller
-    
-    ' === BƯỚC 4: CHUYỂN GIAO DIỆN ===
-    ' Client tự điều hướng
-    UI -> UI: Router.push('/manage-profile')
-    
-    UI --> User: Chuyển sang giao diện Quản lý hồ sơ cá nhân
-    deactivate UI
+Service --> Controller: Trả về thông tin hồ sơ cá nhân
+deactivate Service
+Controller --> View: Trả về thông tin hồ sơ cá nhân trên form
+deactivate Controller
+View --> View: Hiển thị thông tin hồ sơ cá nhân trên form
+User -> View: Nhập thông tin mới cho hồ sơ
+View --> View: Kiểm tra thông tin nhập
+View -> Controller: Gửi yêu cầu sửa thông tin hồ sơ cá nhân
+activate Controller
+Controller -> Service: Xử lý yêu cầu sửa thông tin hồ sơ cá nhân
+activate Service
+Service --> Controller: Trả về kết quả sửa thông tin hồ sơ cá nhân
+deactivate Service
+alt Sửa thông tin thành công
+    Controller --> View: Thông báo "Sửa thông tin hồ sơ cá nhân thành công"
+    View --> View: Tắt form sửa thông tin hồ sơ cá nhân
+    View --> View: Cập nhật hồ sơ cá nhân mới
+else Sửa thông tin thất bại
+    Controller --> View: Thông báo "Sửa thông tin hồ sơ cá nhân thất bại, vui lòng thử lại"
 end
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

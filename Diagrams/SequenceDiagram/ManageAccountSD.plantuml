@@ -1,84 +1,35 @@
-@startuml Sequence Diagram - Quản Lý Tài Khoản 
-
-title Sơ Đồ Tuần Tự - Quản Lý Tài Khoản 
+@startuml SD
 
 actor "Admin" as Admin
-participant ":NextJS Admin" as UI
-participant ":AccountController" as Controller
-participant ":UserService" as Service
-participant ":UserRepository" as DB
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+
+title Sequence Diagram: Quản lý tài khoản người dùng
 
 autonumber
 
-' === BƯỚC 1: TẢI DANH SÁCH ===
-Admin -> UI: Vào trang "Quản lý tài khoản"
-activate UI
-UI -> Controller: getAccounts()
+Admin -> View: Admin chọn chức năng Quản lý tài khoản người dùng
+activate View
+View -> Controller: Yêu cầu danh sách tài khoản
 activate Controller
-Controller -> Service: getAccounts()
+Controller -> Service: Yêu cầu danh sách tài khoản
 activate Service
-
-Service -> DB: find()
-activate DB
-DB --> Service: [UserEntities]
-deactivate DB
-
-Service --> Controller: {data: [...]}
+Service --> Controller: Trả về danh sách tài khoản
 deactivate Service
-Controller --> UI: {status: 200, data: [...]}
+Controller --> View: Trả về danh sách tài khoản
 deactivate Controller
-UI --> Admin: Hiển thị danh sách User & trạng thái (Active/Locked)
-deactivate UI
+View --> View: Hiển thị danh sách tài khoản
 
-' === BƯỚC 2: THAY ĐỔI TRẠNG THÁI (KHÓA / MỞ KHÓA) ===
-' Use case nói: Khóa hoặc Mở khóa -> Ta dùng tham số status để đại diện cả 2
-Admin -> UI: Chọn User & Nhấn nút "Khóa/Mở khóa"
-activate UI
-
-' Gửi status ngược lại với hiện tại (VD: đang Active -> gửi Locked)
-UI -> Controller: updateStatus(userId, newStatus)
+Admin -> View: Chọn tài khoản để Khoá
+View -> Controller: Yêu cầu khoá tài khoản
 activate Controller
-
-Controller -> Service: updateStatus(userId, newStatus)
+Controller -> Service: Yêu cầu cập nhật trạng thái tài khoản
 activate Service
-
-' === BƯỚC 3: CẬP NHẬT DB ===
-alt Cập nhật thất bại (User không tồn tại / Lỗi DB)
-    Service -> DB: update(userId, { isLocked: newStatus })
-    activate DB
-    DB --> Service: Error
-    deactivate DB
-    
-    Service --> Controller: Throw BadRequest/InternalError
-    deactivate Service
-    Controller --> UI: {status: 500, error: "Update Failed"}
-    deactivate Controller
-    
-    UI --> Admin: Thông báo "Cập nhật trạng thái thất bại"
-    deactivate UI
-
-else Cập nhật thành công
-    Service -> DB: update(userId, { isLocked: newStatus })
-    activate DB
-    DB --> Service: {affected: 1}
-    deactivate DB
-    
-    Service --> Controller: {success: true}
-    deactivate Service
-    
-    ' === BƯỚC 4: LÀM MỚI DỮ LIỆU ===
-    ' Cách tối ưu: Trả về success, Client tự reload hoặc update state
-    Controller --> UI: {status: 200, message: "Updated Successfully"}
-    deactivate Controller
-    
-    ' Client tự động gọi lại API lấy danh sách (hoặc tự sửa UI)
-    UI -> Controller: getAccounts() (Tự động refresh)
-    activate Controller
-    ' ... (Lặp lại quy trình lấy danh sách như Bước 1) ...
-    Controller --> UI: [Danh sách mới]
-    deactivate Controller
-    
-    UI --> Admin: Cập nhật giao diện với trạng thái mới
-    deactivate UI
-end
+Service --> Controller: Trả về kết quả cập nhật trạng thái tài khoản
+deactivate Service
+Controller --> View: Thông báo kết quả cập nhật trạng thái tài khoản
+deactivate Controller
+View --> Admin: Hiển thị thông báo
+deactivate View
 @enduml

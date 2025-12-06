@@ -1,69 +1,33 @@
-@startuml Sequence Diagram - Báo Cáo Vi Phạm
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Báo Cáo Vi Phạm
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":GiaoDienBaiHat" as SongUI
-participant ":GiaoDienBaoCao" as ReportUI
-participant ":ReportController" as Controller
-participant ":ReportService" as Service
-participant ":ReportRepository" as DB
+title Sequence Diagram: Báo cáo vi phạm
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM ===
-User -> SongUI: Nhấn nút "Báo cáo vi phạm"
-activate SongUI
-SongUI -> ReportUI: OpenModal(songId)
-activate ReportUI
-ReportUI --> User: Hiển thị form (Lý do, Mô tả)
-deactivate SongUI
+User -> View: User chọn chức năng Báo cáo vi phạm
+activate View
+View --> View: Hiển thị form thông tin báo cáo
 
-' === BƯỚC 2: GỬI BÁO CÁO ===
-User -> ReportUI: Điền lý do & Nhấn "Gửi"
-activate ReportUI
-
-' Dùng DTO để gói dữ liệu
-ReportUI -> Controller: createReport(req, createReportDto)
+User -> View: Nhập thông tin báo cáo
+View --> View: Kiểm tra thông tin báo cáo
+View -> Controller: Gửi yêu cầu nhận báo cáo
 activate Controller
-
-' Lấy userId từ req.user (AuthGuard đã check account not locked)
-Controller -> Service: createReport(userId, createReportDto)
+Controller -> Service: Lưu báo cáo
 activate Service
-
-' === BƯỚC 3: GHI DATABASE ===
-alt Lỗi DB (Lỗi kết nối / Hệ thống)
-    Service -> DB: save(reportEntity)
-    activate DB
-    DB --> Service: Error
-    deactivate DB
-    
-    Service --> Controller: Throw InternalServerError
-    deactivate Service
-    Controller --> ReportUI: {status: 500, error: "Failed"}
-    deactivate Controller
-    
-    ReportUI --> User: Thông báo "Báo cáo thất bại"
-
-else Thành công
-    Service -> DB: save(reportEntity)
-    activate DB
-    DB --> Service: newReport
-    deactivate DB
-    
-    Service --> Controller: {success: true}
-    deactivate Service
-    
-    Controller --> ReportUI: {status: 201, success: true}
-    deactivate Controller
-    
-    ' === BƯỚC 4 & 5: THÔNG BÁO & ĐÓNG ===
-    ReportUI --> User: Thông báo "Đã gửi báo cáo thành công"
-    
-    ReportUI -> ReportUI: CloseModal()
-    ReportUI --> SongUI: Quay lại màn hình bài hát
-    deactivate ReportUI
-    activate SongUI
-    deactivate SongUI
+Service --> Controller: Trả về kết quả lưu báo cáo
+deactivate Service
+alt Lưu báo cáo thành công
+    Controller --> View: Thông báo "Báo cáo thành công"
+    View --> View: Tắt form thông tin báo cáo
+else Lưu báo cáo thất bại
+    Controller --> View: Thông báo "Báo cáo thất bại, vui lòng thử lại"
 end
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

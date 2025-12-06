@@ -1,60 +1,32 @@
-@startuml Sequence Diagram - Tạo Playlist Cá Nhân
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Tạo Playlist Cá Nhân 
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":NextJS Client" as UI
-participant ":PlaylistController" as Controller
-participant ":PlaylistService" as Service
-participant ":PlaylistRepository" as DB
+title Sequence Diagram: Tạo Playlist cá nhân
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM ===
-UI --> User: Hiển thị form (Tên, Mô tả, Ảnh...)
-
-' === BƯỚC 2: GỬI YÊU CẦU ===
-User -> UI: Điền thông tin & Nhấn "Tạo Playlist"
-activate UI
-
-' Dùng DTO
-UI -> Controller: createPlaylist(req, createPlaylistDto)
+User -> View: User chọn chức năng Tạo Playlist cá nhân
+activate View
+View --> View: Hiển thị form tạo Playlist
+User -> View: Nhập thông tin Playlist
+View --> View: Kiểm tra thông tin Playlist
+View -> Controller: Gửi yêu cầu tạo Playlist
 activate Controller
-
-' Lấy userId từ req.user
-Controller -> Service: createPlaylist(userId, createPlaylistDto)
+Controller -> Service: Xử lý yêu cầu tạo Playlist
 activate Service
-
-' === BƯỚC 3: LƯU DB ===
-' TypeORM: save(entity)
-Service -> DB: save({ ...createPlaylistDto, userId })
-activate DB
-DB --> Service: newPlaylistEntity
-deactivate DB
-
-alt Thất bại (Lỗi DB)
-    Service --> Controller: Throw InternalServerError
-    deactivate Service
-    Controller --> UI: {status: 500, error: "Create Failed"}
-    deactivate Controller
-    
-    UI --> User: Thông báo "Tạo Playlist thất bại, vui lòng thử lại"
-    deactivate UI
-
-else Thành công
-    ' Đã activate Service ở trên
-    activate Service
-    Service --> Controller: {success: true, data: newPlaylistEntity}
-    deactivate Service
-    
-    Controller --> UI: {status: 201, id: newPlaylistEntity.id}
-    deactivate Controller
-    
-    ' === BƯỚC 4: CHUYỂN GIAO DIỆN ===
-    ' Client tự điều hướng
-    UI -> UI: Router.push(`/edit-playlist/${id}`)
-    
-    UI --> User: Chuyển sang giao diện Sửa Playlist
-    deactivate UI
+Service --> Controller: Trả về kết quả tạo Playlist
+deactivate Service
+alt Tạo Playlist thành công
+    Controller --> View: Thông báo "Tạo Playlist thành công"
+    View --> View: Tắt form tạo Playlist
+else Tạo Playlist thất bại
+    Controller --> View: Thông báo "Tạo Playlist thất bại, vui lòng thử lại"
 end
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml

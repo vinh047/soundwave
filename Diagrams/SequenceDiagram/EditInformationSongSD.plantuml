@@ -1,97 +1,42 @@
-@startuml Sequence Diagram - Sửa Thông Tin Bài Hát 
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Sửa Thông Tin Bài Hát 
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Nghệ sĩ" as Artist
-participant ":NextJS Client" as UI
-participant ":SongController" as Controller
-participant ":SongService" as Service
-participant ":FileStorageService" as Storage
-participant ":SongRepository" as DB
+title Sequence Diagram: Sửa thông tin bài hát
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM (Implicit) ===
-UI --> Artist: Hiển thị form với dữ liệu cũ
-
-' === BƯỚC 2: NGHỆ SĨ SỬA & LƯU ===
-Artist -> UI: Thay đổi thông tin/File & Nhấn "Lưu"
-activate UI
-
-' Gửi request API
-UI -> Controller: updateSongInfo(req, songId, updateSongDto, file)
+User -> View: User chọn chức năng Sửa thông tin bài hát
+activate View
+View --> View: Hiển thị form sửa thông tin bài hát
+View -> Controller: Yêu cầu thông tin bài hát cần sửa
 activate Controller
-
-' Lấy userId từ Token (req.user)
-Controller -> Service: updateSongInfo(userId, songId, updateSongDto, file)
+Controller -> Service: Yêu cầu thông tin bài hát
 activate Service
-
-' === BƯỚC 3: LẤY DỮ LIỆU CŨ & CHECK QUYỀN ===
-Service -> DB: findOne({ where: { id: songId, userId: userId } })
-activate DB
-DB --> Service: oldSongEntity
-deactivate DB
-
-alt Không tìm thấy (Sai ID hoặc Không phải chủ sở hữu)
-    Service --> Controller: Throw ForbiddenException
-    Controller --> UI: {status: 403, error: "Access Denied"}
-    UI --> Artist: Thông báo "Không có quyền sửa"
-    
-else Hợp lệ (Tiếp tục xử lý)
-
-    ' === BƯỚC 4: XỬ LÝ FILE (Logic File) ===
-    alt Có tải lên file nhạc mới
-        Service -> Storage: upload(file)
-        activate Storage
-        Storage --> Service: newFileUrl
-        deactivate Storage
-        
-        ' Xóa file cũ (Dọn rác)
-        Service -> Storage: delete(oldSongEntity.fileUrl)
-        activate Storage
-        deactivate Storage
-        
-        note right of Service: Gán fileUrl mới vào DTO
-    else Không tải file mới
-        note right of Service: Giữ nguyên fileUrl cũ
-    end
-
-    ' === BƯỚC 5: CẬP NHẬT DB & XỬ LÝ LỖI (Use Case 3 & 3.1) ===
-    Service -> Service: merge(oldSongEntity, updateSongDto)
-    
-    Service -> DB: save(updatedEntity)
-    activate DB
-    
-    alt Dòng sự kiện phụ 3.1: Ghi nhận thất bại (Lỗi DB)
-        DB --> Service: Error / Exception
-        deactivate DB
-        
-        Service --> Controller: Throw InternalServerError
-        deactivate Service
-        
-        Controller --> UI: {status: 500, error: "Database Error"}
-        deactivate Controller
-        
-        UI --> Artist: Thông báo "Cập nhật thông tin bài hát thất bại"
-        deactivate UI
-        
-    else Dòng sự kiện chính 3 & 4: Ghi nhận thành công
-        ' (DB đã activate ở trên)
-        DB --> Service: savedSong
-        deactivate DB
-        
-        Service --> Controller: {success: true, data: savedSong}
-        activate Service
-        deactivate Service
-        
-        Controller --> UI: {status: 200, message: "Update Success"}
-        activate Controller
-        deactivate Controller
-        
-        ' Client chuyển hướng
-        UI -> UI: Router.push('/manage-songs')
-        UI --> Artist: Chuyển sang giao diện Quản lý & Thông báo thành công
-        deactivate UI
-    end
+Service --> Controller: Trả về thông tin bài hát
+deactivate Service
+Controller --> View: Trả về thông tin bài hát trên form
+deactivate Controller
+View --> View: Hiển thị thông tin bài hát trên form
+User -> View: Nhập thông tin mới cho bài hát
+View --> View: Kiểm tra thông tin bài hát
+View -> Controller: Gửi yêu cầu sửa thông tin bài hát
+activate Controller
+Controller -> Service: Xử lý yêu cầu sửa thông tin bài hát
+activate Service
+Service --> Controller: Trả về kết quả sửa thông tin bài hát
+deactivate Service
+alt Sửa thông tin bài hát thành công
+    Controller --> View: Thông báo "Sửa thông tin bài hát thành công"
+    View --> View: Tắt form sửa thông tin bài hát
+    View --> View: Cập nhật thông tin bài hát mới
+else Sửa thông tin bài hát thất bại
+    Controller --> View: Thông báo "Sửa thông tin bài hát thất bại, vui lòng thử lại"
 end
+deactivate Controller
+View --> User: Hiển thị thông báo
+deactivate View
 @enduml
