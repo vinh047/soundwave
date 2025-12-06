@@ -21,15 +21,15 @@ Controller --> View: Hiển thị danh sách báo cáo vi phạm
 deactivate Controller
 deactivate Service
 
-Admin -> View: Chọn báo cáo vi phạm để xử lý
-View -> Controller: Yêu cầu xử lý báo cáo vi phạm
+Admin -> View: Xem báo cáo vi phạm và chọn phương thức xử lý
+View -> Controller: Yêu cầu xử lý và cập nhật trạng thái báo cáo vi phạm
 activate Controller
-Controller -> Service: Yêu cầu cập nhật trạng thái báo cáo
+Controller -> Service: Yêu cầu xử lý và cập nhật trạng thái báo cáo
 activate Service
 Service -> User: Gửi thông báo kết quả xử lý báo cáo
-Service --> Controller: Trả về kết quả cập nhật trạng thái
+Service --> Controller: Trả về kết quả xử lý và cập nhật trạng thái
 deactivate Service
-Controller --> View: Thông báo kết quả cập nhật trạng thái báo cáo
+Controller --> View: Thông báo kết quả xử lý và cập nhật trạng thái báo cáo
 deactivate Controller
 
 deactivate View
