@@ -17,11 +17,11 @@ Controller -> Service: Yêu cầu danh sách bài hát
 activate Service
 Service --> Controller: Trả về danh sách bài hát
 deactivate Service
-
+Controller --> View: Trả về danh sách bài hát
 alt Lấy danh sách bài hát thành công
-Controller --> View: Hiển thị danh sách bài hát
+    View --> View: Hiển thị danh sách bài hát
 else Lấy danh sách bài hát thất bại
-    Controller --> View: Thông báo "Lấy danh sách bài hát thất bại, vui lòng thử lại"
+    View --> User: Hiển thị thông báo lỗi
 end
 deactivate Controller
 
@@ -36,6 +36,7 @@ Service --> Controller: Trả về kết quả Thêm bài hát vào danh sách y
 deactivate Service
 Controller --> View: Thông báo "Thích bài hát thành công"
 deactivate Controller
+View --> User: Hiển thị thông báo
 View --> View: Cập nhật số lượt thích
 end
 
@@ -51,6 +52,7 @@ Service --> Controller: Trả về kết quả Thêm bình luận cho bài hát
 deactivate Service
 Controller --> View: Thông báo "Bình luận thành công"
 deactivate Controller
+View --> User: Hiển thị thông báo
 View --> View: Cập nhật số lượt bình luận
 end
 
@@ -68,6 +70,7 @@ Service --> Controller: Trả về kết quả Thêm bài hát vào hồ sơ cá
 deactivate Service
 Controller --> View: Thông báo "Đăng lại thành công"
 deactivate Controller
+View --> User: Hiển thị thông báo
 View --> View: Cập nhật số lượt đăng lại
 end
 

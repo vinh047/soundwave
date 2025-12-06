@@ -30,5 +30,6 @@ else Chia sẻ thất bại
     Controller --> View: Thông báo "Chia sẻ thất bại, vui lòng thử lại"
 end
 deactivate Controller
+View --> User: Hiển thị thông báo
 deactivate View
 @enduml

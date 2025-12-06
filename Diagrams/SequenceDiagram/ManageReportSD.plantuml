@@ -4,7 +4,7 @@ actor "Admin" as Admin
 participant "View" as View
 participant "Controller" as Controller
 participant "Service" as Service
-participant "UserView" as UserView
+participant "User" as User
 
 title Sequence Diagram: Quản lý báo cáo vi phạm
 
@@ -18,21 +18,20 @@ Controller -> Service: Yêu cầu danh sách báo cáo vi phạm
 activate Service
 Service --> Controller: Trả về danh sách báo cáo vi phạm
 deactivate Service
-Controller --> View: Hiển thị danh sách báo cáo vi phạm
+Controller --> View: Trả về danh sách báo cáo vi phạm
 deactivate Controller
+View --> View: Hiển thị danh sách báo cáo vi phạm
 
 Admin -> View: Xem báo cáo vi phạm và chọn phương thức xử lý
 View -> Controller: Yêu cầu xử lý và cập nhật trạng thái báo cáo vi phạm
 activate Controller
 Controller -> Service: Yêu cầu xử lý và cập nhật trạng thái báo cáo
 activate Service
-Service -> UserView: Gửi thông báo kết quả xử lý báo cáo
-activate UserView
-deactivate UserView
+Service -> User: Gửi thông báo kết quả xử lý báo cáo
 Service --> Controller: Trả về kết quả xử lý và cập nhật trạng thái
 deactivate Service
 Controller --> View: Thông báo kết quả xử lý và cập nhật trạng thái báo cáo
 deactivate Controller
-
+View --> Admin: Hiển thị thông báo
 deactivate View
 @enduml

@@ -19,8 +19,9 @@ Controller -> Service: Yêu cầu thông tin tài khoản
 activate Service
 Service --> Controller: Trả về thông tin tài khoản
 deactivate Service
-Controller --> View: Hiển thị thông tin tài khoản trên form
+Controller --> View: Trả về thông tin tài khoản trên form
 deactivate Controller
+View --> View: Hiển thị thông tin tài khoản trên form
 
 User -> View: Nhập thông tin mới cho tài khoản
 View --> View: Kiểm tra thông tin nhập
@@ -38,5 +39,6 @@ else Sửa tài khoản thất bại
     Controller --> View: Thông báo "Sửa tài khoản thất bại, vui lòng thử lại"
 end
 deactivate Controller
+View --> User: Hiển thị thông báo
 deactivate View
 @enduml

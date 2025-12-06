@@ -18,9 +18,9 @@ Controller -> Service: Yêu cầu thông tin bài hát
 activate Service
 Service --> Controller: Trả về thông tin bài hát
 deactivate Service
-Controller --> View: Hiển thị thông tin bài hát trên form
+Controller --> View: Trả về thông tin bài hát trên form
 deactivate Controller
-
+View --> View: Hiển thị thông tin bài hát trên form
 User -> View: Nhập thông tin mới cho bài hát
 View --> View: Kiểm tra thông tin bài hát
 View -> Controller: Gửi yêu cầu sửa thông tin bài hát
@@ -37,5 +37,6 @@ else Sửa thông tin bài hát thất bại
     Controller --> View: Thông báo "Sửa thông tin bài hát thất bại, vui lòng thử lại"
 end
 deactivate Controller
+View --> User: Hiển thị thông báo
 deactivate View
 @enduml

@@ -18,8 +18,9 @@ Controller -> Service: Yêu cầu danh sách bài hát
 activate Service
 Service --> Controller: Trả về danh sách bài hát
 deactivate Service
-Controller --> View: Hiển thị danh sách bài hát trên form
+Controller --> View: Trả về danh sách bài hát trên form
 deactivate Controller
+View --> View: Hiển thị form thêm bài hát vào Playlist với danh sách bài hát
 User -> View: Chọn bài hát và nhấn Thêm vào Playlist
 View -> Controller: Yêu cầu thêm bài hát vào Playlist
 activate Controller
@@ -35,5 +36,6 @@ else Thêm bài hát vào Playlist thất bại
     Controller --> View: Thông báo "Thêm bài hát vào Playlist thất bại, vui lòng thử lại"
 end
 deactivate Controller
+View --> User: Hiển thị thông báo
 deactivate View
 @enduml

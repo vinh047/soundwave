@@ -16,9 +16,10 @@ activate Controller
 Controller -> Service: Yêu cầu danh sách Playlist
 activate Service
 Service --> Controller: Trả về danh sách Playlist
-Controller --> View: Hiển thị danh sách Playlist
-deactivate Controller
 deactivate Service
+Controller --> View: Trả về danh sách Playlist
+deactivate Controller
+View --> View: Hiển thị danh sách Playlist
 
 User -> View: Chọn chức năng Tạo Playlist cá nhân (Chuyển sang Usecase Tạo Playlist cá nhân)
 User -> View: Chọn chức năng Quản lý chi tiết Playlist cá nhân (Chuyển sang Usecase Sửa thông tin Playlist cá nhân)
@@ -36,6 +37,6 @@ else Xoá Playlist thất bại
 Controller --> View: Thông báo "Xoá Playlist thất bại, vui lòng thử lại"
 end
 deactivate Controller
-
+View --> User: Hiển thị thông báo
 deactivate View
 @enduml

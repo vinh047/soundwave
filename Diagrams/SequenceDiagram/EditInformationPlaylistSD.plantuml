@@ -18,9 +18,9 @@ Controller -> Service: Yêu cầu thông tin Playlist
 activate Service
 Service --> Controller: Trả về thông tin Playlist
 deactivate Service
-Controller --> View: Hiển thị thông tin Playlist trên form
+Controller --> View: Trả về thông tin Playlist trên form
 deactivate Controller
-
+View --> View: Hiển thị thông tin Playlist trên form
 User -> View: Nhập thông tin mới cho Playlist
 View --> View: Kiểm tra thông tin Playlist
 View -> Controller: Gửi yêu cầu sửa thông tin Playlist
@@ -37,5 +37,6 @@ else Sửa thông tin Playlist thất bại
     Controller --> View: Thông báo "Sửa thông tin Playlist thất bại, vui lòng thử lại"
 end
 deactivate Controller
+View --> User: Hiển thị thông báo
 deactivate View
 @enduml

@@ -16,9 +16,10 @@ activate Controller
 Controller -> Service: Yêu cầu danh sách tài khoản
 activate Service
 Service --> Controller: Trả về danh sách tài khoản
-Controller --> View: Hiển thị danh sách tài khoản
-deactivate Controller
 deactivate Service
+Controller --> View: Trả về danh sách tài khoản
+deactivate Controller
+View --> View: Hiển thị danh sách tài khoản
 
 Admin -> View: Chọn tài khoản để Khoá
 View -> Controller: Yêu cầu khoá tài khoản
@@ -29,6 +30,6 @@ Service --> Controller: Trả về kết quả cập nhật trạng thái tài k
 deactivate Service
 Controller --> View: Thông báo kết quả cập nhật trạng thái tài khoản
 deactivate Controller
-
+View --> Admin: Hiển thị thông báo
 deactivate View
 @enduml

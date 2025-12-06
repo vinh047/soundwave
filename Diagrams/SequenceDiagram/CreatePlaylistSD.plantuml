@@ -27,5 +27,6 @@ else Tạo Playlist thất bại
     Controller --> View: Thông báo "Tạo Playlist thất bại, vui lòng thử lại"
 end
 deactivate Controller
+View --> User: Hiển thị thông báo
 deactivate View
 @enduml

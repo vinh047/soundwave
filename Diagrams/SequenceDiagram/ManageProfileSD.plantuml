@@ -17,15 +17,13 @@ Controller -> Service: Yêu cầu hồ sơ cá nhân
 activate Service
 Service --> Controller: Trả về hồ sơ cá nhân
 deactivate Service
-Controller --> View: Hiển thị hồ sơ cá nhân
+Controller --> View: Trả về hồ sơ cá nhân
 deactivate Controller
+View --> View: Hiển thị hồ sơ cá nhân
 
-group Sửa hồ sơ cá nhân
-    User -> View: Chọn chức năng Sửa hồ sơ (Chuyển sang Usecase Sửa hồ sơ cá nhân)
-end
-group Xem danh sách và tìm kiếm bài hát yêu thích
-    User -> View: Chọn chức năng Xem danh sách bài hát yêu thích (Chuyển sang Usecase Xem danh sách và tìm kiếm bài hát yêu thích)
-end
+User -> View: Chọn chức năng Sửa hồ sơ (Chuyển sang Usecase Sửa hồ sơ cá nhân)
+User -> View: Chọn chức năng Xem danh sách bài hát yêu thích (Chuyển sang Usecase Xem danh sách và tìm kiếm bài hát yêu thích)
+
 group Tương tác bài hát
     User -> View: Chọn 1 bài hát và nhấn tương tác
     View -> Controller: Yêu cầu xử lý tương tác bài hát
@@ -40,6 +38,7 @@ group Tương tác bài hát
         Controller --> View: Thông báo "Hành động thành công"
     end
     deactivate Controller
+    View --> User: Hiển thị thông báo
     View --> View: Cập nhật số lượt tương tác
 end
 deactivate View

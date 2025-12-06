@@ -17,8 +17,9 @@ Controller -> Service: Yêu cầu danh sách bài hát
 activate Service
 Service --> Controller: Trả về danh sách bài hát yêu thích
 deactivate Service
-Controller --> View: Hiển thị danh sách bài hát yêu thích
+Controller --> View: Trả về danh sách bài hát yêu thích
 deactivate Controller
+View --> View: Hiển thị danh sách bài hát yêu thích
 
 group Tương tác bài hát
     User -> View: Chọn 1 bài hát và nhấn tương tác
@@ -34,6 +35,7 @@ group Tương tác bài hát
         Controller --> View: Thông báo "Hành động thành công"
     end
     deactivate Controller
+    View --> User: Hiển thị thông báo
     View --> View: Cập nhật số lượt tương tác
 end
 

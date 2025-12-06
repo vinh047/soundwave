@@ -32,6 +32,7 @@ else Thông tin hợp lệ
         Controller --> View: Thông báo "Đăng ký thất bại, vui lòng thử lại"
     end
     deactivate Controller
+    View --> User: Hiển thị thông báo
 end
 
 deactivate View

@@ -16,9 +16,10 @@ activate Controller
 Controller -> Service: Yêu cầu danh sách nghệ sĩ
 activate Service
 Service --> Controller: Trả về danh sách nghệ sĩ
-Controller --> View: Hiển thị danh sách nghệ sĩ
-deactivate Controller
 deactivate Service
+Controller --> View: Trả về danh sách nghệ sĩ
+deactivate Controller
+View --> View: Hiển thị danh sách nghệ sĩ
 
 User -> View: Chọn nghệ sĩ để (Bỏ)Theo dõi
 View -> Controller: Yêu cầu (Bỏ)theo dõi nghệ sĩ
@@ -33,6 +34,6 @@ else Cập nhật trạng thái theo dõi thất bại
     Controller --> View: Thông báo "(Bỏ)Theo dõi nghệ sĩ thất bại, vui lòng thử lại"
 end
 deactivate Controller
-
+View --> User: Hiển thị thông báo
 deactivate View
 @enduml

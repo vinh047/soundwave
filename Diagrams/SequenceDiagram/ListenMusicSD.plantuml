@@ -17,12 +17,13 @@ Controller -> Service: Yêu cầu phát bài hát
 activate Service
 Service --> Controller: Trả về kết quả phát bài hát
 deactivate Service
-alt Phát bài hát thành công
-    Controller --> View: Hiển thị bài hát và trạng thái phát
-else Phát bài hát thất bại
-    Controller --> View: Thông báo "Phát nhạc thất bại, vui lòng thử lại"
-end
+Controller --> View: Trả về kết quả phát bài hát
 deactivate Controller
+alt Phát bài hát thành công
+    View --> View: Hiển thị bài hát đang phát
+else Phát bài hát thất bại
+    View --> User: Hiển thị thông báo lỗi
+end
 
 User -> View: Chọn chức năng Phát/Tạm dừng
 View -> Controller: Yêu cầu cập nhật trạng thái phát nhạc
@@ -41,7 +42,8 @@ Controller -> Service: Yêu cầu chuyển bài hát
 activate Service
 Service --> Controller: Trả về bài hát mới
 deactivate Service
+Controller --> View: Trả về bài hát mới
 deactivate Controller
-Controller --> View: Hiển thị bài hát mới
+View --> User: Hiển thị bài hát mới đang phát
 deactivate View
 @enduml

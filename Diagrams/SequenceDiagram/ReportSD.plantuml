@@ -28,5 +28,6 @@ else Lưu báo cáo thất bại
     Controller --> View: Thông báo "Báo cáo thất bại, vui lòng thử lại"
 end
 deactivate Controller
+View --> User: Hiển thị thông báo
 deactivate View
 @enduml

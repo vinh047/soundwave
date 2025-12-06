@@ -18,9 +18,9 @@ Controller -> Service: Yêu cầu thông tin hồ sơ cá nhân
 activate Service
 Service --> Controller: Trả về thông tin hồ sơ cá nhân
 deactivate Service
-Controller --> View: Hiển thị thông tin hồ sơ cá nhân trên form
+Controller --> View: Trả về thông tin hồ sơ cá nhân trên form
 deactivate Controller
-
+View --> View: Hiển thị thông tin hồ sơ cá nhân trên form
 User -> View: Nhập thông tin mới cho hồ sơ
 View --> View: Kiểm tra thông tin nhập
 View -> Controller: Gửi yêu cầu sửa thông tin hồ sơ cá nhân
@@ -37,5 +37,6 @@ else Sửa thông tin thất bại
     Controller --> View: Thông báo "Sửa thông tin hồ sơ cá nhân thất bại, vui lòng thử lại"
 end
 deactivate Controller
+View --> User: Hiển thị thông báo
 deactivate View
 @enduml
