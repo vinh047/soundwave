@@ -36,18 +36,44 @@ axiosClient.interceptors.request.use(
 
 // --- Response Interceptor ---
 axiosClient.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response;
-  },
-  (error: AxiosError) => {
-    if (error.response && error.response.status === 401) {
+  (response) => response,
+
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
+
+    if (!error.response) return Promise.reject(error);
+
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("accessToken")
+        : null;
+    if (!token) {
       return Promise.reject(error);
     }
-    if (error.response) {
-      console.error("Server error:", error.response.data);
-    } else {
-      console.error("Network error:", error.message);
+
+    // Nếu lỗi 401 => thử refresh
+    if (error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshResponse = await axiosClient.post("/auth/refresh");
+        const newAccessToken = (refreshResponse.data as any).accessToken;
+
+        localStorage.setItem("accessToken", newAccessToken);
+
+        originalRequest.headers.set(
+          "Authorization",
+          `Bearer ${newAccessToken}`
+        );
+
+        return axiosClient(originalRequest);
+      } catch (refreshErr) {
+        return Promise.reject(refreshErr);
+      }
     }
+
     return Promise.reject(error);
   }
 );
