@@ -1,108 +1,36 @@
-@startuml Sequence Diagram - Quản Lý Báo Cáo (Thông điệp)
-
-title Sơ Đồ Tuần Tự - Quản Lý Báo Cáo Vi Phạm
+@startuml SD
 
 actor "Admin" as Admin
-participant ":Giao diện" as UI
-participant ":Controller" as Controller
-participant ":Service" as Service
-participant ":Database" as DB
-participant ":Hệ thống phụ" as SubSystem
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+actor "User" as User
+
+title Sequence Diagram: Quản lý báo cáo vi phạm
 
 autonumber
 
-' === BƯỚC 1: XEM DANH SÁCH ===
-Admin -> UI: Yêu cầu xem danh sách báo cáo vi phạm
-activate UI
-UI -> Controller: Gửi yêu cầu lấy danh sách báo cáo
+Admin -> View: Admin chọn chức năng Quản lý báo cáo vi phạm
+activate View
+View -> Controller: Yêu cầu danh sách báo cáo vi phạm
 activate Controller
-Controller -> Service: Yêu cầu tìm các báo cáo "Chưa xử lý"
+Controller -> Service: Yêu cầu danh sách báo cáo vi phạm
 activate Service
-
-Service -> DB: Truy vấn danh sách báo cáo chưa xử lý
-activate DB
-DB --> Service: Trả về danh sách báo cáo
-deactivate DB
-
-Service --> Controller: Trả về dữ liệu danh sách
-deactivate Service
-Controller --> UI: Hiển thị danh sách lên giao diện
+Service --> Controller: Trả về danh sách báo cáo vi phạm
+Controller --> View: Hiển thị danh sách báo cáo vi phạm
 deactivate Controller
-UI --> Admin: Hiển thị danh sách báo cáo & các nút chức năng
-deactivate UI
+deactivate Service
 
-' === BƯỚC 2, 3, 4: CHỌN VÀ XỬ LÝ ===
-Admin -> UI: Chọn 1 báo cáo và xem chi tiết
-Admin -> UI: Đánh giá & Chọn phương thức xử lý (Ẩn / Cảnh cáo / Bỏ qua)
-activate UI
-
-UI -> Controller: Gửi yêu cầu xử lý báo cáo (ID báo cáo, Hành động chọn)
+Admin -> View: Chọn báo cáo vi phạm để xử lý
+View -> Controller: Yêu cầu xử lý báo cáo vi phạm
 activate Controller
-Controller -> Service: Chuyển tiếp yêu cầu xử lý nghiệp vụ
+Controller -> Service: Yêu cầu cập nhật trạng thái báo cáo
 activate Service
+Service -> User: Gửi thông báo kết quả xử lý báo cáo
+Service --> Controller: Trả về kết quả cập nhật trạng thái
+deactivate Service
+Controller --> View: Thông báo kết quả cập nhật trạng thái báo cáo
+deactivate Controller
 
-' === BƯỚC 5: CẬP NHẬT TRẠNG THÁI (Use case dòng 5) ===
-Service -> DB: Cập nhật trạng thái báo cáo thành "Đã xử lý" và lưu phương thức xử lý
-activate DB
-
-alt Dòng sự kiện phụ 5.1: Cập nhật trạng thái thất bại
-    DB --> Service: Phản hồi lỗi (Không thể ghi dữ liệu)
-    Service --> Controller: Báo lỗi cập nhật
-    Controller --> UI: Phản hồi lỗi hệ thống
-    UI --> Admin: Thông báo "Cập nhật trạng thái của báo cáo thất bại"
-
-else Cập nhật trạng thái thành công
-    DB --> Service: Xác nhận đã cập nhật thành công
-    deactivate DB
-
-    ' === BƯỚC 6: THỰC HIỆN PHƯƠNG THỨC XỬ LÝ (Use case dòng 6) ===
-    group Thực hiện hành động theo lựa chọn của Admin
-        
-        alt Trường hợp: Ẩn bài hát
-            Service -> SubSystem: Gửi lệnh ẩn bài hát vi phạm
-            activate SubSystem
-            SubSystem --> Service: Kết quả thực hiện
-            deactivate SubSystem
-            
-        else Trường hợp: Cảnh cáo người dùng
-            Service -> SubSystem: Gửi lệnh cảnh cáo tài khoản vi phạm
-            activate SubSystem
-            SubSystem --> Service: Kết quả thực hiện
-            deactivate SubSystem
-            
-        else Trường hợp: Bỏ qua báo cáo
-            note over Service: Không cần tác động đến Bài hát hay Người dùng
-        end
-    end
-
-    ' Kiểm tra kết quả thực hiện hành động (Dòng sự kiện phụ 6.1)
-    alt Dòng sự kiện phụ 6.1: Thực hiện xử lý thất bại
-        Service --> Controller: Báo lỗi xử lý nghiệp vụ
-        Controller --> UI: Phản hồi lỗi
-        UI --> Admin: Thông báo "Xử lý báo cáo thất bại"
-        
-    else Thực hiện xử lý thành công (Dòng sự kiện chính 6, 7, 8)
-        ' === BƯỚC 8: GỬI THÔNG BÁO ===
-        Service -> SubSystem: Gửi thông báo đến người báo cáo và người vi phạm
-        activate SubSystem
-        SubSystem --> Service: Đã gửi
-        deactivate SubSystem
-
-        Service --> Controller: Xác nhận quy trình hoàn tất
-        deactivate Service
-        
-        ' === BƯỚC 7: CẬP NHẬT DANH SÁCH ===
-        Controller --> UI: Yêu cầu làm mới giao diện
-        deactivate Controller
-        
-        UI -> Controller: Gửi yêu cầu lấy lại danh sách báo cáo mới
-        activate Controller
-        note right: (Hệ thống tự động tải lại danh sách\nnhư quy trình ở Bước 1)
-        Controller --> UI: Danh sách mới (đã loại bỏ báo cáo vừa xử lý)
-        deactivate Controller
-        
-        UI --> Admin: Hiển thị danh sách cập nhật & Thông báo thành công
-        deactivate UI
-    end
-end
+deactivate View
 @enduml

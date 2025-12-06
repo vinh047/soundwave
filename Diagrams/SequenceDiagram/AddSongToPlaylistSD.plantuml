@@ -1,94 +1,39 @@
-@startuml Sequence Diagram - Thêm Bài Hát (Thông điệp)
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Thêm Bài Hát Vào Playlist
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":Giao diện" as UI_Edit
-participant ":Form\nThêm bài hát" as UI_Form
-participant ":Controller" as Controller
-participant ":Service" as Service
-participant ":Database" as DB
+title Sequence Diagram: Thêm bài hát vào Playlist
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ FORM (Dòng sự kiện chính 1) ===
-User -> UI_Edit: Nhấn nút "Thêm bài hát"
-activate UI_Edit
-
-UI_Edit -> Controller: Yêu cầu lấy danh sách tất cả bài hát trong hệ thống
+User -> View: User chọn chức năng Thêm bài hát vào Playlist
+activate View
+View --> View: Hiển thị form thêm bài hát vào Playlist
+View -> Controller: Yêu cầu danh sách bài hát
 activate Controller
-Controller -> Service: Truy xuất danh sách bài hát khả dụng
+Controller -> Service: Yêu cầu danh sách bài hát
 activate Service
-
-Service -> DB: Truy vấn danh sách bài hát
-activate DB
-DB --> Service: Trả về danh sách
-deactivate DB
-
-Service --> Controller: Dữ liệu danh sách bài hát
+Service --> Controller: Trả về danh sách bài hát
 deactivate Service
-Controller --> UI_Form: Hiển thị Biểu mẫu kèm danh sách
+Controller --> View: Hiển thị danh sách bài hát trên form
 deactivate Controller
-activate UI_Form
-
-UI_Form --> User: Hiển thị Form danh sách bài hát để chọn
-deactivate UI_Edit
-
-' === BƯỚC 2: NGƯỜI DÙNG CHỌN VÀ THÊM (Dòng sự kiện chính 2) ===
-User -> UI_Form: Chọn một bài hát và nhấn nút "Thêm"
-activate UI_Form
-
-UI_Form -> Controller: Gửi yêu cầu thêm bài hát (ID Playlist, ID Bài hát)
+User -> View: Chọn bài hát và nhấn Thêm vào Playlist
+View -> Controller: Yêu cầu thêm bài hát vào Playlist
 activate Controller
-Controller -> Service: Chuyển tiếp yêu cầu xử lý
+Controller -> Service: Xử lý yêu cầu thêm bài hát vào Playlist
 activate Service
-
-' === BƯỚC 3: GHI NHẬN VÀO CSDL (Dòng sự kiện chính 3) ===
-' (Bước kiểm tra quyền sở hữu ngầm định trong Service)
-Service -> DB: Kiểm tra quyền sở hữu Playlist
-activate DB
-DB --> Service: Xác nhận hợp lệ
-deactivate DB
-
-Service -> DB: Yêu cầu lưu liên kết Bài hát vào Playlist
-activate DB
-
-alt Dòng sự kiện phụ 3.1: Ghi nhận thất bại
-    DB --> Service: Phản hồi lỗi (Lỗi kết nối hoặc Bài hát đã tồn tại)
-    Service --> Controller: Báo lỗi xử lý
-    Controller --> UI_Form: Phản hồi trạng thái lỗi
-    
-    UI_Form --> User: Thông báo "Thêm bài hát vào Playlist thất bại, vui lòng thử lại"
-    ' (Form vẫn mở để người dùng thử lại hoặc chọn bài khác)
-
-else Ghi nhận thành công (Dòng sự kiện chính 3 & 4)
-    DB --> Service: Xác nhận đã lưu thành công
-    deactivate DB
-    
-    Service --> Controller: Xác nhận quy trình hoàn tất
-    deactivate Service
-    
-    Controller --> UI_Form: Phản hồi thành công & Yêu cầu tắt form
-    deactivate Controller
-    
-    ' === BƯỚC 4: TẮT FORM & CẬP NHẬT ===
-    UI_Form --> User: Thông báo "Đã thêm bài hát thành công"
-    
-    UI_Form -> UI_Form: Tắt form (Đóng cửa sổ chọn bài)
-    deactivate UI_Form
-    
-    UI_Form --> UI_Edit: Quay lại màn hình Sửa Playlist
-    activate UI_Edit
-    
-    ' (Tự động làm mới danh sách trong playlist)
-    UI_Edit -> Controller: Yêu cầu cập nhật lại danh sách bài hát trong Playlist
-    activate Controller
-    ' ... (Các bước tải lại dữ liệu) ...
-    Controller --> UI_Edit: Dữ liệu mới
-    deactivate Controller
-
-    UI_Edit --> User: Hiển thị Playlist với bài hát vừa thêm
-    deactivate UI_Edit
+Service --> Controller: Trả về kết quả thêm bài hát vào Playlist
+deactivate Service
+alt Thêm bài hát vào Playlist thành công
+    Controller --> View: Thông báo "Thêm bài hát vào Playlist thành công"
+    View --> View: Tắt form thêm bài hát vào Playlist
+    View --> View: Cập nhật danh sách bài hát trong Playlist
+else Thêm bài hát vào Playlist thất bại
+    Controller --> View: Thông báo "Thêm bài hát vào Playlist thất bại, vui lòng thử lại"
 end
-
+deactivate Controller
+deactivate View
 @enduml

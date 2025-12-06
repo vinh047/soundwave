@@ -23,115 +23,109 @@ package "Enums" {
 ' --- ENTITIES ---
 package "Database Entities" {
     class User {
-        + id: string
-        + name: string
-        + email: string
-        + hashedPassword: string
-        + imageUrl: string
-        + isLocked: boolean = false
-        + role: Role
-        + createdAt: Date = now()
-        + updatedAt: Date
+        - id: string
+        - name: string
+        - email: string
+        - hashedPassword: string
+        - imageUrl: string
+        - isLocked: boolean = false
+        - role: Role
+        - createdAt: Date = now()
+        - updatedAt: Date
     }
 
     class Profile {
-        + id: string
-        + bio: string
-        + location: string
-        + userId: string
+        - id: string
+        - bio: string
+        - userId: string
     }
 
     class Song {
-        + id: string
-        + title: string
-        + description: string
-        + imageUrl: string
-        + audioUrl: string
-        + duration: number
-        + playCount: number
-        + isPublic: boolean = true
-        + createdAt: Date = now()
-        + updatedAt: Date
-        + isBanned: boolean = false
-        + userId: string
+        - id: string
+        - title: string
+        - description: string
+        - imageUrl: string
+        - audioUrl: string
+        - duration: number
+        - playCount: number
+        - isPublic: boolean = true
+        - createdAt: Date = now()
+        - updatedAt: Date
+        - isBanned: boolean = false
+        - userId: string
     }
 
     class PlaylistSong {
-        + id: string
-        + order: number
-        + addedAt: Date = now()
-        + playlistId: string
-        + songId: string
+        - id: string
+        - addedAt: Date = now()
+        - playlistId: string
+        - songId: string
     }
 
     class Playlist {
-        + id: string
-        + title: string
-        + description: string
-        + isPublic: boolean = true
-        + createdAt: Date = now()
-        + updatedAt: Date
-        + userId: string
+        - id: string
+        - title: string
+        - description: string
+        - imageUrl: string
+        - isPublic: boolean = true
+        - createdAt: Date = now()
+        - updatedAt: Date
+        - userId: string
     }
 
     class Like {
-        + id: string
-        + createdAt: Date = now()
-        + userId: string
-        + songId: string
+        - id: string
+        - createdAt: Date = now()
+        - userId: string
+        - songId: string
     }
 
     class Comment {
-        + id: string
-        + content: string
-        + createdAt: Date = now()
-        + timestamp: number
-        + userId: string
-        + songId: string
+        - id: string
+        - content: string
+        - createdAt: Date = now()
+        - userId: string
+        - songId: string
     }
 
     class Follow {
-        + createdAt: Date = now()
-        + followerId: string
-        + followingId: string
+        - id: string
+        - createdAt: Date = now()
+        - followerId: string
+        - followingId: string
     }
 
     class Repost {
-        + id: string
-        + createdAt: Date = now()
-        + userId: string
-        + songId: string
+        - id: string
+        - createdAt: Date = now()
+        - userId: string
+        - songId: string
     }
 
     class Share {
-        + userId: string
-        + songId: string
-        + platform: string
-        + createdAt: Date = now()
+        - id: string
+        - createdAt: Date = now()
+        - userId: string
+        - songId: string
+        - platform: string
     }
 
     class Report {
-        + id: string
-        + message: string
-        + createdAt: Date = now()
-        + reportReasonId: string
-        + status: ReportStatus
-        + action: ReportAction
-        + songId: string
-        + reporterId: string
-    }
-
-    class ReportReason {
-        + id: string
-        + reason: string
+        - id: string
+        - content: string
+        - createdAt: Date = now()
+        - status: ReportStatus
+        - action: ReportAction
+        - songId: string
+        - reporterId: string
     }
 
     class Notification {
-        + id: string
-        + message: string
-        + isRead: boolean = false
-        + createdAt: Date = now()
-        + receiverId: string
+        - id: string
+        - content: string
+        - isRead: boolean = false
+        - createdAt: Date = now()
+        - receiverId: string
     }
 }
 
@@ -166,7 +160,6 @@ User "1" -- "0..*" Share : chia sẻ >
 Share "0..*" --> "1" Song : thuộc về >
 
 ' 5. REPORT SYSTEM
-Report "0..*" --> "1" ReportReason : có >
 User "1" -- "0..*" Report : báo cáo >
 Report "0..*" --> "1" Song : thuộc về >
 User "1" -- "0..*" Report : xử lý (Admin) >

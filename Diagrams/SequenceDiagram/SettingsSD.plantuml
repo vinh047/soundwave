@@ -1,74 +1,42 @@
-@startuml Sequence Diagram - Cài Đặt (Sửa Tài Khoản)
+@startuml SD
 
-title Sơ Đồ Tuần Tự - Cài Đặt 
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
 
-actor "Người dùng" as User
-participant ":Giao diện\nCài đặt" as UI_Settings
-participant ":Form\nSửa tài khoản" as UI_Form
-participant ":Controller" as Controller
-participant ":Service" as Service
-participant ":Database" as DB
+title Sequence Diagram: Cài đặt
 
 autonumber
 
-' === BƯỚC 1: HIỂN THỊ GIAO DIỆN CÀI ĐẶT ===
-User -> UI_Settings: Chọn chức năng "Cài đặt"
-activate UI_Settings
-UI_Settings --> User: Hiển thị giao diện Cài đặt
-deactivate UI_Settings
-
-' === BƯỚC 2 & 3: CHỌN SỬA TÀI KHOẢN ===
-User -> UI_Settings: Chọn mục "Sửa tài khoản cá nhân"
-activate UI_Settings
-
-UI_Settings -> UI_Form: Yêu cầu hiển thị biểu mẫu (Form)
-activate UI_Form
-' (Có thể có bước lấy dữ liệu cũ để điền vào form, nhưng lược bỏ để tập trung vào flow chính)
-UI_Form --> User: Hiển thị Form nhập liệu (Email, Mật khẩu)
-deactivate UI_Settings
-
-' === BƯỚC 4: NGƯỜI DÙNG NHẬP LIỆU ===
-User -> UI_Form: Nhập thông tin mới và nhấn "Lưu"
-activate UI_Form
-
-UI_Form -> Controller: Gửi thông tin tài khoản mới (Email, Mật khẩu)
+User -> View: User chọn chức năng Cài đặt
+activate View
+User -> View: User chọn chức năng Sửa tài khoản cá nhân
+View --> View: Hiển thị form sửa tài khoản cá nhân
+View -> Controller: Yêu cầu thông tin tài khoản
 activate Controller
-Controller -> Service: Chuyển tiếp yêu cầu cập nhật
+Controller -> Service: Yêu cầu thông tin tài khoản
 activate Service
+Service --> Controller: Trả về thông tin tài khoản
+deactivate Service
+Controller --> View: Hiển thị thông tin tài khoản trên form
+deactivate Controller
 
-' === BƯỚC 5: GHI NHẬN VÀO CSDL ===
-' Logic nghiệp vụ: Mã hóa mật khẩu trước khi lưu
-Service -> Service: Mã hóa mật khẩu mới
-Service -> DB: Yêu cầu cập nhật thông tin tài khoản
-activate DB
-
-alt Dòng sự kiện phụ 5.1: Ghi nhận thất bại
-    DB --> Service: Phản hồi lỗi (Lỗi kết nối hoặc Email trùng lặp)
-    Service --> Controller: Báo lỗi xử lý
-    Controller --> UI_Form: Phản hồi trạng thái lỗi
-    
-    UI_Form --> User: Thông báo "Cập nhật tài khoản thất bại, vui lòng thử lại"
-    ' (Form vẫn mở để người dùng sửa lại)
-
-else Ghi nhận thành công (Dòng sự kiện chính 5 & 6)
-    DB --> Service: Xác nhận cập nhật thành công
-    deactivate DB
-    
-    Service --> Controller: Xác nhận quy trình hoàn tất
-    deactivate Service
-    
-    Controller --> UI_Form: Phản hồi thành công
-    deactivate Controller
-    
-    ' === BƯỚC 6: TẮT FORM ===
-    UI_Form -> UI_Form: Tắt form (Đóng cửa sổ nhập liệu)
-    
-    UI_Form --> UI_Settings: Quay lại giao diện Cài đặt
-    deactivate UI_Form
-    activate UI_Settings
-    
-    UI_Settings --> User: Hiển thị lại màn hình Cài đặt (Sẵn sàng)
-    deactivate UI_Settings
+User -> View: Nhập thông tin mới cho tài khoản
+View --> View: Kiểm tra thông tin nhập
+View -> Controller: Gửi yêu cầu sửa thông tin tài khoản
+activate Controller
+Controller -> Service: Xử lý yêu cầu sửa thông tin tài khoản
+activate Service
+Service --> Controller: Trả về kết quả sửa thông tin tài khoản
+deactivate Service
+alt Sửa tài khoản thành công
+    Controller --> View: Thông báo "Sửa tài khoản thành công"
+    View --> View: Tắt form sửa thông tin tài khoản
+    View --> View: Cập nhật thông tin tài khoản mới
+else Sửa tài khoản thất bại
+    Controller --> View: Thông báo "Sửa tài khoản thất bại, vui lòng thử lại"
 end
-
+deactivate Controller
+deactivate View
 @enduml
