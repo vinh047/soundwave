@@ -17,9 +17,9 @@ activate Controller
 Controller -> Service: Yêu cầu danh sách báo cáo vi phạm
 activate Service
 Service --> Controller: Trả về danh sách báo cáo vi phạm
+deactivate Service
 Controller --> View: Hiển thị danh sách báo cáo vi phạm
 deactivate Controller
-deactivate Service
 
 Admin -> View: Xem báo cáo vi phạm và chọn phương thức xử lý
 View -> Controller: Yêu cầu xử lý và cập nhật trạng thái báo cáo vi phạm
