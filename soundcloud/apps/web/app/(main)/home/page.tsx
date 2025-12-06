@@ -2,6 +2,7 @@ import { TrackList } from "@/components/track/TrackList";
 import { Button } from "@/components/ui2/Button";
 import trackApi from "@/lib/api/trackApi";
 import { Footer } from "./_components/Footer";
+import Image from "next/image";
 
 export default async function HomePage({
   searchParams,
@@ -59,11 +60,61 @@ export default async function HomePage({
             <TrackList tracks={data} />
           </section>
         </div>
-
         <div className="hidden lg:block border-l border-gray-200 dark:border-gray-800 pl-8 py-8">
-          <h3 className="text-gray-500 dark:text-gray-400 font-semibold uppercase text-xs tracking-wider mb-4">
-            Go Mobile
-          </h3>
+          <div className="mt-8">
+            <h3 className="text-gray-500 dark:text-gray-400 font-semibold uppercase text-xs tracking-wider mb-4">
+              Trending Artists
+            </h3>
+            <ul className="space-y-4">
+              {["SOOBIN", "AMEE", "Đen Vâu", "Hoàng Dũng"].map((artist) => (
+                <li key={artist} className="flex items-center gap-3">
+                  <Image
+                    src={`https://picsum.photos/seed/${artist}/40/40`}
+                    width={40}
+                    height={40}
+                    alt={artist}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                  <span className="text-gray-900 dark:text-white font-medium">
+                    {artist}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="mt-8">
+            <h3 className="text-gray-500 dark:text-gray-400 font-semibold uppercase text-xs tracking-wider mb-4">
+              Top Tracks
+            </h3>
+            <ul className="space-y-3">
+              {["Mất Kết Nối", "Em Xinh", "Anh Trai"].map((song, idx) => (
+                <li key={song} className="flex items-center justify-between">
+                  <span className="text-gray-900 dark:text-white">
+                    {idx + 1}. {song}
+                  </span>
+                  <Button variant="ghost" size="sm">
+                    ▶
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="mt-8">
+            <h3 className="text-gray-500 dark:text-gray-400 font-semibold uppercase text-xs tracking-wider mb-4">
+              Suggested Playlist
+            </h3>
+            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+              <p className="text-gray-900 dark:text-white font-semibold mb-2">
+                Chill Vibes
+              </p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                Nhạc thư giãn buổi tối
+              </p>
+              <Button className="mt-3 w-full bg-orange-500 text-white">
+                Play
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
       <Footer />

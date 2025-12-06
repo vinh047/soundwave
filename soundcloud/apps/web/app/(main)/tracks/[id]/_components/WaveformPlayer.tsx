@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useEffect, useMemo, useState, useCallback } from "react";
-import { Prisma } from "@repo/database";
+// Import type từ store để đồng bộ
+import { TrackWithUser } from "@/store/playerStore";
 
 interface WaveformPlayerProps {
-  track: Prisma.TrackGetPayload<{ include: { user: true } }>;
+  track: TrackWithUser | null;
   currentTime: number;
   duration: number;
   isPlaying: boolean;
@@ -12,31 +13,21 @@ interface WaveformPlayerProps {
 }
 
 const CONFIG = {
-  // --- CẤU HÌNH CƠ BẢN ---
   barWidth: 2,
   gap: 1,
-
   baselineRatio: 0.65,
   reflectionScale: 0.5,
   radius: 2,
-
-  // --- CẤU HÌNH HIỆU ỨNG MAGNIFY (LÀM MỀM HƠN) ---
-  hoverScaleRange: 60, // Phạm vi ảnh hưởng rộng hơn để độ dốc thoai thoải
-  hoverMaxScale: 1.3, // Độ phóng đại vừa phải
-
+  hoverScaleRange: 60,
+  hoverMaxScale: 1.3,
   colors: {
-    // Màu chủ đạo (Cyan Neon)
-    primary: "#22d3ee", // Cyan-400
-    primaryDark: "#0891b2", // Cyan-600
-
-    // Màu nền (Slate)
+    primary: "#22d3ee",
+    primaryDark: "#0891b2",
     base: "#334155",
     baseReflection: "rgba(51, 65, 85, 0.3)",
-
-    // --- MÀU TRẠNG THÁI TUA (QUAN TRỌNG) ---
-    previewForward: "#67e8f9", // Sáng hơn khi tua tới
-    rewindGhost: "rgba(34, 211, 238, 0.25)", // Mờ hẳn đi khi tua lui (Ghost)
-    hoverHighlight: "#ffffff", // Trắng tinh tại điểm chuột
+    previewForward: "#67e8f9",
+    rewindGhost: "rgba(34, 211, 238, 0.25)",
+    hoverHighlight: "#ffffff",
   },
 };
 
@@ -50,46 +41,56 @@ export default function WaveformPlayer({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>(0);
-
   const hoverXRef = useRef<number | null>(null);
   const [hoverDisplay, setHoverDisplay] = useState<{
     x: number;
     time: string;
   } | null>(null);
 
-  // 1. Dữ liệu giả lập
+  // 1. Xử lý dữ liệu sóng (Waveform Data)
   const rawData = useMemo(() => {
-    const data = track.waveform as unknown as number[] | null | undefined;
+    if (!track?.waveform) return null;
+
+    // Ép kiểu an toàn: Prisma Json -> unknown -> number[]
+    const data = track.waveform as unknown as number[];
+
     if (Array.isArray(data) && data.length > 0) return data;
+    return null; // Trả về null để kích hoạt logic giả lập bên dưới
+  }, [track?.waveform]);
+
+  // Logic fallback nếu không có dữ liệu sóng thật
+  const effectiveData = useMemo(() => {
+    if (rawData) return rawData;
 
     // Giả lập sóng
-    return Array.from({ length: 400 }, (_, i) => {
+    return Array.from({ length: 100 }, (_, i) => {
       const x = i * 0.1;
-      const val = Math.sin(x) * Math.cos(x * 0.5) * Math.sin(x * 0.2);
-      return Math.abs(val) * 0.8 + Math.random() * 0.2;
+      return Math.abs(Math.sin(x) * Math.cos(x * 0.5)) * 0.8 + 0.1;
     });
-  }, [track.waveform]);
+  }, [rawData]);
 
-  // SỬA LỖI 2: Dùng useCallback để hàm này không bị tạo mới mỗi lần render
   const getResampledData = useCallback(
     (width: number, bars: number) => {
-      const step = Math.floor(rawData.length / bars);
+      if (effectiveData.length === 0) return Array(bars).fill(0.05);
+
+      const step = Math.floor(effectiveData.length / bars);
       const sampled = [];
       for (let i = 0; i < bars; i++) {
         const start = i * step;
         let max = 0;
+        // Safety check loop
         for (let j = 0; j < step; j++) {
-          // SỬA LỖI 1: TypeScript safety check
-          const val = rawData[start + j];
-          if (val !== undefined) {
-            max = Math.max(max, val);
+          // check index bounds
+          if (start + j < effectiveData.length) {
+            const val = effectiveData[start + j];
+            if (typeof val === "number") max = Math.max(max, val);
           }
         }
         sampled.push(Math.max(max, 0.05));
       }
       return sampled;
     },
-    [rawData]
+    [effectiveData]
   );
 
   const formatTime = (secs: number) => {
@@ -101,8 +102,6 @@ export default function WaveformPlayer({
     return `${m}:${s}`;
   };
 
-  // 2. RENDER LOOP
-  // SỬA LỖI 2: Bọc toàn bộ hàm draw trong useCallback và liệt kê đủ dependencies
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
@@ -126,18 +125,20 @@ export default function WaveformPlayer({
     const { width, height } = rect;
     ctx.clearRect(0, 0, width, height);
 
+    // Vẫn vẽ nền tĩnh kể cả khi không có track để UI đẹp
+    if (!track && duration === 0) return;
+
     const totalBarWidth = CONFIG.barWidth + CONFIG.gap;
     const barCount = Math.floor(width / totalBarWidth);
     const bars = getResampledData(width, barCount);
 
     const baseline = height * CONFIG.baselineRatio;
     const maxTopHeight = baseline;
-
     const progressPercent = duration > 0 ? currentTime / duration : 0;
     const hoverPercent =
       hoverXRef.current !== null ? hoverXRef.current / width : null;
 
-    // --- SETUP GRADIENTS ---
+    // Gradients
     const gradActive = ctx.createLinearGradient(
       0,
       baseline - maxTopHeight,
@@ -164,7 +165,6 @@ export default function WaveformPlayer({
       const x = i * totalBarWidth;
       const barPercent = i / barCount;
 
-      // --- A. XỬ LÝ MAGNIFY (Làm mượt scale) ---
       let scale = 1;
       let isHoveredDirectly = false;
 
@@ -181,7 +181,6 @@ export default function WaveformPlayer({
       const barHeightTop = amp * maxTopHeight * 0.9 * scale;
       const barHeightReflect = barHeightTop * CONFIG.reflectionScale;
 
-      // --- B. LOGIC MÀU SẮC ---
       let topFill: string | CanvasGradient = gradBase;
       let reflectFill: string | CanvasGradient = CONFIG.colors.baseReflection;
       let shadowBlur = 0;
@@ -189,10 +188,7 @@ export default function WaveformPlayer({
       const isBeforeProgress = barPercent <= progressPercent;
 
       if (hoverPercent !== null) {
-        // ==> ĐANG HOVER <==
-
         if (hoverPercent < progressPercent) {
-          // 1. TUA LUI (REWINDING)
           if (barPercent <= hoverPercent) {
             topFill = gradActive;
             reflectFill = gradReflectActive;
@@ -202,7 +198,6 @@ export default function WaveformPlayer({
             reflectFill = "rgba(34, 211, 238, 0.05)";
           }
         } else {
-          // 2. TUA TỚI (SEEKING FORWARD)
           if (barPercent <= progressPercent) {
             topFill = gradActive;
             reflectFill = gradReflectActive;
@@ -213,7 +208,6 @@ export default function WaveformPlayer({
           }
         }
       } else {
-        // ==> KHÔNG HOVER <==
         if (isBeforeProgress) {
           topFill = gradActive;
           reflectFill = gradReflectActive;
@@ -227,52 +221,31 @@ export default function WaveformPlayer({
         shadowBlur = 15;
       }
 
-      // --- VẼ ---
+      // Draw Top
       ctx.beginPath();
       ctx.fillStyle = topFill;
       ctx.shadowColor = CONFIG.colors.primary;
       ctx.shadowBlur = shadowBlur;
-
-      if (typeof ctx.roundRect === "function") {
-        ctx.roundRect(
-          x,
-          baseline - barHeightTop,
-          CONFIG.barWidth,
-          barHeightTop,
-          [CONFIG.radius, CONFIG.radius, 0, 0]
-        );
-      } else {
-        ctx.fillRect(x, baseline - barHeightTop, CONFIG.barWidth, barHeightTop);
-      }
+      ctx.fillRect(x, baseline - barHeightTop, CONFIG.barWidth, barHeightTop);
       ctx.fill();
 
-      // Vẽ phản chiếu
+      // Draw Reflection
       ctx.shadowBlur = 0;
       ctx.fillStyle = reflectFill;
-      if (typeof ctx.roundRect === "function") {
-        ctx.roundRect(x, baseline + 2, CONFIG.barWidth, barHeightReflect, [
-          0,
-          0,
-          CONFIG.radius,
-          CONFIG.radius,
-        ]);
-      } else {
-        ctx.fillRect(x, baseline + 2, CONFIG.barWidth, barHeightReflect);
-      }
+      ctx.fillRect(x, baseline + 2, CONFIG.barWidth, barHeightReflect);
       ctx.fill();
     });
 
     animationRef.current = requestAnimationFrame(draw);
-  }, [currentTime, duration, getResampledData]);
-  // Kết thúc useCallback cho draw, bao gồm đủ deps
+  }, [currentTime, duration, getResampledData, track]);
 
   useEffect(() => {
     animationRef.current = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animationRef.current);
-  }, [draw, isPlaying]); // Đã thêm 'draw' vào deps, ESLint sẽ hết báo lỗi
+  }, [draw, isPlaying]);
 
-  // Event Handlers
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!track || duration === 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     hoverXRef.current = x;
@@ -286,13 +259,14 @@ export default function WaveformPlayer({
   };
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!track || duration === 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const percent = (e.clientX - rect.left) / rect.width;
     onSeek(Math.min(Math.max(percent, 0), 1));
   };
 
   return (
-    <div className="w-full flex flex-col gap-3 font-sans select-none rounded-xl ">
+    <div className="w-full flex flex-col gap-3 font-sans select-none rounded-xl">
       <div
         ref={containerRef}
         className="relative h-32 w-full cursor-pointer group touch-none overflow-hidden rounded-md bg-gray-100 dark:bg-black"
@@ -300,15 +274,12 @@ export default function WaveformPlayer({
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Lớp lưới nền techy */}
         <div
           className="absolute inset-0 border-b border-slate-300 dark:border-slate-700/50 pointer-events-none"
           style={{ top: "65%" }}
         ></div>
-
         <canvas ref={canvasRef} className="block w-full h-full relative z-10" />
 
-        {/* Hover UI */}
         {hoverDisplay && (
           <>
             <div
@@ -316,7 +287,7 @@ export default function WaveformPlayer({
               style={{ left: hoverDisplay.x }}
             />
             <div
-              className="absolute top-2 px-2 py-1 bg-slate-200 dark:bg-slate-900/95 text-cyan-600 dark:text-cyan-400 text-[10px] font-bold tracking-wider rounded border border-cyan-500/40 transform -translate-x-1/2 pointer-events-none z-30 backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.5)]"
+              className="absolute top-2 px-2 py-1 bg-slate-200 dark:bg-slate-900/95 text-cyan-600 dark:text-cyan-400 text-[10px] font-bold tracking-wider rounded border border-cyan-500/40 transform -translate-x-1/2 pointer-events-none z-30 backdrop-blur-md"
               style={{ left: hoverDisplay.x }}
             >
               {hoverDisplay.time}

@@ -1,82 +1,87 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import Image from "next/image";
-
-import { Prisma } from "@repo/database";
 import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import WaveformPlayer from "./WaveformPlayer";
+import { usePlayerStore, TrackWithUser } from "@/store/playerStore";
 
-export default function TrackCard({
-  track,
-}: {
-  track: Prisma.TrackGetPayload<{ include: { user: true } }>;
-}) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const audioRef = useRef<HTMLAudioElement>(null);
+export default function TrackCard({ track }: { track: TrackWithUser }) {
+  const {
+    currentTrack,
+    isPlaying,
+    play,
+    toggle,
+    currentTime: globalCurrentTime,
+    duration: globalDurationState,
+    setDuration: setGlobalDuration,
+    setCurrentTime,
+  } = usePlayerStore();
 
-  // --- AUDIO LOGIC (Giữ nguyên) ---
+  const isCurrent = currentTrack?.id === track.id;
+  const localAudioRef = useRef<HTMLAudioElement>(null);
+
+  // Nếu bài hát đang chơi, ta ưu tiên dùng duration từ DB trước, nếu null mới lấy từ audio
+  const displayDuration = isCurrent
+    ? track.duration || globalDurationState
+    : track.duration || 0;
+
+  // Chỉ dùng localAudio để lấy metadata nếu DB chưa có duration
   useEffect(() => {
-    const audio = audioRef.current;
+    const audio = localAudioRef.current;
     if (!audio) return;
 
-    const updateState = () => {
-      setIsPlaying(!audio.paused);
-      setCurrentTime(audio.currentTime);
-    };
-    const handleLoadedMetadata = () => setDuration(audio.duration);
-    const handleEnded = () => {
-      setIsPlaying(false);
-      setCurrentTime(0);
-      audio.currentTime = 0;
-    };
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    // Nếu track DB đã có duration rồi thì không cần load thẻ audio ẩn này nữa để tối ưu
+    if (track.duration) return;
 
-    audio.addEventListener("play", updateState);
-    audio.addEventListener("pause", updateState);
-    audio.addEventListener("ended", handleEnded);
-    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
-    audio.addEventListener("timeupdate", handleTimeUpdate);
-
-    return () => {
-      audio.removeEventListener("play", updateState);
-      audio.removeEventListener("pause", updateState);
-      audio.removeEventListener("ended", handleEnded);
-      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
-      audio.removeEventListener("timeupdate", handleTimeUpdate);
+    const onLoaded = () => {
+      // Chỉ cập nhật nếu đang là bài hiện tại và DB thiếu duration
+      if (isCurrent && !track.duration) {
+        setGlobalDuration(audio.duration);
+      }
     };
-  }, []);
+    audio.addEventListener("loadedmetadata", onLoaded);
+    return () => audio.removeEventListener("loadedmetadata", onLoaded);
+  }, [isCurrent, setGlobalDuration, track.duration]);
 
-  const togglePlay = () => {
-    if (audioRef.current) {
-      isPlaying ? audioRef.current.pause() : audioRef.current.play();
+  const handleSkip = (sec: number) => {
+    // Logic tìm global audio element hơi thủ công nhưng giữ nguyên theo code cũ của bạn
+    const globalAudio = document.querySelector("audio") as HTMLAudioElement;
+    // Lưu ý: nên tìm cách access ref tốt hơn trong tương lai
+    if (!globalAudio || !displayDuration) return;
+
+    const nextTime = Math.max(
+      0,
+      Math.min(displayDuration, globalAudio.currentTime + sec)
+    );
+    globalAudio.currentTime = nextTime;
+    setCurrentTime(nextTime);
+  };
+
+  const handleSeek = (p: number) => {
+    const globalAudio = document.querySelector("audio") as HTMLAudioElement;
+    if (!globalAudio || !displayDuration) return;
+
+    const nextTime = p * displayDuration;
+    globalAudio.currentTime = nextTime;
+    setCurrentTime(nextTime);
+  };
+
+  const handlePlay = () => {
+    if (!isCurrent) {
+      play(track);
+    } else {
+      toggle();
     }
   };
 
-  const handleSkip = (seconds: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = Math.max(
-        0,
-        Math.min(duration, audioRef.current.currentTime + seconds)
-      );
-    }
-  };
-
-  const handleSeek = (percent: number) => {
-    if (audioRef.current && duration > 0) {
-      audioRef.current.currentTime = percent * duration;
-    }
-  };
+  const displayCurrentTime = isCurrent ? globalCurrentTime : 0;
+  const trackForWaveform = isCurrent ? currentTrack : track;
 
   return (
     <div>
-      {/* LIGHT: bg-white, shadow-sm 
-         DARK: bg-transparent (hoặc bg-white/5), text-white
-      */}
       <div className="py-6 flex flex-col md:flex-row gap-6 items-stretch">
-        {/* --- CỘT TRÁI: ẢNH BÌA --- */}
+        {/* Cover */}
         <div className="relative group shrink-0 self-center md:self-auto">
           <div className="relative w-48 h-48 md:w-64 md:h-64 overflow-hidden rounded-xl shadow-2xl dark:shadow-black/60 shadow-gray-200/50">
             <Image
@@ -89,9 +94,8 @@ export default function TrackCard({
           </div>
         </div>
 
-        {/* --- CỘT PHẢI: INFO & PLAYER --- */}
+        {/* Info + Controls */}
         <div className="flex flex-col justify-between flex-1 gap-4">
-          {/* Header & Buttons */}
           <div className="flex items-center justify-between space-y-3">
             <div>
               <h1 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-transparent dark:bg-clip-text dark:bg-linear-to-r dark:from-white dark:to-gray-400 line-clamp-1">
@@ -102,7 +106,6 @@ export default function TrackCard({
               </p>
             </div>
 
-            {/* Controller Buttons */}
             <div className="flex items-center gap-4 md:gap-6 mt-1">
               <button
                 onClick={() => handleSkip(-10)}
@@ -112,10 +115,10 @@ export default function TrackCard({
               </button>
 
               <button
-                onClick={togglePlay}
+                onClick={handlePlay}
                 className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-[#4ecdc4] hover:bg-[#3dbdb4] flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all text-white"
               >
-                {isPlaying ? (
+                {isCurrent && isPlaying ? (
                   <Pause size={28} fill="currentColor" />
                 ) : (
                   <Play size={28} fill="currentColor" className="ml-1" />
@@ -131,25 +134,23 @@ export default function TrackCard({
             </div>
           </div>
 
-          {/* Waveform Visualizer */}
+          {/* Waveform */}
           <div className="w-full mt-auto pt-4 border-t border-gray-200 dark:border-white/10">
-            {/* Cần đảm bảo WaveformPlayer hỗ trợ màu dynamic hoặc dùng currentColor */}
             <WaveformPlayer
-              track={track}
-              currentTime={currentTime}
-              duration={duration}
-              isPlaying={isPlaying}
+              track={trackForWaveform}
+              currentTime={displayCurrentTime}
+              duration={displayDuration}
+              isPlaying={isCurrent ? isPlaying : false}
               onSeek={handleSeek}
             />
           </div>
         </div>
       </div>
 
-      <audio
-        ref={audioRef}
-        src={track.audioPath || "/sample.mp3"}
-        onEnded={() => setIsPlaying(false)}
-      />
+      {/* Hidden audio: Chỉ render nếu chưa có duration trong DB */}
+      {!track.duration && (
+        <audio ref={localAudioRef} src={track.audioPath} className="hidden" />
+      )}
     </div>
   );
 }

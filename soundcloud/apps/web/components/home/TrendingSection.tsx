@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "../ui/Button";
 
 export default function TrendingSection() {
@@ -6,9 +7,11 @@ export default function TrendingSection() {
       <h2 className="mb-6 text-3xl font-semibold text-gray-800">
         Hear what&apos;s trending for free in the SoundCloud community
       </h2>
-      <Button dark size="lg">
-        Explore trending playlists
-      </Button>
+      <Link href={"/home"} >
+        <Button dark size="lg">
+          Explore trending playlists
+        </Button>
+      </Link>
     </section>
   );
 }
