@@ -60,22 +60,22 @@ export function GlobalPlayer() {
   if (!currentTrack) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 px-6 py-4 flex flex-col md:flex-row items-center gap-4 text-white z-50">
+    <div className="fixed h-16 bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 px-6 py-4 flex flex-col md:flex-row items-center gap-4 text-gray-800 dark:text-white z-50">
       {/* Left: Track Info */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
         {/* Ảnh bài hát */}
         <Image
           src={currentTrack.imagePath || "/placeholder.png"}
           alt="cover"
-          width={48}
-          height={48}
+          width={36}
+          height={36}
           className="rounded-md object-cover"
         />
 
         {/* Thông tin bài hát */}
         <div className="flex flex-col w-42">
           <h4 className="font-medium truncate">{currentTrack.title}</h4>
-          <p className="text-sm text-gray-400 truncate">
+          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
             {currentTrack.user.name}
           </p>
         </div>
@@ -83,24 +83,24 @@ export function GlobalPlayer() {
         {/* Hành động (tym + thêm hàng chờ) */}
         <div className="flex items-center gap-2 ml-3">
           <button
-            className="p-2 rounded-full hover:bg-white/10 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
             title="Yêu thích"
           >
-            <Heart className="w-4 h-4 text-gray-300 hover:text-red-500" />
+            <Heart className="w-4 h-4 text-gray-600 dark:text-gray-300 hover:text-red-500" />
           </button>
 
           <button
-            className="p-2 rounded-full hover:bg-white/10 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
             title="Theo dõi"
           >
-            <UserPlus className="w-4 h-4 text-gray-300 hover:text-red-500" />
+            <UserPlus className="w-4 h-4 text-gray-600 dark:text-gray-300 hover:text-red-500" />
           </button>
 
           <button
-            className="p-2 rounded-full hover:bg-white/10 transition-colors"
+            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-white/10 transition-colors"
             title="Thêm vào hàng chờ"
           >
-            <ListPlus className="w-4 h-4 text-gray-300 hover:text-white" />
+            <ListPlus className="w-4 h-4 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white" />
           </button>
         </div>
       </div>

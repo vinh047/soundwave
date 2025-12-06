@@ -4,6 +4,7 @@ import "./globals.css";
 import { ModalProvider } from "@/providers/modal-provider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -27,11 +28,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <AuthProvider>
-          <Toaster richColors position="top-right" />
-          <ModalProvider />
-          {children}
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <Toaster richColors position="top-right" />
+            <ModalProvider />
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

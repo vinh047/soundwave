@@ -1,11 +1,11 @@
 @import "tailwindcss";
-
+@custom-variant dark (&:where(.dark, .dark *));
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
 .scrollbar-none {
-  -ms-overflow-style: none; 
-  scrollbar-width: none; 
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 /* Ẩn nút hiện/ẩn mật khẩu mặc định của Edge/IE */
 ::-ms-reveal,
