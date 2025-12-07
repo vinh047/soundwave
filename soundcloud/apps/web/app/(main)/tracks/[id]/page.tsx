@@ -5,6 +5,7 @@ import TrackInteraction from "./_components/TrackInteraction";
 import TrackCard from "./_components/TrackCard";
 import { InfoRow } from "./_components/InfoRow";
 import { formatDate, formatDuration } from "./_components/utils";
+import FollowButton from "./_components/FollowButton";
 
 interface TrackPageProps {
   params: Promise<{ id: string }>;
@@ -13,7 +14,14 @@ interface TrackPageProps {
 export default async function TrackPage({ params }: TrackPageProps) {
   const { id } = await params;
   const res = await trackApi.getTrackById(id);
-  const track: Prisma.TrackGetPayload<{ include: { user: true } }> = res.data;
+  const track: Prisma.TrackGetPayload<{
+    include: {
+      user: true;
+      likes: true;
+      reposts: true;
+      comments: { include: { user: true } };
+    };
+  }> = res.data;
 
   return (
     <article className=" w-full transition-colors duration-300 bg-gray-50 text-gray-900 dark:bg-linear-to-b dark:from-[#0a0a0f] dark:to-[#0f0f1a] dark:text-white">
@@ -48,6 +56,8 @@ export default async function TrackPage({ params }: TrackPageProps) {
                     <div className="h-full bg-linear-to-r from-[#ff6b6b] to-[#4ecdc4] w-3/5" />
                   </div>
 
+
+
                   {/* Artist Card */}
                   <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-white/5">
                     <div className="w-12 h-12 rounded-full bg-linear-to-br from-[#ff6b6b] to-[#4ecdc4] flex items-center justify-center font-bold text-lg text-white shadow-md">
@@ -63,9 +73,7 @@ export default async function TrackPage({ params }: TrackPageProps) {
                     </div>
                   </div>
 
-                  <button className="w-full py-3 rounded-lg bg-linear-to-r from-[#ff6b6b] to-[#4ecdc4] font-bold text-white shadow-md hover:shadow-lg hover:scale-[1.02] transition-all">
-                    Follow Artist
-                  </button>
+                  <FollowButton artistId={track.userId} />
                 </div>
               </div>
 

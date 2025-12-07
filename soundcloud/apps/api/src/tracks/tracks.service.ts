@@ -28,7 +28,7 @@ export class TracksService {
   constructor(
     private prisma: PrismaService,
     private cloudinaryService: CloudinaryService,
-  ) {}
+  ) { }
 
   async findAll(
     page: number = 1,
@@ -194,7 +194,12 @@ export class TracksService {
 
     const track = await this.prisma.track.findUnique({
       where: { id },
-      include: { user: true, likes: true, comments: true },
+      include: {
+        user: true,
+        likes: true,
+        comments: { include: { user: true } },
+        reposts: true,
+      },
     });
 
     if (!track) {
@@ -354,6 +359,71 @@ export class TracksService {
       orderBy: { lastPlayedAt: 'desc' },
       take: limit,
       include: { track: { include: { user: true } } },
+    });
+  }
+
+  // --- SOCIAL INTERACTIONS ---
+
+  async likeTrack(userId: string, trackId: string) {
+    // Check if already liked
+    const existing = await this.prisma.like.findUnique({
+      where: { userId_trackId: { userId, trackId } },
+    });
+    if (existing) return existing;
+
+    return this.prisma.like.create({
+      data: { userId, trackId },
+    });
+  }
+
+  async unlikeTrack(userId: string, trackId: string) {
+    try {
+      return await this.prisma.like.delete({
+        where: { userId_trackId: { userId, trackId } },
+      });
+    } catch (error) {
+      // Ignore if not found
+      return null;
+    }
+  }
+
+  async repostTrack(userId: string, trackId: string) {
+    const existing = await this.prisma.repost.findUnique({
+      where: { userId_trackId: { userId, trackId } },
+    });
+    if (existing) return existing;
+
+    return this.prisma.repost.create({
+      data: { userId, trackId },
+    });
+  }
+
+  async unrepostTrack(userId: string, trackId: string) {
+    try {
+      return await this.prisma.repost.delete({
+        where: { userId_trackId: { userId, trackId } },
+      });
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async commentTrack(userId: string, trackId: string, content: string) {
+    return this.prisma.comment.create({
+      data: {
+        userId,
+        trackId,
+        content,
+      },
+      include: { user: true },
+    });
+  }
+
+  async getComments(trackId: string) {
+    return this.prisma.comment.findMany({
+      where: { trackId },
+      orderBy: { createdAt: 'desc' },
+      include: { user: true },
     });
   }
 }

@@ -26,7 +26,7 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @Controller('tracks')
 export class TracksController {
-  constructor(private readonly tracksService: TracksService) {}
+  constructor(private readonly tracksService: TracksService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -105,6 +105,48 @@ export class TracksController {
     await this.tracksService.recordListen(userId, trackId);
 
     return { message: 'Listen recorded' };
+  }
+
+  // --- SOCIAL INTERACTIONS ---
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/like')
+  async likeTrack(@Param('id') trackId: string, @Req() req) {
+    return this.tracksService.likeTrack(req.user.id, trackId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/like')
+  async unlikeTrack(@Param('id') trackId: string, @Req() req) {
+    return this.tracksService.unlikeTrack(req.user.id, trackId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/repost')
+  async repostTrack(@Param('id') trackId: string, @Req() req) {
+    return this.tracksService.repostTrack(req.user.id, trackId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/repost')
+  async unrepostTrack(@Param('id') trackId: string, @Req() req) {
+    return this.tracksService.unrepostTrack(req.user.id, trackId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/comments')
+  async commentTrack(
+    @Param('id') trackId: string,
+    @Body('content') content: string,
+    @Req() req,
+  ) {
+    return this.tracksService.commentTrack(req.user.id, trackId, content);
+  }
+
+  @Public()
+  @Get(':id/comments')
+  async getComments(@Param('id') trackId: string) {
+    return this.tracksService.getComments(trackId);
   }
 
   @Public()

@@ -81,6 +81,12 @@ const userApi = {
 
   getTrendingArtists: (limit: number = 5) =>
     axiosClient.get<{ data: User[] }>(`/users/trending?limit=${limit}`),
+
+  // --- SOCIAL ---
+  followUser: (id: string) => axiosClient.post(`/users/${id}/follow`),
+  unfollowUser: (id: string) => axiosClient.delete(`/users/${id}/follow`),
+  checkFollow: (id: string) =>
+    axiosClient.get<{ isFollowing: boolean }>(`/users/${id}/follow`),
 };
 
 export default userApi;

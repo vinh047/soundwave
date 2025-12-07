@@ -1,6 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, Home, Search, Upload, Library, User } from "lucide-react";
+import { X, Home, Search, Upload, Library, User, LogIn } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 interface MobileNavProps {
   open: boolean;
@@ -8,6 +9,23 @@ interface MobileNavProps {
 }
 
 export function MobileNav({ open, onOpenChange }: MobileNavProps) {
+  const { user, isLoggedIn } = useAuth();
+
+  const navItems = [
+    { icon: Home, label: "Home", href: "/" },
+    { icon: Search, label: "Search", href: "/search" },
+    ...(isLoggedIn
+      ? [
+        { icon: Upload, label: "Upload", href: "/tracks/upload" },
+        { icon: Library, label: "Your Library", href: "/library" },
+        { icon: User, label: "Profile", href: `/profile/${user?.id}` },
+      ]
+      : [
+        { icon: LogIn, label: "Login", href: "/login" },
+        { icon: User, label: "Register", href: "/register" },
+      ]),
+  ];
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -21,13 +39,7 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
           </div>
 
           <nav className="space-y-2">
-            {[
-              { icon: Home, label: "Home", href: "/" },
-              { icon: Search, label: "Search", href: "/search" },
-              { icon: Upload, label: "Upload", href: "/tracks/upload" },
-              { icon: Library, label: "Your Library", href: "/library" },
-              { icon: User, label: "Profile", href: "/profile/me" },
-            ].map((item) => (
+            {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

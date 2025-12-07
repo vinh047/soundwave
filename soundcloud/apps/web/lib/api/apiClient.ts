@@ -41,8 +41,10 @@ axiosClient.interceptors.response.use(
     // ⚠️ QUAN TRỌNG: Kiểm tra xem URL bị lỗi có phải là endpoint refresh không
     // Nếu chính là '/auth/refresh' đang bị lỗi 401 thì DỪNG LẠI NGAY (tránh loop)
     if (originalRequest.url?.includes("/auth/refresh")) {
-      // Có thể force logout tại đây nếu muốn
-      // window.location.href = '/login';
+      // Force logout if refresh endpoint itself fails
+      if (typeof window !== "undefined") {
+        window.location.href = "/login";
+      }
       return Promise.reject(error);
     }
 
@@ -55,7 +57,10 @@ axiosClient.interceptors.response.use(
         // Gọi lại request gốc
         return axiosClient(originalRequest);
       } catch (refreshErr) {
-        // Nếu refresh thất bại thì reject luôn, không retry nữa
+        // Nếu refresh thất bại thì reject luôn và redirect login
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
         return Promise.reject(refreshErr);
       }
     }

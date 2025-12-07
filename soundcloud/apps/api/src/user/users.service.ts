@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Playlist, Repost, Track, User } from '@repo/database';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -14,7 +14,7 @@ interface PaginatedResult<T> {
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const newUser = await this.prisma.user.create({
@@ -208,5 +208,39 @@ export class UsersService {
       // Raw query thường trả về BigInt cho count, cần convert nếu cần
       recentPlays: Number(artist.recentPlays),
     }));
+  }
+
+  // --- SOCIAL ---
+  async followUser(followerId: string, followingId: string) {
+    if (followerId === followingId) {
+      throw new BadRequestException('Cannot follow yourself');
+    }
+
+    // Check if already following
+    const existing = await this.prisma.follow.findUnique({
+      where: { followerId_followingId: { followerId, followingId } },
+    });
+    if (existing) return existing;
+
+    return this.prisma.follow.create({
+      data: { followerId, followingId },
+    });
+  }
+
+  async unfollowUser(followerId: string, followingId: string) {
+    try {
+      return await this.prisma.follow.delete({
+        where: { followerId_followingId: { followerId, followingId } },
+      });
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async checkFollow(followerId: string, followingId: string) {
+    const follow = await this.prisma.follow.findUnique({
+      where: { followerId_followingId: { followerId, followingId } },
+    });
+    return { isFollowing: !!follow };
   }
 }

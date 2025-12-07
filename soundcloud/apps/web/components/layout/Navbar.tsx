@@ -5,11 +5,11 @@ import { Avatar } from "../ui2/Avatar";
 import { Button } from "../ui2/Button";
 import { useState } from "react";
 import { MobileNav } from "./MobileNav";
-
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const user = { username: "dj_khanh", avatarUrl: "/avatar.jpg" }; // mock
+  const { user, isLoggedIn } = useAuth();
 
   return (
     <>
@@ -44,20 +44,33 @@ export function Navbar() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-3">
-            <Button asChild className="hidden sm:flex">
-              <Link href="/tracks/upload">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload
-              </Link>
-            </Button>
+            {isLoggedIn && user ? (
+              <>
+                <Button asChild className="hidden sm:flex">
+                  <Link href="/tracks/upload">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload
+                  </Link>
+                </Button>
 
-            <Button variant="ghost" size="sm" className="hidden sm:flex">
-              <Bell className="h-5 w-5" />
-            </Button>
+                <Button variant="ghost" size="sm" className="hidden sm:flex">
+                  <Bell className="h-5 w-5" />
+                </Button>
 
-            <Link href={`/profile/${user.username}`}>
-              <Avatar src={user.avatarUrl} alt={user.username} size={36} />
-            </Link>
+                <Link href={`/profile/${user.id}`}>
+                  <Avatar src={user.image} alt={user.name} size={36} />
+                </Link>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link href="/login">Login</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/register">Create account</Link>
+                </Button>
+              </>
+            )}
 
             {/* Mobile Menu */}
             <Button

@@ -20,9 +20,16 @@ const trackApi = {
   },
 
   getTrackById: (id: string) =>
-    axiosClient.get<Prisma.TrackGetPayload<{ include: { user: true } }>>(
-      `/tracks/${id}`
-    ),
+    axiosClient.get<
+      Prisma.TrackGetPayload<{
+        include: {
+          user: true;
+          likes: true;
+          reposts: true;
+          comments: { include: { user: true } };
+        };
+      }>
+    >(`/tracks/${id}`),
 
   uploadTrack: (data: FormData) =>
     axiosClient.post<TrackType>("/tracks", data, {
@@ -58,6 +65,20 @@ const trackApi = {
         include: { track: { include: { user: true } } };
       }>[]
     >(`/tracks/recent`),
+
+  // --- SOCIAL ---
+  likeTrack: (id: string) => axiosClient.post(`/tracks/${id}/like`),
+  unlikeTrack: (id: string) => axiosClient.delete(`/tracks/${id}/like`),
+
+  repostTrack: (id: string) => axiosClient.post(`/tracks/${id}/repost`),
+  unrepostTrack: (id: string) => axiosClient.delete(`/tracks/${id}/repost`),
+
+  commentTrack: (id: string, content: string) =>
+    axiosClient.post(`/tracks/${id}/comments`, { content }),
+  getComments: (id: string) =>
+    axiosClient.get<Prisma.CommentGetPayload<{ include: { user: true } }>[]>(
+      `/tracks/${id}/comments`
+    ),
 };
 
 export default trackApi;
