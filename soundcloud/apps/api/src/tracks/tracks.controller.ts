@@ -16,6 +16,8 @@ import {
   UseInterceptors,
   UploadedFiles,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { TracksService } from './tracks.service';
 import { CreateTrackDto } from './dto/create-track.dto';
@@ -94,17 +96,22 @@ export class TracksController {
   }
 
   /**
-   * POST /tracks/:id/listen
-   * Ghi nhận lượt nghe của user
+   * API: Ghi nhận lượt nghe
+   * POST /api/tracks/:id/listen
+   * - Public: Khách nghe cũng tính view.
+   * - UseGuards: Vẫn chạy qua Guard để lấy userId (nếu có token).
    */
-  @UseGuards(JwtAuthGuard) // nếu muốn yêu cầu token
+  @Public()
+  @UseGuards(JwtAuthGuard)
   @Post(':id/listen')
+  @HttpCode(HttpStatus.OK)
   async recordListen(@Param('id') trackId: string, @Req() req) {
     const userId = req.user?.id ?? null;
+    console.log("User from Req:", req.user);
 
     await this.tracksService.recordListen(userId, trackId);
 
-    return { message: 'Listen recorded' };
+    return { message: 'Listen recorded successfully' };
   }
 
   @Public()
