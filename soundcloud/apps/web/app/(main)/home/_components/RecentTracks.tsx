@@ -3,58 +3,71 @@
 import React, { useEffect, useState } from "react";
 import trackApi from "@/lib/api/trackApi";
 import { TrackList } from "@/components/track/TrackList";
-// 1. Import thêm User để định nghĩa type đúng
-import { Track, User } from "@repo/database"; 
+import { useAuth } from "@/app/contexts/AuthContext";
+import { Track, User } from "@repo/database";
+import { TrackListSkeleton } from "@/components/track/TrackListSkeleton";
 
-// 2. Định nghĩa type cho Track có kèm User (để thỏa mãn TrackList)
 type TrackWithUser = Track & { user: User };
 
 export const RecentTracks = () => {
-  // 3. Sửa type của State: Không phải Track[] mà là TrackWithUser[]
+  // 2. Lấy trạng thái đăng nhập từ Context
+  const { isLoggedIn, isLoading: isAuthLoading } = useAuth();
+
   const [tracks, setTracks] = useState<TrackWithUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
+    // 3. Chỉ gọi API khi đã xác xác nhận ĐÃ ĐĂNG NHẬP
+    if (!isLoggedIn) return;
+
     const fetchRecent = async () => {
       try {
+        setLoading(true);
         const res = await trackApi.getRecentTracks();
-        
+
         if (res.data && Array.isArray(res.data)) {
-            setTracks(res.data as any);
-            setIsLoggedIn(true);
+          setTracks(res.data as any);
         }
       } catch (error) {
-        // console.log("User chưa login");
+        console.error("Lỗi lấy recent tracks", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchRecent();
-  }, []);
+  }, [isLoggedIn]);
 
+  // 4. Xử lý hiển thị
+
+  // Trường hợp 1: Auth đang check -> Có thể return null hoặc Skeleton tùy bạn
+  if (isAuthLoading) return null;
+
+  // Trường hợp 2: Chưa đăng nhập -> Ẩn
+  if (!isLoggedIn) return null;
+
+  // Trường hợp 3: Đang load API -> Hiện Skeleton chuẩn
   if (loading) {
     return (
-        <div className="mb-12">
-            <div className="h-8 w-48 bg-gray-200 animate-pulse mb-6 rounded"></div>
-            <div className="grid grid-cols-5 gap-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="aspect-square bg-gray-200 animate-pulse rounded-md"></div>
-                ))}
-            </div>
-        </div>
+      <section className="mb-12">
+        {/* Skeleton cho tiêu đề (giữ chỗ cho chữ "Nghe gần đây") */}
+        <div className="h-8 w-48 bg-gray-200 dark:bg-zinc-800 animate-pulse mb-6 rounded" />
+
+        {/* Skeleton cho danh sách Track (Carousel) */}
+        <TrackListSkeleton />
+      </section>
     );
   }
 
-  if (!isLoggedIn || tracks.length === 0) return null;
+  // Trường hợp 4: Load xong nhưng rỗng -> Ẩn
+  if (tracks.length === 0) return null;
 
+  // Trường hợp 5: Có dữ liệu -> Hiển thị
   return (
     <section className="mb-12">
       <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
         Nghe gần đây
       </h2>
-      {/* Bây giờ tracks đã đúng kiểu mà TrackList yêu cầu */}
       <TrackList tracks={tracks} />
     </section>
   );

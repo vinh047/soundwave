@@ -5,10 +5,10 @@ export async function seedWebsiteTypes(prisma: PrismaClient) {
 
   await prisma.websiteType.createMany({
     data: [
-      { type: "YOUTUBE", icon: "FaYoutube" },
-      { type: "TWITTER", icon: "FaTwitter" },
-      { type: "INSTAGRAM", icon: "FaInstagram" },
-      { type: "TIKTOK", icon: "FaTiktok" },
+      { id: "wt_youtube", type: "YOUTUBE", icon: "FaYoutube" },
+      { id: "wt_facebook", type: "FACEBOOK", icon: "FaFacebook" },
+      { id: "wt_twitter", type: "TWITTER", icon: "FaTwitter" },
+      { id: "wt_tiktok", type: "TIKTOK", icon: "FaTiktok" },
     ],
     skipDuplicates: true,
   });

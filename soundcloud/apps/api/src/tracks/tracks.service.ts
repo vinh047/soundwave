@@ -5,6 +5,19 @@ import { PrismaService } from '../prisma/prisma.service';
 import type { Prisma, Track, User } from '@repo/database';
 import { PaginatedResult } from '../dto/PaginatedResult';
 
+export type TrackWithStats = Prisma.TrackGetPayload<{
+  include: {
+    user: true;
+    _count: {
+      select: {
+        likes: true;
+        reposts: true;
+        comments: true;
+      };
+    };
+  };
+}>;
+
 @Injectable()
 export class TracksService {
   constructor(private prisma: PrismaService) {}
@@ -94,12 +107,11 @@ export class TracksService {
   async getTrendingTopN({
     days = 7,
     limit = 20,
-  }: { days?: number; limit?: number } = {}): Promise<
-    (Track & { user: User })[]
-  > {
+  }: { days?: number; limit?: number } = {}): Promise<TrackWithStats[]> {
+    // <-- Đổi kiểu trả về
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-    // 1) group likes
+    // 1) group likes (Lấy dữ liệu recent để tính điểm trending)
     const likes = await this.prisma.like.groupBy({
       by: ['trackId'],
       where: { createdAt: { gte: since } },
@@ -109,7 +121,7 @@ export class TracksService {
       likes.map((r) => [r.trackId, Number(r._count._all)]),
     );
 
-    // 2) group reposts
+    // 2) group reposts (Lấy dữ liệu recent để tính điểm trending)
     const reposts = await this.prisma.repost.groupBy({
       by: ['trackId'],
       where: { createdAt: { gte: since } },
@@ -127,7 +139,21 @@ export class TracksService {
       ]),
     );
 
-    let tracks;
+    // --- CẤU HÌNH INCLUDE CHUNG (QUAN TRỌNG) ---
+    // Lấy User và đếm tổng số Like/Repost/Comment
+    const commonInclude = {
+      user: true,
+      _count: {
+        select: {
+          likes: true,
+          reposts: true,
+          comments: true,
+        },
+      },
+    };
+
+    let tracks: TrackWithStats[]; // <-- Sử dụng type mới
+
     if (candidateTrackIds.length > 0) {
       tracks = await this.prisma.track.findMany({
         where: {
@@ -135,7 +161,7 @@ export class TracksService {
           isPublic: true,
           isBanned: false,
         },
-        include: { user: true },
+        include: commonInclude, // <-- Thêm include vào đây
       });
     } else {
       // fallback: use playCount
@@ -143,13 +169,14 @@ export class TracksService {
         where: { isPublic: true, isBanned: false },
         orderBy: { playCount: 'desc' },
         take: limit,
-        include: { user: true },
+        include: commonInclude, // <-- Thêm include vào đây
       });
     }
 
-    // 4) compute score
+    // 4) compute score (Logic tính điểm giữ nguyên)
     const now = new Date();
     const items = tracks.map((t) => {
+      // Dùng map để lấy recent activity cho việc xếp hạng
       const recentLikes = likesMap.get(t.id) || 0;
       const recentReposts = repostsMap.get(t.id) || 0;
 
@@ -166,7 +193,7 @@ export class TracksService {
       return { track: t, score };
     });
 
-    // 5) sort & return Track[]
+    // 5) sort & return
     items.sort((a, b) => b.score - a.score);
     return items.slice(0, limit).map((i) => i.track);
   }

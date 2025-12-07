@@ -33,9 +33,20 @@ const trackApi = {
   deleteTrack: (id: string) => axiosClient.delete<void>(`/tracks/${id}`),
 
   getTrendingTracks: (limit: number) =>
-    axiosClient.get<Prisma.TrackGetPayload<{ include: { user: true } }>[]>(
-      `/tracks/trending?limit=${limit}`
-    ),
+    axiosClient.get<
+      Prisma.TrackGetPayload<{
+        include: {
+          user: true;
+          _count: {
+            select: {
+              likes: true;
+              reposts: true;
+              comments: true;
+            };
+          };
+        };
+      }>[]
+    >(`/tracks/trending?limit=${limit}`),
 
   getRecentTracks: () =>
     axiosClient.get<
@@ -43,7 +54,6 @@ const trackApi = {
         include: { track: { include: { user: true } } };
       }>[]
     >(`/tracks/recent`),
-    
 };
 
 export default trackApi;

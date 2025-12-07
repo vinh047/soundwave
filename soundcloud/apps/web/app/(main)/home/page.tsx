@@ -4,6 +4,9 @@ import trackApi from "@/lib/api/trackApi";
 import { Footer } from "./_components/Footer";
 import Image from "next/image";
 import { RecentTracks } from "./_components/RecentTracks";
+import userApi from "@/lib/api/usersApi";
+import Link from "next/link";
+import { HorizontalTrackCard } from "@/components/track/HorizontalTrackCard";
 
 export default async function HomePage({
   searchParams,
@@ -11,12 +14,21 @@ export default async function HomePage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const api = await searchParams;
-  const initTracks = await trackApi.getTracks({
-    page: Number(api.page) || 1,
-    limit: 10,
-  });
-  const data = initTracks.data.data;
-  const trendingTracks = (await trackApi.getTrendingTracks(10)).data;
+
+  const [initTracksRes, trendingTracksRes, trendingArtistsRes] =
+    await Promise.all([
+      trackApi.getTracks({
+        page: Number(api.page) || 1,
+        limit: 10,
+      }),
+      trackApi.getTrendingTracks(10),
+      userApi.getTrendingArtists(5),
+    ]);
+
+  const data = initTracksRes.data.data;
+  const trendingTracks = trendingTracksRes.data;
+
+  const trendingArtists = trendingArtistsRes.data?.data || [];
 
   return (
     <div className="bg-white dark:bg-[#121212] transition-colors duration-300">
@@ -69,41 +81,74 @@ export default async function HomePage({
             <h3 className="text-gray-500 dark:text-gray-400 font-semibold uppercase text-xs tracking-wider mb-4">
               Trending Artists
             </h3>
-            <ul className="space-y-4">
-              {["SOOBIN", "AMEE", "Đen Vâu", "Hoàng Dũng"].map((artist) => (
-                <li key={artist} className="flex items-center gap-3">
-                  <Image
-                    src={`https://picsum.photos/seed/${artist}/40/40`}
-                    width={40}
-                    height={40}
-                    alt={artist}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <span className="text-gray-900 dark:text-white font-medium">
-                    {artist}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            {trendingArtists.length === 0 ? (
+              <p className="text-sm text-gray-500">Chưa có dữ liệu.</p>
+            ) : (
+              <ul className="space-y-4">
+                {trendingArtists.map((artist) => (
+                  <li key={artist.id}>
+                    {/* Dùng Link để click vào xem profile */}
+                    <Link
+                      href={`/profile/${artist.id}`}
+                      className="flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-md transition-colors"
+                    >
+                      <Image
+                        // Fallback nếu artist chưa có avatar
+                        src={artist.image || "/placeholder-avatar.png"}
+                        width={40}
+                        height={40}
+                        alt={artist.name || "Artist"}
+                        className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700"
+                      />
+                      <span className="text-gray-900 dark:text-white font-medium truncate">
+                        {artist.name || "Unknown Artist"}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
+          {/* --- TOP TRACKS (Sử dụng HorizontalTrackCard) --- */}
           <div className="mt-8">
             <h3 className="text-gray-500 dark:text-gray-400 font-semibold uppercase text-xs tracking-wider mb-4">
               Top Tracks
             </h3>
-            <ul className="space-y-3">
-              {["Mất Kết Nối", "Em Xinh", "Anh Trai"].map((song, idx) => (
-                <li key={song} className="flex items-center justify-between">
-                  <span className="text-gray-900 dark:text-white">
-                    {idx + 1}. {song}
-                  </span>
-                  <Button variant="ghost" size="sm">
-                    ▶
-                  </Button>
-                </li>
+
+            <div className="flex flex-col gap-3">
+              {/* Lấy 3 bài hát đầu tiên từ trendingTracks */}
+              {trendingTracks.slice(0, 3).map((track: any) => (
+                <HorizontalTrackCard
+                  key={track.id}
+                  track={{
+                    id: track.id,
+                    title: track.title,
+                    imagePath: track.imagePath,
+                    audioPath: track.audioPath,
+                    user: {
+                      id: track.user.id,
+                      name: track.user.name || "Unknown Artist",
+                    },
+                    // Mapping dữ liệu thống kê từ API (có _count) sang Props của Card
+                    stats: {
+                      playCount: track.playCount || 0,
+                      likeCount: track._count?.likes || 0,
+                      repostCount: track._count?.reposts || 0,
+                      commentCount: track._count?.comments || 0,
+                    },
+                  }}
+                />
               ))}
-            </ul>
+            </div>
+
+            {/* Fallback nếu không có dữ liệu */}
+            {trendingTracks.length === 0 && (
+              <p className="text-sm text-gray-500 italic">
+                Chưa có bài hát nào.
+              </p>
+            )}
           </div>
-          <div className="mt-8">
+          {/* <div className="mt-8">
             <h3 className="text-gray-500 dark:text-gray-400 font-semibold uppercase text-xs tracking-wider mb-4">
               Suggested Playlist
             </h3>
@@ -118,7 +163,7 @@ export default async function HomePage({
                 Play
               </Button>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
       <Footer />

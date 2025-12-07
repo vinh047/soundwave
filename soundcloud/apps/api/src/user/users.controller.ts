@@ -45,9 +45,44 @@ export class UsersController {
   }
 
   @Public()
+  @Get('trending')
+  async getTrendingArtists(@Query('limit') limit: string) {
+    const take = Number(limit) || 10;
+
+    const artists =
+      await this.usersService.getTrendingArtistsByRecentPlays(take);
+
+    return {
+      message: 'Lấy danh sách nghệ sĩ thịnh hành thành công',
+      data: artists,
+    };
+  }
+
+  @Public()
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
+  }
+
+  @Public()
+  @Get(':id/playlists')
+  async getPlaylists(@Param('id') id: string) {
+    const data = await this.usersService.findPlaylistsByUser(id);
+    return { data };
+  }
+
+  @Public()
+  @Get(':id/reposts')
+  async getReposts(@Param('id') id: string) {
+    const data = await this.usersService.findRepostByUser(id);
+    return { data };
+  }
+
+  @Public()
+  @Get(':id/popular-tracks')
+  async getPopularTracks(@Param('id') id: string) {
+    const data = await this.usersService.findPopularTracksByUser(id);
+    return { data };
   }
 
   @Post()
