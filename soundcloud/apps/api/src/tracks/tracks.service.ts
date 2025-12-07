@@ -6,6 +6,10 @@ import type { Prisma, Track, User } from '@repo/database';
 import { PaginatedResult } from '../dto/PaginatedResult';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
+import ffmpeg from 'fluent-ffmpeg';
+import { PassThrough } from 'stream';
+import toStream = require('streamifier');
+
 export type TrackWithStats = Prisma.TrackGetPayload<{
   include: {
     user: true;
@@ -57,15 +61,100 @@ export class TracksService {
     };
   }
 
+  private async generateRealWaveform(buffer: Buffer): Promise<number[]> {
+    return new Promise((resolve, reject) => {
+      const samples: number[] = [];
+      const numPoints = 100; // Số cột sóng muốn hiển thị (SoundCloud dùng khoảng 100-150)
+
+      // Tạo stream từ buffer file nhạc
+      const stream = toStream.createReadStream(buffer);
+
+      // Một stream tạm để hứng dữ liệu Raw từ FFmpeg
+      const outputStream = new PassThrough();
+
+      // Cấu hình FFmpeg: Chuyển sang Raw PCM (1 kênh mono, 4000Hz cho nhẹ)
+      const ffmpegCommand = ffmpeg(stream)
+        .audioCodec('pcm_s16le') // Codec raw
+        .format('s16le') // Định dạng 16-bit signed little-endian
+        .audioChannels(1) // Gộp thành 1 kênh mono
+        .audioFrequency(4000) // Sample rate thấp để xử lý nhanh
+        .on('error', (err) => {
+          console.error('FFmpeg Error:', err);
+          // Nếu lỗi thì fallback về mảng rỗng hoặc random để ko chết app
+          resolve(Array.from({ length: 100 }, () => 0));
+        });
+
+      // Pipe dữ liệu ra stream
+      ffmpegCommand.pipe(outputStream);
+
+      // Đọc dữ liệu từ stream
+      const rawData: number[] = [];
+
+      outputStream.on('data', (chunk: Buffer) => {
+        // Mỗi mẫu 16-bit chiếm 2 bytes. Đọc Int16.
+        for (let i = 0; i < chunk.length; i += 2) {
+          if (i + 1 < chunk.length) {
+            // Lấy giá trị tuyệt đối (biên độ)
+            const amplitude = Math.abs(chunk.readInt16LE(i));
+            rawData.push(amplitude);
+          }
+        }
+      });
+
+      outputStream.on('end', () => {
+        // Thuật toán Downsampling (Nén dữ liệu khổng lồ thành 100 điểm)
+        const step = Math.ceil(rawData.length / numPoints);
+
+        for (let i = 0; i < numPoints; i++) {
+          const start = i * step;
+          const end = start + step;
+          const slice = rawData.slice(start, end);
+
+          // Lấy giá trị lớn nhất trong đoạn (Peak)
+          let max = 0;
+          for (const val of slice) {
+            if (val > max) max = val;
+          }
+
+          // Chuẩn hóa về thang 0-100 (Max PCM 16-bit là 32767)
+          // Làm trơn số liệu một chút
+          let normalized = max / 32767;
+          if (normalized > 1) normalized = 1;
+          samples.push(Number(normalized.toFixed(4)));
+        }
+
+        resolve(samples);
+      });
+    });
+  }
+
   async create(
     dto: CreateTrackDto,
     userId: string,
     audioFile: Express.Multer.File,
     imageFile?: Express.Multer.File,
   ) {
-    const audioResult = await this.cloudinaryService.uploadFile(audioFile);
-    const audioUrl = audioResult.secure_url;
+    // 1. Upload Cloudinary (Chạy song song với tạo waveform để tiết kiệm thời gian)
+    const uploadAudioPromise = this.cloudinaryService.uploadFile(audioFile);
 
+    // 2. Tạo Waveform THẬT từ buffer
+    // Lưu ý: Việc này tốn CPU, nếu file quá lớn có thể làm chậm server
+    const waveformPromise = this.generateRealWaveform(audioFile.buffer);
+
+    // Chờ cả 2 xong
+    const [audioResult, waveform] = await Promise.all([
+      uploadAudioPromise,
+      waveformPromise,
+    ]);
+
+    const audioUrl = audioResult.secure_url;
+    // Lấy duration từ Cloudinary (giây) -> Đổi sang Milliseconds (DB thường lưu ms hoặc giây tùy bạn)
+    // Ở đây schema của bạn là Int (giây) nên Math.round là chuẩn.
+    const duration = audioResult.duration
+      ? Math.round(audioResult.duration)
+      : 0;
+
+    // 3. Upload ảnh (nếu có)
     let imageUrl = null;
     if (imageFile) {
       const imageResult = await this.cloudinaryService.uploadFile(imageFile);
@@ -74,6 +163,7 @@ export class TracksService {
 
     const { title, description, isPublic } = dto;
 
+    // 4. Lưu vào DB
     return await this.prisma.track.create({
       data: {
         title,
@@ -82,12 +172,16 @@ export class TracksService {
 
         audioPath: audioUrl,
         imagePath: imageUrl,
+
+        duration: duration,
+        waveform: waveform, // Mảng số thật đã tính toán
+
         user: { connect: { id: userId } },
       },
       include: { user: true },
     });
   }
-  
+
   async findOne(id: string): Promise<Track> {
     try {
       await this.prisma.track.update({

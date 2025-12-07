@@ -106,6 +106,44 @@ export function GlobalPlayer() {
     };
   }, [setCurrentTime, resetTime, currentTime]);
 
+  useEffect(() => {
+    // Chỉ log khi đã mounted để tránh rác console bên server
+    if (!isMounted) return;
+
+    console.group("🔍 GlobalPlayer Debug Info");
+
+    console.log("1. Trạng thái chung:");
+    console.log("   - isMounted:", isMounted);
+    console.log("   - isPlaying:", isPlaying);
+    console.log("   - Volume:", volume);
+    console.log("   - Current Time:", currentTime);
+
+    console.log("2. Dữ liệu bài hát (currentTrack):", currentTrack);
+    if (currentTrack) {
+      console.log("   - ID:", currentTrack.id);
+      console.log("   - Title:", currentTrack.title);
+      console.log("   - Audio Path:", currentTrack.audioPath);
+      console.log("   - Image Path:", currentTrack.imagePath);
+
+      // Kiểm tra kỹ phần User/Artist xem có bị null không
+      console.log("   - User Object:", currentTrack.user);
+      console.log("   - User Name:", currentTrack.user?.name);
+    } else {
+      console.warn(
+        "   ⚠️ Chưa có bài hát nào được chọn (currentTrack is null)"
+      );
+    }
+
+    console.log("3. Thẻ Audio thực tế (HTMLAudioElement):", audioRef.current);
+    if (audioRef.current) {
+      console.log("   - Src hiện tại:", audioRef.current.src);
+      console.log("   - Paused:", audioRef.current.paused);
+      console.log("   - ReadyState:", audioRef.current.readyState);
+    }
+
+    console.groupEnd();
+  }, [currentTrack, isPlaying, isMounted]);
+
   const handleSeek = (time: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime = time;
