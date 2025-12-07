@@ -66,7 +66,6 @@ const trackApi = {
       }>[]
     >(`/tracks/recent`),
 
-<<<<<<< HEAD
   // --- SOCIAL ---
   likeTrack: (id: string) => axiosClient.post(`/tracks/${id}/like`),
   unlikeTrack: (id: string) => axiosClient.delete(`/tracks/${id}/like`),
@@ -80,10 +79,8 @@ const trackApi = {
     axiosClient.get<Prisma.CommentGetPayload<{ include: { user: true } }>[]>(
       `/tracks/${id}/comments`
     ),
-=======
   increasePlayCount: (id: string) =>
     axiosClient.post<{ message: string }>(`/tracks/${id}/listen`),
->>>>>>> 9bc7985947ff574307e85ab87f4050c6c734242c
 };
 
 export default trackApi;
