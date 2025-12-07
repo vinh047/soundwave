@@ -30,7 +30,7 @@ const tracks = [
     artist: "Bad User", 
     plays: 1200, 
     duration: "3:10", 
-    image: "https://images.unsplash.com/photo-1514525253440-b39333156162?w=100&h=100&fit=crop",
+    image: "https://plus.unsplash.com/premium_photo-1677589330352-509c3d18f3a0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c29uZyUyMGljb258ZW58MHx8MHx8fDA%3D",
     isPublic: true,
     isBanned: true 
   },

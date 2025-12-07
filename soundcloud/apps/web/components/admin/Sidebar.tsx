@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Users, Flag, Music, LogOut } from "lucide-react";
-import { cn } from "@/lib/utils"; // Giả sử bạn có file utils để merge class (nếu chưa có thì dùng template literal)
+import { cn } from "@/lib/utils"; 
 
 const menuItems = [
   {
@@ -14,17 +14,17 @@ const menuItems = [
   {
     title: "Quản lý Users",
     href: "/admin/users",
-    icon: Users, // Tương ứng use case: Quản lý tài khoản
+    icon: Users, 
   },
   {
     title: "Báo cáo & Vi phạm",
     href: "/admin/reports",
-    icon: Flag, // Tương ứng use case: Quản lý báo cáo
+    icon: Flag, 
   },
   {
     title: "Kho bài hát",
     href: "/admin/tracks",
-    icon: Music, // Tương ứng use case: Khám phá bài hát
+    icon: Music, 
   },
 ];
 

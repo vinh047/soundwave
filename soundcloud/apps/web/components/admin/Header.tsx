@@ -19,7 +19,7 @@ export function AdminHeader() {
   }, []);
 
   const handleLogout = () => {
-    // Xử lý logic đăng xuất ở đây (ví dụ: signOut() nếu dùng NextAuth)
+    // Xử lý logic đăng xuất ở đây 
     console.log("Logging out...");
   };
 

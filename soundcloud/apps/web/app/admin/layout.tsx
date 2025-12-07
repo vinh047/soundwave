@@ -19,21 +19,8 @@ export default function AdminLayout({
 
       {/* Main Content Area */}
       <main className="ml-64 min-h-screen">
-        {/* Header Admin (Optional) */}
-        {/* <header className="h-16 border-b border-zinc-800 bg-zinc-950/50 backdrop-blur-md sticky top-0 z-10 flex items-center justify-between px-8">
-            <h1 className="text-sm font-medium text-zinc-400">
-              Trung tâm quản trị hệ thống
-            </h1>
-            <div className="flex items-center gap-4">
-               {/* Avatar Admin giả lập */}
-               {/* <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-xs font-bold text-white">
-                 AD
-               </div>
-            </div>
-        // </header> */} 
-            {/* --- THAY THẾ PHẦN HEADER CŨ BẰNG DÒNG NÀY --- */}
+       
         <AdminHeader /> 
-        {/* ----------------------------------------------- */}
 
         {/* Page Content */}
         <div className="p-8">

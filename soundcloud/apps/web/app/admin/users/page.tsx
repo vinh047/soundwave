@@ -4,10 +4,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Search } from "lucide-react";
 
-// 1. Cập nhật Mock Data: Thêm ID dạng chuỗi cho chuyên nghiệp
+// Mock data
 const users = [
   { 
-    id: "USR001", // ID hiển thị
+    id: "USR001", 
     name: "Nguyen Van A", 
     email: "vana@example.com", 
     status: "active", 
@@ -35,11 +35,11 @@ const users = [
 export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Logic tìm kiếm giữ nguyên
+  // Logic tìm kiếm 
   const filteredUsers = users.filter((user) => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.id.toLowerCase().includes(searchTerm.toLowerCase()) // Thêm: Tìm theo ID luôn cho tiện
+    user.id.toLowerCase().includes(searchTerm.toLowerCase()) 
   );
 
   return (
@@ -63,7 +63,6 @@ export default function UsersPage() {
         <table className="w-full text-sm text-left">
           <thead className="bg-zinc-900 text-zinc-400 font-medium">
             <tr>
-              {/* 2. Thêm tiêu đề cột ID */}
               <th className="px-6 py-4 w-24">ID</th>
               <th className="px-6 py-4">User</th>
               <th className="px-6 py-4">Trạng thái</th>

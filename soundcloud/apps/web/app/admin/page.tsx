@@ -33,16 +33,11 @@ export default function AdminDashboard() {
           trend="Live" 
         />
       </div>
-
-      {/* Khu vực biểu đồ hoặc danh sách gần đây sẽ thêm sau */}
-      <div className="p-6 rounded-xl bg-zinc-900 border border-zinc-800 h-64 flex items-center justify-center text-zinc-500">
-        [Biểu đồ thống kê lượt nghe sẽ hiển thị ở đây]
-      </div>
+      
     </div>
   );
 }
 
-// Component con hiển thị thẻ thống kê
 function StatCard({ title, value, icon: Icon, trend, urgent }: any) {
   return (
     <div className="p-5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors">

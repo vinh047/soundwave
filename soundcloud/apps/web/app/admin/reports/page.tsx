@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { CheckCircle, XCircle, Eye, Music, User, Clock } from "lucide-react"; // Thêm icon Clock
+import { CheckCircle, XCircle, Eye, Music, User, Clock } from "lucide-react"; 
 import { useState } from "react";
 
 // 1. Mock Data: Thêm trường 'resolvedAt' cho các đơn đã xử lý
@@ -144,7 +144,6 @@ export default function ReportsPage() {
                  <span className="text-sm font-medium text-green-500 flex items-center gap-2">
                    <CheckCircle size={16} /> Đã giải quyết
                  </span>
-                 <span className="text-xs text-zinc-600">Admin: super_admin</span>
               </div>
             )}
           </div>
