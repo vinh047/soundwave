@@ -6,6 +6,7 @@ import { usePlayerStore } from "@/store/playerStore";
 import { PlayerControls } from "./PlayerControls";
 import { ProgressBar } from "./ProgressBar";
 import { Heart, ListPlus, UserPlus } from "lucide-react";
+import trackApi from "@/lib/api/trackApi";
 
 export function GlobalPlayer() {
   const {
@@ -25,6 +26,8 @@ export function GlobalPlayer() {
 
   const lastTrackIdRef = useRef<string | null>(null);
 
+  const isCountedRef = useRef(false);
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -38,6 +41,8 @@ export function GlobalPlayer() {
 
     if (isSongChanged) {
       audio.src = currentTrack.audioPath;
+
+      isCountedRef.current = false;
 
       if (lastTrackIdRef.current === null && currentTime > 0) {
         audio.currentTime = currentTime;
@@ -82,6 +87,22 @@ export function GlobalPlayer() {
 
     const handleTimeUpdate = () => {
       setCurrentTime(audio.currentTime);
+
+      if (
+        currentTrack && // Có bài hát
+        audio.currentTime > 10 && // Nghe được hơn 10 giây (tùy chỉnh số này)
+        !isCountedRef.current // Chưa tính view lần nào
+      ) {
+        // Đánh dấu ngay là đã tính (để giây thứ 11, 12... không gọi nữa)
+        isCountedRef.current = true;
+
+        console.log("📈 Tăng play count cho:", currentTrack.title);
+
+        // Gọi API (không cần await để không chặn UI)
+        trackApi
+          .increasePlayCount(currentTrack.id)
+          .catch((err) => console.error("Lỗi tăng view:", err));
+      }
     };
 
     const handleEnded = () => {
@@ -104,45 +125,7 @@ export function GlobalPlayer() {
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
-  }, [setCurrentTime, resetTime, currentTime]);
-
-  useEffect(() => {
-    // Chỉ log khi đã mounted để tránh rác console bên server
-    if (!isMounted) return;
-
-    console.group("🔍 GlobalPlayer Debug Info");
-
-    console.log("1. Trạng thái chung:");
-    console.log("   - isMounted:", isMounted);
-    console.log("   - isPlaying:", isPlaying);
-    console.log("   - Volume:", volume);
-    console.log("   - Current Time:", currentTime);
-
-    console.log("2. Dữ liệu bài hát (currentTrack):", currentTrack);
-    if (currentTrack) {
-      console.log("   - ID:", currentTrack.id);
-      console.log("   - Title:", currentTrack.title);
-      console.log("   - Audio Path:", currentTrack.audioPath);
-      console.log("   - Image Path:", currentTrack.imagePath);
-
-      // Kiểm tra kỹ phần User/Artist xem có bị null không
-      console.log("   - User Object:", currentTrack.user);
-      console.log("   - User Name:", currentTrack.user?.name);
-    } else {
-      console.warn(
-        "   ⚠️ Chưa có bài hát nào được chọn (currentTrack is null)"
-      );
-    }
-
-    console.log("3. Thẻ Audio thực tế (HTMLAudioElement):", audioRef.current);
-    if (audioRef.current) {
-      console.log("   - Src hiện tại:", audioRef.current.src);
-      console.log("   - Paused:", audioRef.current.paused);
-      console.log("   - ReadyState:", audioRef.current.readyState);
-    }
-
-    console.groupEnd();
-  }, [currentTrack, isPlaying, isMounted]);
+  }, [setCurrentTime, resetTime, currentTime, currentTrack]);
 
   const handleSeek = (time: number) => {
     if (audioRef.current) {

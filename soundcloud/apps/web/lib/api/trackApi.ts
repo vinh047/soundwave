@@ -58,6 +58,9 @@ const trackApi = {
         include: { track: { include: { user: true } } };
       }>[]
     >(`/tracks/recent`),
+
+  increasePlayCount: (id: string) =>
+    axiosClient.post<{ message: string }>(`/tracks/${id}/listen`),
 };
 
 export default trackApi;
