@@ -262,7 +262,7 @@ export class AuthService {
   async validateGoogleUser(details: {
     email: string;
     name: string;
-    image: string; 
+    image: string;
   }) {
     // 1. Tìm user bằng email
     const user = await this.prisma.user.findUnique({
@@ -291,7 +291,7 @@ export class AuthService {
       data: {
         email: details.email,
         name: details.name,
-        image: details.image, 
+        image: details.image,
         emailVerified: new Date(),
       },
     });
@@ -313,5 +313,36 @@ export class AuthService {
     }
 
     await this.sendVerification(user);
+  }
+
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      // 1. Lấy các quan hệ liên kết
+      include: {
+        profile: {
+          include: {
+            websiteProfiles: {
+              include: { websiteType: true }, // Lấy cả icon/type của link social
+            },
+          },
+        },
+        // 2. Đếm số lượng (Stats) để hiển thị trên profile
+        _count: {
+          select: {
+            followers: true,
+            following: true,
+            tracks: true,
+            likes: true,
+          },
+        },
+      },
+    });
+
+    if (!user) return null;
+
+    // 3. Loại bỏ thông tin nhạy cảm trước khi trả về
+    const { hashedPassword, hashedRefreshToken, ...safeUser } = user;
+    return safeUser;
   }
 }

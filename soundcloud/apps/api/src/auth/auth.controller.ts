@@ -267,4 +267,16 @@ export class AuthController {
       res.redirect(`${feUrl}/?error=${encodedMessage}`);
     }
   }
+
+  @Get('profile')
+  @HttpCode(HttpStatus.OK)
+  async getProfile(@Req() req) {
+    // req.user.id có được từ Access Token (do JwtStrategy giải mã)
+    const userId = req.user.id;
+
+    // Gọi xuống DB để lấy dữ liệu tươi mới nhất và đầy đủ nhất
+    const userProfile = await this.authService.getMe(userId);
+
+    return userProfile;
+  }
 }

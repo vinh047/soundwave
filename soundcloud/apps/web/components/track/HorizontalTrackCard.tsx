@@ -41,8 +41,6 @@ export function HorizontalTrackCard({ track }: HorizontalTrackCardProps) {
     router.push(`/tracks/${track.id}`);
   };
 
-  console.log(track);
-
   return (
     // 3. Đổi từ Link thành div
     <div

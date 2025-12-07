@@ -1,8 +1,6 @@
 "use client";
 
-import { signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
-
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import Link from "next/link";
 import {
@@ -12,6 +10,7 @@ import {
   InputHTMLAttributes,
 } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import Image from "next/image";
 
 import {
   Music,
@@ -30,9 +29,13 @@ import {
   X,
   UserIcon,
 } from "lucide-react";
-import userApi from "@/lib/api/usersApi";
+
 import { User } from "@repo/database";
-import Image from "next/image";
+import authApi from "@/lib/api/authApi"; // ✅ Đã dùng authApi thay cho userApi
+import { useAuthModal } from "@/hooks/use-auth-modal";
+import { useAuth } from "@/app/contexts/AuthContext";
+
+// --- 1. COMPONENTS PHỤ (NavLink, BaseButton, BaseInput) ---
 
 const NavLink = ({
   href,
@@ -119,6 +122,25 @@ const BaseButton = ({
   );
 };
 
+const BaseInput = ({
+  className = "",
+  ...props
+}: InputHTMLAttributes<HTMLInputElement>) => (
+  <input
+    className={`
+      flex h-10 w-full rounded-md border text-sm transition-colors
+      border-gray-300 bg-white text-gray-900 placeholder:text-gray-400
+      focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:outline-none
+      disabled:cursor-not-allowed disabled:opacity-50
+      dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-offset-[#111]
+      ${className}
+    `}
+    {...props}
+  />
+);
+
+// --- 2. COMPONENT USER DROPDOWN (Đã fix Avatar & Logout) ---
+
 interface UserDropdownProps {
   user: User;
   userInitials: string;
@@ -134,9 +156,17 @@ const UserDropdown = ({
 }: UserDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleSignOut = () => {
-    signOut({ callbackUrl: "/" });
-    setIsOpen(false);
+  // ✅ Hàm Logout chuẩn: Gọi API -> Xóa Cookie -> Refresh trang
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+      setIsOpen(false);
+      router.push("/");
+      router.refresh(); // F5 lại trạng thái Server Component
+    } catch (error) {
+      console.error("Đăng xuất thất bại:", error);
+      router.push("/");
+    }
   };
 
   const DropdownItem = ({
@@ -161,50 +191,49 @@ const UserDropdown = ({
 
   return (
     <div className="relative">
-      {/* Trigger */}
       <BaseButton
         onClick={() => setIsOpen(!isOpen)}
         variant="ghost"
-        className="relative h-10 w-10 rounded-full p-0 overflow-hidden border border-gray-200 dark:border-gray-700"
+        size="icon"
+        className="relative h-10 w-10 rounded-full p-0 overflow-hidden border border-gray-200 dark:border-gray-700 shrink-0 focus:ring-2 focus:ring-orange-500"
       >
         <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-700">
           {user?.image ? (
             <Image
               src={user.image}
               alt={user?.name || "User"}
+              // ✅ Fix Next.js Image: Thêm width/height và object-cover
+              width={40}
+              height={40}
               className="h-full w-full object-cover"
+              priority
             />
           ) : (
-            <span className="font-semibold text-sm text-gray-600 dark:text-white">
+            <span className="font-semibold text-sm text-gray-600 dark:text-white select-none">
               {userInitials}
             </span>
           )}
         </div>
       </BaseButton>
 
-      {/* Content Dropdown */}
       {isOpen && (
         <>
-          {/* Overlay vô hình để click outside đóng menu */}
           <div
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-
-          <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 origin-top-right animate-in fade-in-0 zoom-in-95 dark:bg-gray-800 dark:ring-gray-700">
+          <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 origin-top-right animate-in fade-in-0 zoom-in-95 dark:bg-[#1a1a1a] dark:ring-gray-800 dark:border dark:border-gray-800">
             <div className="py-1">
-              {/* Label */}
               <div className="px-4 py-2">
-                <p className="text-sm font-medium leading-none text-gray-900 dark:text-white">
+                <p className="text-sm font-medium leading-none text-gray-900 dark:text-white truncate">
                   {user?.name}
                 </p>
-                <p className="text-xs leading-none text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs leading-none text-gray-500 dark:text-gray-400 mt-1 truncate">
                   {user?.email}
                 </p>
               </div>
               <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
 
-              {/* Items */}
               <DropdownItem
                 onClick={() => {
                   router.push("/profile");
@@ -241,11 +270,13 @@ const UserDropdown = ({
               )}
 
               <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+
+              {/* ✅ Gọi hàm handleLogout */}
               <DropdownItem
-                onClick={handleSignOut}
+                onClick={handleLogout}
                 icon={<LogOut className="h-4 w-4" />}
               >
-                Sign out
+                Logout
               </DropdownItem>
             </div>
           </div>
@@ -254,23 +285,6 @@ const UserDropdown = ({
     </div>
   );
 };
-
-const BaseInput = ({
-  className = "",
-  ...props
-}: InputHTMLAttributes<HTMLInputElement>) => (
-  <input
-    className={`
-      flex h-10 w-full rounded-md border text-sm transition-colors
-      border-gray-300 bg-white text-gray-900 placeholder:text-gray-400
-      focus:border-orange-500 focus:ring-2 focus:ring-orange-500 focus:outline-none
-      disabled:cursor-not-allowed disabled:opacity-50
-      dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-offset-[#111]
-      ${className}
-    `}
-    {...props}
-  />
-);
 
 const MobileNavLink = ({
   href,
@@ -306,19 +320,27 @@ const MobileNavLink = ({
   );
 };
 
+// --- 3. NAVBAR CHÍNH ---
+
 export function Navbar() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   const [user, setUser] = useState<User | null>(null);
+
+  const authModal = useAuthModal();
+  const handleAuth = () => {
+    return authModal.onOpen();
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await userApi.getUserById("user_admin");
-        setUser(res?.data || null);
+        // Gọi API lấy thông tin người dùng hiện tại (dựa trên Cookie)
+        const res = await authApi.getProfile();
+        // Ép kiểu dữ liệu trả về cho khớp với State
+        setUser(res.data as unknown as User);
       } catch (error) {
-        console.error("Lỗi khi lấy user:", error);
+        // Nếu lỗi (401 Unauthorized), coi như chưa đăng nhập
         setUser(null);
       }
     };
@@ -326,8 +348,9 @@ export function Navbar() {
     fetchUser();
   }, []);
 
-  const isAdmin = user?.email === "demo@soundcloud.com";
+  const isAdmin = user?.email === "demo@soundcloud.com"; // Logic admin tạm thời
 
+  // Tạo ký tự đầu tên cho Avatar fallback
   const userInitials = user?.name
     ? user.name
         .split(" ")
@@ -380,7 +403,6 @@ export function Navbar() {
 
           {/* === RIGHT: Actions & User Menu === */}
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            {/* Nút chuyển đổi Dark Mode */}
             <ThemeToggle />
 
             {user ? (
@@ -393,7 +415,6 @@ export function Navbar() {
                   Try Artist Pro
                 </BaseButton>
 
-                {/* Ẩn bớt link For Artists trên màn hình nhỏ */}
                 <BaseButton
                   onClick={() => router.push("/artists")}
                   variant="link"
@@ -402,57 +423,29 @@ export function Navbar() {
                   For Artists
                 </BaseButton>
 
+                {/* Dropdown User Info */}
                 <UserDropdown
                   user={user}
                   userInitials={userInitials}
                   isAdmin={isAdmin}
                   router={router}
                 />
-
-                <div className="hidden sm:flex items-center gap-1">
-                  <BaseButton
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => router.push("/notifications")}
-                    aria-label="Notifications"
-                  >
-                    <Bell className="h-5 w-5" />
-                  </BaseButton>
-                  <BaseButton
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => router.push("/messages")}
-                    aria-label="Messages"
-                  >
-                    <MessageSquare className="h-5 w-5" />
-                  </BaseButton>
-                  <BaseButton
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => router.push("/more")}
-                    aria-label="More options"
-                  >
-                    <MoreHorizontal className="h-5 w-5" />
-                  </BaseButton>
-                </div>
               </>
             ) : (
               <>
                 <BaseButton
-                  onClick={() => router.push("/auth/signin")}
+                  onClick={handleAuth}
                   variant="ghost"
                   className="hidden sm:flex"
                 >
                   Sign In
                 </BaseButton>
                 <BaseButton
-                  onClick={() => router.push("/auth/signup")}
+                  onClick={handleAuth}
                   variant="primary"
                 >
                   Create account
                 </BaseButton>
-
-                {/* Mobile only sign-in/up logic if needed */}
               </>
             )}
 
@@ -477,7 +470,6 @@ export function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden bg-white border-t border-gray-200 dark:bg-[#1a1a1a] dark:border-gray-800 shadow-xl">
           <div className="px-4 pt-2 pb-3 space-y-1 sm:px-3">
-            {/* Mobile Search */}
             <div className="mb-4 relative">
               <BaseInput
                 type="search"
@@ -515,26 +507,6 @@ export function Navbar() {
             >
               Upload
             </MobileNavLink>
-
-            {user && (
-              <>
-                <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-                <MobileNavLink
-                  href="/notifications"
-                  icon={<Bell className="h-4 w-4" />}
-                  onClick={closeMobileMenu}
-                >
-                  Notifications
-                </MobileNavLink>
-                <MobileNavLink
-                  href="/messages"
-                  icon={<MessageSquare className="h-4 w-4" />}
-                  onClick={closeMobileMenu}
-                >
-                  Messages
-                </MobileNavLink>
-              </>
-            )}
 
             {!user && (
               <>
