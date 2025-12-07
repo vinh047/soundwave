@@ -43,6 +43,7 @@ const trackApi = {
         include: { track: { include: { user: true } } };
       }>[]
     >(`/tracks/recent`),
+    
 };
 
 export default trackApi;

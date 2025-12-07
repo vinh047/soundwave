@@ -28,6 +28,26 @@ export class AuthController {
     private configService: ConfigService,
   ) {}
 
+  // Cấu hình chung cho Cookie Access Token (ngắn hạn)
+  private getAccessTokenCookieOptions() {
+    return {
+      httpOnly: true, // Tốt nhất là true để tránh XSS. Nếu Client Component cần đọc JS thì để false (không khuyến khích)
+      secure: false, // Để true nếu chạy https (production)
+      sameSite: 'lax' as const,
+      maxAge: 15 * 60 * 1000, // Ví dụ: 15 phút (khớp với thời gian hết hạn của accessToken)
+    };
+  }
+
+  // Cấu hình chung cho Cookie Refresh Token (dài hạn)
+  private getRefreshTokenCookieOptions() {
+    return {
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax' as const,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
+    };
+  }
+
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('authenticate')
@@ -42,12 +62,17 @@ export class AuthController {
     );
 
     if (result.action === 'LOGIN_SUCCESS') {
-      res.cookie('refresh_token', result.refreshToken, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+      res.cookie(
+        'refresh_token',
+        result.refreshToken,
+        this.getRefreshTokenCookieOptions(),
+      );
+
+      res.cookie(
+        'access_token',
+        result.accessToken,
+        this.getAccessTokenCookieOptions(),
+      );
 
       return {
         accessToken: result.accessToken,
@@ -67,7 +92,6 @@ export class AuthController {
     }
   }
 
-  // 💡 ENDPOINT MỚI: Xử lý link xác thực
   @Public()
   @Get('verify-email')
   async verifyEmail(
@@ -83,12 +107,18 @@ export class AuthController {
       const verificationResult = await this.authService.verifyEmailToken(token);
 
       // 2. Set Refresh Token vào HttpOnly Cookie
-      res.cookie('refresh_token', verificationResult.tokens.refreshToken, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+      res.cookie(
+        'refresh_token',
+        verificationResult.tokens.refreshToken,
+        this.getRefreshTokenCookieOptions(),
+      );
+
+      // 2.1. Set access token
+      res.cookie(
+        'access_token',
+        verificationResult.tokens.accessToken,
+        this.getAccessTokenCookieOptions(),
+      );
 
       // 3. Trả về trang chủ/stream của Frontend và đính kèm Access Token
       // SỬ DỤNG FE_URL: Chuyển hướng trình duyệt
@@ -151,12 +181,17 @@ export class AuthController {
       const result = await this.authService.refreshTokens(refreshToken);
 
       // 3. (QUAN TRỌNG) Set lại refresh token mới (nếu bạn dùng xoay vòng)
-      res.cookie('refresh_token', result.tokens.refreshToken, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+      res.cookie(
+        'refresh_token',
+        result.tokens.refreshToken,
+        this.getRefreshTokenCookieOptions(),
+      );
+
+      res.cookie(
+        'access_token',
+        result.tokens.accessToken,
+        this.getAccessTokenCookieOptions(),
+      );
 
       // 4. Trả về accessToken và user cho FE
       return {
@@ -165,11 +200,8 @@ export class AuthController {
       };
     } catch (e) {
       // Nếu refresh token không hợp lệ -> Xóa cookie
-      res.clearCookie('refresh_token', {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-      });
+      res.clearCookie('refresh_token', { httpOnly: true, sameSite: 'lax' });
+      res.clearCookie('access_token', { httpOnly: true, sameSite: 'lax' });
       throw new UnauthorizedException(
         'Refresh token không hợp lệ hoặc đã hết hạn.',
       );
@@ -180,11 +212,8 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('refresh_token', {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-    });
+    res.clearCookie('refresh_token', { httpOnly: true, sameSite: 'lax' });
+    res.clearCookie('access_token', { httpOnly: true, sameSite: 'lax' });
 
     return { message: 'Đã đăng xuất thành công.' };
   }
@@ -212,12 +241,16 @@ export class AuthController {
       const user = req.user as any;
       const tokens = await this.authService.login(user);
 
-      res.cookie('refresh_token', tokens.refreshToken, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+      res.cookie(
+        'refresh_token',
+        tokens.refreshToken,
+        this.getRefreshTokenCookieOptions(),
+      );
+      res.cookie(
+        'access_token',
+        tokens.accessToken,
+        this.getAccessTokenCookieOptions(),
+      );
 
       // Chuyển hướng về FE (trang home) với cờ thành công
       res.redirect(`${feUrl}/home`);
