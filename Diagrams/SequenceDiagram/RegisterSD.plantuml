@@ -27,12 +27,13 @@ else Thông tin hợp lệ
     alt Đăng ký thành công
         Controller --> View: Thông báo "Đăng ký thành công"
         View --> View: Tắt form đăng ký
+        View --> User: Hiển thị thông báo
         View --> View: Chuyển sang giao diện Đăng Nhập
     else Đăng ký thất bại
         Controller --> View: Thông báo "Đăng ký thất bại, vui lòng thử lại"
+        View --> User: Hiển thị thông báo
     end
     deactivate Controller
-    View --> User: Hiển thị thông báo
 end
 
 deactivate View

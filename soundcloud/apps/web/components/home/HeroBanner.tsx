@@ -9,7 +9,15 @@ import type { Swiper as SwiperInstance } from "swiper";
 
 import "swiper/css";
 
-const slides = [
+type Slide = {
+  image: string;
+  title: string[];
+  description: string;
+  button1: { text: string; variant: "light" | "dark" };
+  button2?: { text: string; variant: "light" | "dark" }; // optional
+};
+
+const slides: Slide[] = [
   {
     image: "/images/istockphoto-2161509311-612x612.jpg",
     title: ["Discover.", "Get Discovered."],
@@ -23,7 +31,7 @@ const slides = [
     description:
       "From bedrooms and broom closets to studios and stadiums,\nSoundCloud is where you define what's next in music. Just hit upload.",
     button1: { text: "Upload", variant: "light" as const },
-    button2: { text: "Explore Artist Pro", variant: "dark" as const },
+    // button2: { text: "Explore Artist Pro", variant: "dark" as const },
   },
   {
     image: "/images/istockphoto-472328791-612x612.jpg",
@@ -31,11 +39,15 @@ const slides = [
     description:
       "Discover 400 million songs, remixes and DJ sets: every chart-topping track...",
     button1: { text: "Upload", variant: "light" as const },
-    button2: { text: "Explore Go+", variant: "dark" as const },
+    // button2: { text: "Explore Go+", variant: "dark" as const },
   },
 ];
 
-export default function HeroSliderWithImage() {
+export default function HeroSliderWithImage({
+  handleAuth,
+}: {
+  handleAuth: () => void;
+}) {
   // State để lưu instance của Swiper
   const [swiperInstance, setSwiperInstance] = useState<SwiperInstance | null>(
     null
@@ -102,7 +114,10 @@ export default function HeroSliderWithImage() {
                   {/* Các nút bấm */}
                   <div className="flex gap-4">
                     {slide.button1 && (
-                      <Button {...{ [slide.button1.variant]: true }}>
+                      <Button
+                        {...{ [slide.button1.variant]: true }}
+                        onClick={handleAuth}
+                      >
                         {slide.button1.text}
                       </Button>
                     )}

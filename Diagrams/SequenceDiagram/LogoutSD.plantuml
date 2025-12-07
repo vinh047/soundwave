@@ -19,7 +19,7 @@ Service --> Controller: Trả về kết quả đăng xuất
 deactivate Service
 Controller --> View: Thông báo "Đăng xuất thành công"
 deactivate Controller
+View --> View: Chuyển sang giao diện Khách
 View --> User: Hiển thị thông báo
-View --> User: Chuyển sang giao diện Khách
 deactivate View
 @enduml

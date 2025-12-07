@@ -37,3 +37,20 @@ input[type="password"]::-ms-reveal {
   position: absolute; /* Đặt ra ngoài khu vực nhìn thấy */
   right: 0;
 }
+
+
+@keyframes modalOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
+/* class dùng để animation đóng */
+.animate-modal-out {
+  animation: modalOut 240ms ease-in forwards;
+}
