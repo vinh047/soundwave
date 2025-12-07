@@ -236,7 +236,7 @@ const UserDropdown = ({
 
               <DropdownItem
                 onClick={() => {
-                  router.push("/profile");
+                  router.push(`/artist/${user.id}`);
                   setIsOpen(false);
                 }}
                 icon={<UserIcon className="h-4 w-4" />}

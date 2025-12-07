@@ -13,30 +13,52 @@ import {
   ParseIntPipe,
   UseGuards,
   Req,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
 import { TracksService } from './tracks.service';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { Public } from 'src/decorator/customize';
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
-// import { JwtAuthGuard } from '../auth/jwt-auth.guard'; // <-- Ví dụ
-// import { AuthUser } from '../auth/auth-user.decorator'; // <-- Ví dụ
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @Controller('tracks')
 export class TracksController {
   constructor(private readonly tracksService: TracksService) {}
 
   @Post()
-  // @UseGuards(JwtAuthGuard) // <-- Bạn sẽ cần bảo vệ route này
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'audio', maxCount: 1 },
+      { name: 'image', maxCount: 1 },
+    ]),
+  )
   create(
     @Body() createTrackDto: CreateTrackDto,
-    // @AuthUser('id') userId: string, // <-- Lấy userId từ token
+    @Req() req,
+    @UploadedFiles()
+    files: { audio?: Express.Multer.File[]; image?: Express.Multer.File[] },
   ) {
-    // Tạm thời hardcode userId nếu chưa có Auth
-    const FAKE_USER_ID = 'your-fake-user-id'; // <-- THAY THẾ KHI CÓ AUTH
+    const userId = req.user.id;
 
-    // SỬA LỖI 2: Truyền userId vào service
-    return this.tracksService.create(createTrackDto, FAKE_USER_ID);
+    // 4. Kiểm tra file Audio bắt buộc
+    if (!files || !files.audio || files.audio.length === 0) {
+      throw new BadRequestException('File âm thanh là bắt buộc');
+    }
+
+    const audioFile = files.audio[0];
+    const imageFile = files.image ? files.image[0] : undefined;
+
+    // 5. Truyền file vào Service để xử lý (Upload lên Cloud/Disk)
+    return this.tracksService.create(
+      createTrackDto,
+      userId,
+      audioFile,
+      imageFile,
+    );
   }
 
   @Public()

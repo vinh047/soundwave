@@ -1,37 +1,22 @@
-// apps/api/src/tracks/dto/create-track.dto.ts
-
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  IsInt,
-  IsBoolean,
-} from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateTrackDto {
-  // Dựa trên schema.prisma của bạn
-
+  @IsNotEmpty({ message: 'Tiêu đề không được để trống' })
   @IsString()
-  @IsNotEmpty()
-  title: string = '';
+  title!: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   description?: string;
 
-  @IsString()
   @IsOptional()
-  imagePath?: string;
-
   @IsString()
-  @IsNotEmpty()
-  audioPath: string = '';
-
-  @IsInt()
-  @IsOptional()
-  duration?: number;
+  artist?: string;
 
   @IsBoolean()
-  @IsOptional()
-  isPublic?: boolean;
+  @Transform(({ value }) => {
+    return value === 'true' || value === true;
+  })
+  isPublic: boolean = true; // Mặc định là true nếu không gửi lên
 }

@@ -12,6 +12,7 @@ import { UserModule } from './user/users.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
 import { LoggerMiddleware } from 'middleware/logger.middleware';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { LoggerMiddleware } from 'middleware/logger.middleware';
     AuthModule,
     UserModule,
     TracksModule,
+    CloudinaryModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

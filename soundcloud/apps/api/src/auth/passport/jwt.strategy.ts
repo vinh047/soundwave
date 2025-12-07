@@ -16,7 +16,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromExtractors([
         // Cách 1: Ưu tiên lấy từ Cookie
         (request: Request) => {
-          console.log('🔥 DEBUG COOKIES:', request.cookies);
           let token = null;
           if (request && request.cookies) {
             token = request.cookies['access_token'];

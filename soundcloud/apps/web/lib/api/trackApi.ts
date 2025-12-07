@@ -24,8 +24,12 @@ const trackApi = {
       `/tracks/${id}`
     ),
 
-  createTrack: (data: CreateTrackPayload) =>
-    axiosClient.post<TrackType>("/tracks", data),
+  uploadTrack: (data: FormData) =>
+    axiosClient.post<TrackType>("/tracks", data, {
+      headers: {
+        "Content-Type": "multipart/form-data", // Quan trọng khi upload file
+      },
+    }),
 
   updateTrack: (id: string, data: UpdateTrackPayload) =>
     axiosClient.patch<TrackType>(`/tracks/${id}`, data),
