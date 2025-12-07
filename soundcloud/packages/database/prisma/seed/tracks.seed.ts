@@ -9,7 +9,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Ambient Test 1",
       description: "Nhạc điện tử thử nghiệm nhẹ nhàng.",
       audioPath:
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/1018/300/300",
       duration: 280,
       userId: "user_artist1",
@@ -19,7 +19,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Lo-Fi Chill",
       description: "Nhạc Lo-Fi thư giãn, phù hợp học tập.",
       audioPath:
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/1025/300/300",
       duration: 295,
       userId: "user_artist1",
@@ -29,7 +29,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Epic Score",
       description: "Nhạc nền hoành tráng, mang tính điện ảnh.",
       audioPath:
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/10/300/300",
       duration: 310,
       userId: "user_artist2",
@@ -39,7 +39,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Smooth Jazz",
       description: "Một bản nhạc Jazz êm dịu.",
       audioPath:
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/1084/300/300",
       duration: 265,
       userId: "user_artist1",
@@ -49,7 +49,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Pop Demo Beat",
       description: "Nhạc Pop demo với nhịp điệu nhanh.",
       audioPath:
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/119/300/300",
       duration: 245,
       userId: "user_artist2",
@@ -59,7 +59,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Techno Groove",
       description: "Bản nhạc Techno năng lượng cao.",
       audioPath:
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/145/300/300",
       duration: 300,
       userId: "user_artist1",
@@ -79,7 +79,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Retro Synth",
       description: "Nhạc Synthwave gợi nhớ thập niên 80.",
       audioPath:
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/175/300/300",
       duration: 270,
       userId: "user_artist1",
@@ -89,7 +89,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Electro House",
       description: "Nhạc House với bassline mạnh mẽ.",
       audioPath:
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/191/300/300",
       duration: 340,
       userId: "user_artist2",
@@ -99,7 +99,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Cinematic Rise",
       description: "Nhạc kịch tính, tăng cường cảm xúc.",
       audioPath:
-        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
+        "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/201/300/300",
       duration: 285,
       userId: "user_artist1",
@@ -110,7 +110,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Mất Kết Nối",
       description:
         "Hit Vpop 2025 của Dương Domic, giai điệu hiện đại, cảm xúc mạnh mẽ.",
-      audioPath: "https://example.com/audio/matketnoi.mp3",
+      audioPath: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/301/300/300",
       duration: 240,
       userId: "user_artist1",
@@ -153,7 +153,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Dancing In The Dark",
       description:
         "Ca khúc của SOOBIN, mang phong cách pop điện tử, đang leo top BXH.",
-      audioPath: "https://example.com/audio/dancinginthedark.mp3",
+      audioPath: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/302/300/300",
       duration: 260,
       userId: "user_artist1",
@@ -190,7 +190,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Bắc Bling",
       description:
         "Hiện tượng âm nhạc lớn nhất năm 2025, phong cách trẻ trung, sôi động.",
-      audioPath: "https://example.com/audio/bacbling.mp3",
+      audioPath: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/303/300/300",
       duration: 230,
       userId: "user_artist1",
@@ -213,7 +213,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Em Xinh",
       description:
         "Ca khúc pop ballad ngọt ngào, gây sốt trên các nền tảng nghe nhạc.",
-      audioPath: "https://example.com/audio/emxinh.mp3",
+      audioPath: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/304/300/300",
       duration: 250,
       userId: "user_artist1",
@@ -230,7 +230,7 @@ export async function seedTracks(prisma: PrismaClient) {
       title: "Anh Trai",
       description:
         "Bản rap kết hợp cùng giai điệu bắt tai, được giới trẻ yêu thích.",
-      audioPath: "https://example.com/audio/anhtrai.mp3",
+      audioPath: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
       imagePath: "https://picsum.photos/id/305/300/300",
       duration: 270,
       userId: "user_artist1",

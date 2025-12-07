@@ -64,7 +64,7 @@ export class UsersService {
         tracks: {
           include: { user: true, likes: true, comments: true },
         },
-        playlists:true,
+        playlists: true,
         likes: true,
         reposts: true,
         reports: true,
@@ -141,5 +141,30 @@ export class UsersService {
     return await this.prisma.user.create({
       data: { email, hashedPassword, name },
     });
+  }
+
+  async getTrendingArtistsByRecentPlays(limit: number = 10) {
+    // Sử dụng $queryRaw để tối ưu hóa hiệu năng cho thống kê phức tạp
+    const result = await this.prisma.$queryRaw<any[]>`
+      SELECT 
+        u.id, 
+        u.name, 
+        u.image, 
+        CAST(COUNT(rl.id) AS INTEGER) as "recentPlays"
+      FROM "User" u
+      JOIN "Track" t ON t."userId" = u.id
+      JOIN "RecentListen" rl ON rl."trackId" = t.id
+      WHERE rl."lastPlayedAt" > NOW() - INTERVAL '7 days'
+      GROUP BY u.id, u.name, u.image
+      ORDER BY "recentPlays" DESC
+      LIMIT ${limit};
+    `;
+
+    // Map lại dữ liệu nếu cần thiết để khớp với Frontend
+    return result.map((artist) => ({
+      ...artist,
+      // Raw query thường trả về BigInt cho count, cần convert nếu cần
+      recentPlays: Number(artist.recentPlays),
+    }));
   }
 }

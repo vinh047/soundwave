@@ -48,6 +48,9 @@ const userApi = {
     axiosClient.get<{ method: string }>("/users/check-email", {
       params: { email },
     }),
+
+  getTrendingArtists: (limit: number = 5) =>
+    axiosClient.get<{ data: User[] }>(`/users/trending?limit=${limit}`),
 };
 
 export default userApi;
