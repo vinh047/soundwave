@@ -1,6 +1,6 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios"; // Bạn cần cài axios
+import axiosClient from "@/lib/api/apiClient"; 
 import { toast } from "sonner";
 import authApi from "@/lib/api/authApi";
 
@@ -8,7 +8,7 @@ interface AuthContextType {
   user: any | null;
   accessToken: string | null;
   isLoggedIn: boolean;
-  isLoading: boolean; // Rất quan trọng, để hiển thị loading
+  isLoading: boolean;
   login: (data: { accessToken: string; user: any }) => void;
   logout: () => void;
 }
@@ -20,24 +20,28 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<any | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Bắt đầu là true
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Hàm này sẽ được gọi khi trang tải LẦN ĐẦU
+  // --- 1. Check Login khi F5 trang ---
   useEffect(() => {
     const checkAuthOnLoad = async () => {
       try {
+        // Gọi API refresh. 
+        // Vì cookie "refresh_token" là HttpOnly, nó tự động được gửi đi.
+        // Không cần check localStorage.
         const response = await authApi.refresh();
 
-        // Nếu thành công (cookie hợp lệ) -> Đăng nhập
         const { accessToken, user } = response.data;
+        
+        // Cập nhật State để UI hiển thị đúng
         setAccessToken(accessToken);
         setUser(user);
-        localStorage.setItem("accessToken", accessToken);
+        
       } catch (error) {
-        console.log("Chưa đăng nhập.");
+        // Nếu refresh lỗi (cookie hết hạn hoặc không có cookie)
+        // Coi như chưa đăng nhập
         setUser(null);
         setAccessToken(null);
-        localStorage.removeItem("accessToken");
       } finally {
         setIsLoading(false);
       }
@@ -46,36 +50,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     checkAuthOnLoad();
   }, []);
 
+  // --- 2. Hàm Login (Gọi sau khi nhập email/pass thành công) ---
   const login = (data: { accessToken: string; user: any }) => {
+    // Backend đã set Cookie trong response header rồi
     setAccessToken(data.accessToken);
     setUser(data.user);
-    localStorage.setItem("accessToken", data.accessToken);
   };
 
+  // --- 3. Hàm Logout ---
   const logout = async () => {
     try {
-      // 1. Gọi API backend
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/logout`,
-        {},
-        { withCredentials: true }
-      );
+      // Gọi API Logout để Backend xóa Cookies (Access + Refresh)
+      await axiosClient.post("/auth/logout");
 
-      toast.success(response.data.message || "Đã đăng xuất!");
+      toast.success("Đã đăng xuất!");
     } catch (error) {
-      toast.error("Đăng xuất thất bại.");
+      console.error("Lỗi đăng xuất", error);
     } finally {
-      // 4. Dọn dẹp state
+      // Xóa State React
       setUser(null);
       setAccessToken(null);
-      localStorage.removeItem("accessToken");
+      
+      // Tùy chọn: Refresh trang hoặc đẩy về login
+      // window.location.href = "/login";
     }
   };
 
   const value = {
     user,
     accessToken,
-    isLoggedIn: !!user,
+    isLoggedIn: !!user, // Hoặc !!accessToken
     isLoading,
     login,
     logout,

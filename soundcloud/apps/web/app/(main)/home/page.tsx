@@ -3,6 +3,7 @@ import { Button } from "@/components/ui2/Button";
 import trackApi from "@/lib/api/trackApi";
 import { Footer } from "./_components/Footer";
 import Image from "next/image";
+import { RecentTracks } from "./_components/RecentTracks";
 
 export default async function HomePage({
   searchParams,
@@ -15,6 +16,8 @@ export default async function HomePage({
     limit: 10,
   });
   const data = initTracks.data.data;
+  const trendingTracks = (await trackApi.getTrendingTracks(10)).data;
+
   return (
     <div className="bg-white dark:bg-[#121212] transition-colors duration-300">
       <div className=" grid grid-cols-1 lg:grid-cols-[1fr_350px] px-4 md:px-20 gap-8 ">
@@ -42,12 +45,13 @@ export default async function HomePage({
             </p>
           </div>
 
+          <RecentTracks />
+
           <section className="mb-12">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Just dropped
               </h2>
-              <Button variant="outline">Xem tất cả</Button>
             </div>
 
             <TrackList tracks={data} />
@@ -57,7 +61,7 @@ export default async function HomePage({
             <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
               Trending now
             </h2>
-            <TrackList tracks={data} />
+            <TrackList tracks={trendingTracks} />
           </section>
         </div>
         <div className="hidden lg:block border-l border-gray-200 dark:border-gray-800 pl-8 py-8">

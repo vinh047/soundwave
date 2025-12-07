@@ -2,6 +2,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Request } from 'express';
 
 interface UserPayload {
   id: string;
@@ -12,14 +13,25 @@ interface UserPayload {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private configService: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        // Cách 1: Ưu tiên lấy từ Cookie
+        (request: Request) => {
+          console.log('🔥 DEBUG COOKIES:', request.cookies);
+          let token = null;
+          if (request && request.cookies) {
+            token = request.cookies['access_token'];
+          }
+          return token;
+        },
+        // Cách 2: (Tùy chọn) Vẫn giữ lại lấy từ Header để test Postman cho dễ
+        // ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       ignoreExpiration: false,
       secretOrKey: configService.get('JWT_ACCESS_SECRET')!,
     });
   }
 
   async validate(payload: any): Promise<UserPayload> {
-    // check banned
     return { id: payload.sub, email: payload.email };
   }
 }
