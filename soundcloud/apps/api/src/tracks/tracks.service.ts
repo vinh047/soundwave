@@ -120,7 +120,7 @@ export class TracksService {
           // Làm trơn số liệu một chút
           let normalized = max / 32767;
           if (normalized > 1) normalized = 1;
-          samples.push(Number(normalized.toFixed(4)));
+          samples.push(normalized || 0); // Tránh NaN
         }
 
         resolve(samples);
@@ -324,26 +324,55 @@ export class TracksService {
     return items.slice(0, limit).map((i) => i.track);
   }
 
+  /**
+   * 1. GHI NHẬN LƯỢT NGHE
+   * - Luôn tăng playCount của Track (+1).
+   * - Nếu có userId (đã đăng nhập) -> Lưu vào bảng RecentListen.
+   */
   async recordListen(userId: string | null, trackId: string) {
-    if (!userId) {
-      // anonymous: you can still insert Play log (if using Play), or ignore
-      return;
+    const track = await this.prisma.track.findUnique({
+      where: { id: trackId },
+    });
+    if (!track) {
+      throw new NotFoundException('Bài hát không tồn tại');
     }
 
-    // Upsert RecentListen
-    await this.prisma.recentListen.upsert({
-      where: { userId_trackId: { userId, trackId } }, // needs @@unique([userId, trackId]) and a compound name
-      update: {
-        lastPlayedAt: new Date(),
-        playCount: { increment: 1 as any }, // Prisma numeric increment syntax may vary
-      },
-      create: {
-        userId,
-        trackId,
-        lastPlayedAt: new Date(),
-        playCount: 1,
-      },
+    // Task 1: Tăng playCount cho Track
+    const incrementTrackView = this.prisma.track.update({
+      where: { id: trackId },
+      data: { playCount: { increment: 1 } },
     });
+
+    // Task 2: Nếu là User -> Lưu lịch sử nghe (Upsert)
+    if (userId) {
+      const updateHistory = this.prisma.recentListen.upsert({
+        where: {
+          // Khóa unique kết hợp [userId, trackId] trong schema
+          userId_trackId: {
+            userId: userId,
+            trackId: trackId,
+          },
+        },
+        create: {
+          userId: userId,
+          trackId: trackId,
+          playCount: 1,
+          lastPlayedAt: new Date(),
+        },
+        update: {
+          lastPlayedAt: new Date(), // Cập nhật thời gian mới nhất
+          playCount: { increment: 1 }, // Tăng số lần user này nghe bài này
+        },
+      });
+
+      // Chạy cả 2 lệnh trong 1 transaction (đảm bảo tính toàn vẹn)
+      await this.prisma.$transaction([incrementTrackView, updateHistory]);
+    } else {
+      // Khách vãng lai -> Chỉ tăng view bài hát
+      await incrementTrackView;
+    }
+
+    return { success: true };
   }
 
   async getUserRecentTracks(
