@@ -4,6 +4,7 @@ import { UpdateTrackDto } from './dto/update-track.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import type { Prisma, Track, User } from '@repo/database';
 import { PaginatedResult } from '../dto/PaginatedResult';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 export type TrackWithStats = Prisma.TrackGetPayload<{
   include: {
@@ -20,7 +21,10 @@ export type TrackWithStats = Prisma.TrackGetPayload<{
 
 @Injectable()
 export class TracksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cloudinaryService: CloudinaryService,
+  ) {}
 
   async findAll(
     page: number = 1,
@@ -53,14 +57,37 @@ export class TracksService {
     };
   }
 
-  async create(createTrackDto: CreateTrackDto, userId: string): Promise<Track> {
-    const data = { ...createTrackDto, user: { connect: { id: userId } } };
+  async create(
+    dto: CreateTrackDto,
+    userId: string,
+    audioFile: Express.Multer.File,
+    imageFile?: Express.Multer.File,
+  ) {
+    const audioResult = await this.cloudinaryService.uploadFile(audioFile);
+    const audioUrl = audioResult.secure_url;
+
+    let imageUrl = null;
+    if (imageFile) {
+      const imageResult = await this.cloudinaryService.uploadFile(imageFile);
+      imageUrl = imageResult.secure_url;
+    }
+
+    const { title, description, isPublic } = dto;
+
     return await this.prisma.track.create({
-      data,
+      data: {
+        title,
+        description,
+        isPublic,
+
+        audioPath: audioUrl,
+        imagePath: imageUrl,
+        user: { connect: { id: userId } },
+      },
       include: { user: true },
     });
   }
-
+  
   async findOne(id: string): Promise<Track> {
     try {
       await this.prisma.track.update({

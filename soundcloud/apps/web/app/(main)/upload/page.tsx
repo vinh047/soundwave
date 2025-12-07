@@ -10,18 +10,26 @@ import { Input } from "@/components/ui2/Input";
 import { Textarea } from "@/components/ui2/Textarea";
 import { Card } from "../../../components/ui2/Card";
 import { Toggle } from "../../../components/ui2/Toggle";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import trackApi from "@/lib/api/trackApi";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function UploadPage() {
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [description, setDescription] = useState("");
   const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [, setCoverFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [, setUploadSuccess] = useState(false);
   const [isPublic, setIsPublic] = useState(true);
   const [allowDownload, setAllowDownload] = useState(false);
+
+  const router = useRouter();
+
+  const { user } = useAuth();
 
   const audioInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -62,29 +70,46 @@ export default function UploadPage() {
   // Giả lập upload
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!audioFile || !title.trim()) return;
+    if (!audioFile || !title.trim()) {
+      toast.error("Vui lòng nhập tiêu đề và chọn file nhạc");
+      return;
+    }
 
     setIsUploading(true);
     setUploadSuccess(false);
 
-    // Giả lập thời gian upload
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    try {
+      // 1. Tạo FormData
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("artist", artist); // Nếu backend cần
+      formData.append("isPublic", String(isPublic));
 
-    setIsUploading(false);
-    setUploadSuccess(true);
+      // File nhạc (Bắt buộc)
+      formData.append("audio", audioFile);
 
-    // Reset form sau 2s
-    setTimeout(() => {
-      setTitle("");
-      setArtist("");
-      setDescription("");
-      setAudioFile(null);
-      setCoverFile(null);
-      setCoverPreview(null);
-      setUploadSuccess(false);
-      if (audioInputRef.current) audioInputRef.current.value = "";
-      if (coverInputRef.current) coverInputRef.current.value = "";
-    }, 2000);
+      // Ảnh bìa (Tùy chọn)
+      if (coverFile) {
+        formData.append("image", coverFile);
+      }
+
+      // 2. Gọi API
+      await trackApi.uploadTrack(formData);
+
+      setUploadSuccess(true);
+      toast.success("Tải lên thành công!");
+
+      // 3. Chuyển hướng về trang bài hát hoặc trang cá nhân sau 1s
+      setTimeout(() => {
+        router.push(`/artist/${user.id}`);
+      }, 1000);
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Có lỗi xảy ra khi tải lên.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -185,6 +210,8 @@ export default function UploadPage() {
                         src={coverPreview}
                         alt="Cover preview"
                         className="w-full h-full object-cover"
+                        fill
+                        unoptimized
                       />
                       <Button
                         type="button"

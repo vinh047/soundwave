@@ -23,6 +23,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "picsum.photos", // Domain ảnh mẫu bạn đang dùng
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com', 
+      },
     ],
   },
 };
