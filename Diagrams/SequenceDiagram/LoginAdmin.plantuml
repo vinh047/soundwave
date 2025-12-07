@@ -28,7 +28,7 @@ else Thông tin hợp lệ
         Controller --> View: Thông báo "Đăng nhập thành công"
         View --> View: Tắt form đăng nhập
         View --> Admin: Hiển thị thông báo
-        View --> Admin: Chuyển sang giao diện Admin
+        View --> View: Chuyển sang giao diện Admin
     else Đăng nhập thất bại
         Controller --> View: Thông báo "Sai email hoặc mật khẩu, vui lòng thử lại"
         View --> Admin: Hiển thị thông báo
