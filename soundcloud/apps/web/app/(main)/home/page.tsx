@@ -3,6 +3,7 @@ import { Button } from "@/components/ui2/Button";
 import trackApi from "@/lib/api/trackApi";
 import { Footer } from "./_components/Footer";
 import Image from "next/image";
+import { RecentTracks } from "./_components/RecentTracks";
 
 export default async function HomePage({
   searchParams,
@@ -16,8 +17,6 @@ export default async function HomePage({
   });
   const data = initTracks.data.data;
   const trendingTracks = (await trackApi.getTrendingTracks(10)).data;
-  // const recentTracksRes = (await trackApi.getRecentTracks()).data;
-  // console.log("recentTracksRes: ", recentTracksRes)
 
   return (
     <div className="bg-white dark:bg-[#121212] transition-colors duration-300">
@@ -46,12 +45,13 @@ export default async function HomePage({
             </p>
           </div>
 
+          <RecentTracks />
+
           <section className="mb-12">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Just dropped
               </h2>
-              <Button variant="outline">Xem tất cả</Button>
             </div>
 
             <TrackList tracks={data} />

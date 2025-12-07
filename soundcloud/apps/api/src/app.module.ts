@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -11,6 +11,7 @@ import { TracksModule } from './tracks/tracks.module';
 import { UserModule } from './user/users.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
+import { LoggerMiddleware } from 'middleware/logger.middleware';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
         transport: {
           host: configService.get('MAIL_HOST'),
           port: configService.get('MAIL_PORT'),
-          secure: configService.get('MAIL_SECURE') === 'true', 
+          secure: configService.get('MAIL_SECURE') === 'true',
           auth: {
             user: configService.get('MAIL_USER'),
             pass: configService.get('MAIL_PASSWORD'),
@@ -57,4 +58,8 @@ import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*'); // áp dụng cho tất cả route
+  }
+}
