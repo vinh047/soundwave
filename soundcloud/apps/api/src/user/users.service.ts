@@ -184,7 +184,7 @@ export class UsersService {
         likes: true,
       },
     });
-
+  }
   async getTrendingArtistsByRecentPlays(limit: number = 10) {
     // Sử dụng $queryRaw để tối ưu hóa hiệu năng cho thống kê phức tạp
     const result = await this.prisma.$queryRaw<any[]>`
