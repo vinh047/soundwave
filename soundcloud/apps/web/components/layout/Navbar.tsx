@@ -23,6 +23,13 @@ export function Navbar() {
             <span className="hidden md:block font-bold text-xl">SoundCloud</span>
           </Link>
 
+          {/* Navigation */}
+          <nav className="hidden md:flex items-center gap-6 ml-8">
+            <Link href="/home" className="text-sm font-medium text-gray-300 hover:text-white">Home</Link>
+            <Link href="/feed" className="text-sm font-medium text-gray-300 hover:text-white">Feed</Link>
+            <Link href="/library" className="text-sm font-medium text-gray-300 hover:text-white">Library</Link>
+          </nav>
+
           {/* Search */}
           <div className="flex-1 max-w-xl mx-4 hidden md:block">
             <div className="relative">
