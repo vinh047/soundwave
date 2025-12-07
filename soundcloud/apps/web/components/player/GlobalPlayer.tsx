@@ -198,8 +198,8 @@ export function GlobalPlayer() {
       <PlayerControls
         isPlaying={isPlaying}
         onPlayPause={toggle}
-        onPrev={() => {}}
-        onNext={() => {}}
+        onPrev={() => { }}
+        onNext={() => { }}
         volume={volume}
         onVolumeChange={setVolume}
       />
