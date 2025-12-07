@@ -64,6 +64,27 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @Public()
+  @Get(':id/playlists')
+  async getPlaylists(@Param('id') id: string) {
+    const data = await this.usersService.findPlaylistsByUser(id);
+    return { data };
+  }
+
+  @Public()
+  @Get(':id/reposts')
+  async getReposts(@Param('id') id: string) {
+    const data = await this.usersService.findRepostByUser(id);
+    return { data };
+  }
+
+  @Public()
+  @Get(':id/popular-tracks')
+  async getPopularTracks(@Param('id') id: string) {
+    const data = await this.usersService.findPopularTracksByUser(id);
+    return { data };
+  }
+
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
