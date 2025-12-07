@@ -11,17 +11,26 @@ interface TrackPageProps {
   params: Promise<{ id: string }>;
 }
 
+import { notFound } from "next/navigation";
+
 export default async function TrackPage({ params }: TrackPageProps) {
   const { id } = await params;
-  const res = await trackApi.getTrackById(id);
-  const track: Prisma.TrackGetPayload<{
+  let track: Prisma.TrackGetPayload<{
     include: {
       user: true;
       likes: true;
       reposts: true;
       comments: { include: { user: true } };
     };
-  }> = res.data;
+  }>;
+
+  try {
+    const res = await trackApi.getTrackById(id);
+    track = res.data;
+  } catch (error) {
+    console.error("Error fetching track:", error);
+    notFound();
+  }
 
   return (
     <article className=" w-full transition-colors duration-300 bg-gray-50 text-gray-900 dark:bg-linear-to-b dark:from-[#0a0a0f] dark:to-[#0f0f1a] dark:text-white">

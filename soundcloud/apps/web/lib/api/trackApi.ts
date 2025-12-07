@@ -60,11 +60,9 @@ const trackApi = {
     >(`/tracks/trending?limit=${limit}`),
 
   getRecentTracks: () =>
-    axiosClient.get<
-      Prisma.RecentListenGetPayload<{
-        include: { track: { include: { user: true } } };
-      }>[]
-    >(`/tracks/recent`),
+    axiosClient.get<Prisma.TrackGetPayload<{ include: { user: true } }>[]>(
+      `/tracks/recent`
+    ),
 
   // --- SOCIAL ---
   likeTrack: (id: string) => axiosClient.post(`/tracks/${id}/like`),

@@ -67,11 +67,27 @@ export class UsersService {
         playlists: {
           include: { tracks: true },
         },
-        likes: true,
+        likes: {
+          include: {
+            track: {
+              include: { user: true },
+            },
+          },
+        },
         reposts: true,
         reports: true,
         comments: true,
-        following: true,
+        following: {
+          include: {
+            following: {
+              include: {
+                _count: {
+                  select: { followers: true },
+                },
+              },
+            },
+          },
+        },
         followers: true,
         profile: {
           include: {
