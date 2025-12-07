@@ -3,9 +3,11 @@ import { seedUsers } from "./users.seed";
 import { seedWebsiteTypes } from "./websiteTypes.seed";
 import { seedTracks } from "./tracks.seed";
 import { seedPlaylists } from "./playlists.seed";
-import { seedReportReasons } from "./reportReasons.seed";
+// import { seedReportReasons } from "./reportReasons.seed";
 import { seedProfiles } from "./profiles.seed";
-
+import { seedInteractions } from "./seedInteractions";
+import { seedWebsiteProfiles } from "./websiteProfiles.seed";
+import { seedPlaylistTracks } from "./playlistTracks.seed";
 
 const prisma = new PrismaClient();
 
@@ -17,13 +19,16 @@ async function main() {
   await seedWebsiteTypes(prisma);
   await seedTracks(prisma);
   await seedPlaylists(prisma);
-  await seedReportReasons(prisma);
+  // await seedReportReasons(prisma);
+  await seedInteractions(prisma);
+  await seedPlaylistTracks(prisma);
+  await seedWebsiteProfiles(prisma);
 
   console.log("Seeding complete!");
 }
 
 main()
-  .catch((e) => { 
+  .catch((e) => {
     console.error("❌ Error seeding database:", e);
     process.exit(1);
   })

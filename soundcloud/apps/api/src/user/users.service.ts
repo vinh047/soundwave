@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import type { User } from '@repo/database';
+import type { Playlist, Repost, Track, User } from '@repo/database';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
@@ -64,14 +64,20 @@ export class UsersService {
         tracks: {
           include: { user: true, likes: true, comments: true },
         },
-        playlists:true,
+        playlists: {
+          include: { tracks: true },
+        },
         likes: true,
         reposts: true,
         reports: true,
         comments: true,
         following: true,
         followers: true,
-        profile: true,
+        profile: {
+          include: {
+            websiteProfiles: true,
+          },
+        },
       },
     });
 
@@ -90,9 +96,8 @@ export class UsersService {
       });
       return updatedUser as User;
     } catch (error) {
-      // if (error.code === 'P2025') {
       throw new NotFoundException(`User with ID "${id}" not found`);
-      // }
+
       throw error;
     }
   }
@@ -103,9 +108,8 @@ export class UsersService {
         where: { id },
       });
     } catch (error) {
-      // if (error.code === 'P2025') {
       throw new NotFoundException(`User with ID "${id}" not found`);
-      // }
+
       throw error;
     }
   }
@@ -140,6 +144,45 @@ export class UsersService {
     const hashedPassword = await bcrypt.hash(password, 10);
     return await this.prisma.user.create({
       data: { email, hashedPassword, name },
+    });
+  }
+  async findPlaylistsByUser(userId: string): Promise<Playlist[]> {
+    return this.prisma.playlist.findMany({
+      where: { userId, isPublic: true },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        tracks: { take: 1, include: { track: true } },
+      },
+    });
+  }
+
+  async findRepostByUser(userId: string): Promise<Repost[]> {
+    return this.prisma.repost.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        track: {
+          include: { user: true },
+        },
+      },
+    });
+  }
+
+  async findPopularTracksByUser(userId: string): Promise<Track[]> {
+    return this.prisma.track.findMany({
+      where: {
+        userId,
+        isPublic: true,
+        isBanned: false,
+      },
+      orderBy: {
+        playCount: 'desc',
+      },
+      take: 10,
+      include: {
+        user: true,
+        likes: true,
+      },
     });
   }
 }
