@@ -1,40 +1,33 @@
 "use client";
 
-import { List } from "lucide-react";
+import { List, Play } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import { usePlayerStore } from "@/store/playerStore";
+import { cn } from "@/lib/utils";
+
+function formatDuration(seconds: number) {
+  if (!seconds) return "--:--";
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+}
+
+const PlayingIndicator = () => (
+  <div className="flex items-end gap-[2px] h-3 w-3 justify-center">
+    <div className="w-[3px] bg-orange-500 animate-[bounce_1s_infinite] h-full" />
+    <div className="w-[3px] bg-orange-500 animate-[bounce_1.2s_infinite] h-[60%]" />
+    <div className="w-[3px] bg-orange-500 animate-[bounce_0.8s_infinite] h-[80%]" />
+  </div>
+);
 
 export default function UpNext() {
-  const [autoplay, setAutoplay] = useState(true);
-
-  // Dữ liệu giả định (đã rút gọn để demo)
-  const queue = [
-    {
-      id: "1",
-      title: "Neon Cruise",
-      artist: "@synthwavekid",
-      duration: "3:42",
-      cover: "/images/istockphoto-161839324-612x612.jpg",
-    },
-    {
-      id: "2",
-      title: "Retro Sunset",
-      artist: "@kato_synth",
-      duration: "4:15",
-      cover: "/images/istockphoto-161839324-612x612.jpg",
-    },
-    {
-      id: "3",
-      title: "Night City",
-      artist: "@cyber_punk",
-      duration: "2:50",
-      cover: "/images/istockphoto-161839324-612x612.jpg",
-    },
-  ];
+  const { queue, currentTrack, play, autoplay, toggleAutoplay } =
+    usePlayerStore();
 
   return (
     <div
-      className="p-5 h-full overflow-auto scrollbar-hide rounded-xl border shadow-sm
+      className="p-5 h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-white/10 rounded-xl border shadow-sm
       bg-white border-gray-200
       dark:bg-white/5 dark:border-white/5 dark:shadow-none dark:backdrop-blur-xl"
     >
@@ -43,37 +36,80 @@ export default function UpNext() {
       </h3>
 
       <div className="space-y-1">
-        {queue.map((item, i) => (
-          <div
-            key={item.id}
-            className="flex items-center gap-3 p-2 rounded-lg transition cursor-pointer
-              hover:bg-gray-100 
-              dark:hover:bg-white/10"
-          >
-            <span className="text-gray-400 w-4 text-center text-sm">
-              {i + 1}
-            </span>
-            <div className="relative w-10 h-10 shrink-0 rounded overflow-hidden">
-              <Image
-                src={item.cover}
-                alt={item.title}
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate text-gray-900 dark:text-white">
-                {item.title}
-              </p>
-              <p className="text-xs truncate text-gray-500 dark:text-gray-400">
-                {item.artist}
-              </p>
-            </div>
-            <span className="text-xs text-gray-400">{item.duration}</span>
+        {queue.length === 0 ? (
+          <div className="text-center py-10 text-gray-500 text-sm italic">
+            Queue is empty.
           </div>
-        ))}
+        ) : (
+          queue.map((item, i) => {
+            const isActive = currentTrack?.id === item.id;
+
+            return (
+              <div
+                key={`${item.id}-${i}`}
+                onClick={() => play(item)}
+                className={cn(
+                  "group flex items-center gap-3 p-2 rounded-lg transition-all cursor-pointer border border-transparent",
+                  isActive
+                    ? "bg-orange-50 border-orange-100 dark:bg-white/10 dark:border-white/5"
+                    : "hover:bg-gray-100 dark:hover:bg-white/5 hover:border-gray-200 dark:hover:border-white/10"
+                )}
+              >
+                {/* Cột Số/Play/Sóng nhạc */}
+                <div className="w-6 flex justify-center items-center shrink-0">
+                  {isActive ? (
+                    <PlayingIndicator />
+                  ) : (
+                    <>
+                      <span className="text-xs text-gray-400 group-hover:hidden font-medium tabular-nums">
+                        {i + 1}
+                      </span>
+                      <Play className="w-3.5 h-3.5 text-gray-800 dark:text-gray-200 hidden group-hover:block fill-current" />
+                    </>
+                  )}
+                </div>
+
+                {/* Ảnh */}
+                <div className="relative w-10 h-10 shrink-0 rounded overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-sm">
+                  <Image
+                    src={item.imagePath || "/images/default-cover.jpg"}
+                    alt={item.title}
+                    fill
+                    className={cn(
+                      "object-cover transition-opacity",
+                      isActive ? "opacity-100" : "group-hover:opacity-80"
+                    )}
+                  />
+                </div>
+
+                {/* Thông tin */}
+                <div className="flex-1 min-w-0">
+                  <p
+                    className={cn(
+                      "text-sm font-medium truncate",
+                      isActive
+                        ? "text-orange-600 dark:text-orange-400"
+                        : "text-gray-900 dark:text-gray-200"
+                    )}
+                  >
+                    {item.title}
+                  </p>
+                  <p className="text-xs truncate text-gray-500 dark:text-gray-400">
+                    {item.user?.name || "Unknown Artist"}
+                  </p>
+                </div>
+
+                {/* Thời lượng */}
+                <span className="text-xs text-gray-400 tabular-nums">
+                  {formatDuration(item.duration || 0)}
+                </span>
+              </div>
+            );
+          })
+        )}
       </div>
 
+      {/* Footer Controls */}
       <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
         <div>
           <p className="font-medium text-sm text-gray-900 dark:text-white">
@@ -84,35 +120,19 @@ export default function UpNext() {
           </p>
         </div>
         <button
-          onClick={() => setAutoplay(!autoplay)}
-          className={`w-12 h-7 rounded-full transition relative ${
-            autoplay
-              ? "bg-linear-to-r from-[#ff6b6b] to-[#4ecdc4]"
-              : "bg-gray-300 dark:bg-gray-600"
-          }`}
+          onClick={toggleAutoplay}
+          className={cn(
+            "w-10 h-6 rounded-full transition-colors relative",
+            autoplay ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600"
+          )}
         >
           <span
-            className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-all shadow-sm ${
+            className={cn(
+              "absolute top-1 w-4 h-4 bg-white rounded-full transition-all shadow-sm",
               autoplay ? "right-1" : "left-1"
-            }`}
+            )}
           />
         </button>
-      </div>
-
-      <div
-        className="mt-4 p-3 rounded-xl flex items-center gap-3 border
-        bg-gray-50 border-gray-200 
-        dark:bg-white/5 dark:border-white/10"
-      >
-        <div className="w-10 h-10 rounded bg-gray-300 dark:bg-gray-700" />
-        <div>
-          <p className="font-medium text-sm text-gray-900 dark:text-white">
-            Luna Waves Radio
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Based on this track
-          </p>
-        </div>
       </div>
     </div>
   );

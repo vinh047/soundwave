@@ -8,7 +8,7 @@ import { ProgressBar } from "./ProgressBar";
 import { Heart, ListPlus, UserPlus } from "lucide-react";
 import trackApi from "@/lib/api/trackApi";
 import { cn } from "@/lib/utils";
-import { NextUpList } from "./NextUpList"; // 👇 Import component danh sách chờ
+import { NextUpList } from "./NextUpList";
 
 export function GlobalPlayer() {
   const {
@@ -19,14 +19,15 @@ export function GlobalPlayer() {
     setVolume,
     currentTime,
     setCurrentTime,
-    playNext, // 👇 Lấy hàm chuyển bài từ store
-    playPrev, // 👇 Lấy hàm lùi bài từ store
-    queue,    // 👇 Lấy queue để check hiển thị chấm đỏ (optional)
+    playNext,
+    playPrev,
+    queue,
+    autoplay,
   } = usePlayerStore();
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const [showQueue, setShowQueue] = useState(false); // 👇 State bật tắt Popup Next Up
+  const [showQueue, setShowQueue] = useState(false);
 
   const lastTrackIdRef = useRef<string | null>(null);
   const isCountedRef = useRef(false);
@@ -95,23 +96,22 @@ export function GlobalPlayer() {
       setCurrentTime(audio.currentTime);
 
       // Logic tính lượt nghe (nghe > 10s)
-      if (
-        currentTrack &&
-        audio.currentTime > 10 &&
-        !isCountedRef.current
-      ) {
+      if (currentTrack && audio.currentTime > 10 && !isCountedRef.current) {
         isCountedRef.current = true;
         console.log("📈 Tăng play count cho:", currentTrack.title);
-        
+
         trackApi
           .increasePlayCount(currentTrack.id)
           .catch((err) => console.error("Lỗi tăng view:", err));
       }
     };
 
-    // 👇 KHI HẾT BÀI -> GỌI PLAY NEXT
     const handleEnded = () => {
-      playNext();
+      if (autoplay) {
+        playNext(); // Nếu bật Autoplay -> Chuyển bài
+      } else {
+        usePlayerStore.setState({ isPlaying: false }); // Nếu tắt -> Dừng nhạc
+      }
     };
 
     const handleLoadedMetadata = () => {
@@ -129,7 +129,7 @@ export function GlobalPlayer() {
       audio.removeEventListener("ended", handleEnded);
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
-  }, [setCurrentTime, currentTime, currentTrack, playNext]);
+  }, [setCurrentTime, currentTime, currentTrack, playNext, autoplay]);
 
   // Xử lý tua nhạc
   const handleSeek = (time: number) => {
@@ -143,7 +143,6 @@ export function GlobalPlayer() {
 
   return (
     <div className="fixed h-16 bottom-0 left-0 right-0 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800 px-4 md:px-6 py-4 flex flex-col md:flex-row items-center gap-4 text-gray-800 dark:text-white z-50">
-      
       {/* --- LEFT: TRACK INFO --- */}
       <div className="flex items-center gap-3 flex-1 min-w-0 w-full md:w-auto">
         <div className="relative w-10 h-10 shrink-0 group cursor-pointer">
@@ -154,7 +153,7 @@ export function GlobalPlayer() {
             className="rounded-[3px] object-cover"
           />
         </div>
-        
+
         <div className="flex flex-col min-w-0 mr-2">
           <h4 className="font-medium truncate text-sm leading-tight text-gray-900 dark:text-gray-100">
             {currentTrack.title}
@@ -171,19 +170,21 @@ export function GlobalPlayer() {
           <button className="p-2 text-gray-500 hover:text-orange-500 transition-colors hidden sm:block">
             <UserPlus className="w-4 h-4" />
           </button>
-          
+
           {/* 👇 BUTTON TOGGLE NEXT UP LIST */}
-          <button 
+          <button
             onClick={() => setShowQueue(!showQueue)}
             className={cn(
-                "p-2 transition-colors relative",
-                showQueue ? "text-orange-500" : "text-gray-500 hover:text-orange-500"
+              "p-2 transition-colors relative",
+              showQueue
+                ? "text-orange-500"
+                : "text-gray-500 hover:text-orange-500"
             )}
           >
             <ListPlus className="w-4 h-4" />
             {/* Dot thông báo nếu có bài trong queue (Optional) */}
             {queue.length > 1 && !showQueue && (
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-orange-500 rounded-full border border-white dark:border-black" />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-orange-500 rounded-full border border-white dark:border-black" />
             )}
           </button>
         </div>
@@ -201,12 +202,12 @@ export function GlobalPlayer() {
       {/* --- RIGHT: CONTROLS --- */}
       <div className="flex-1 flex justify-end">
         <PlayerControls
-            isPlaying={isPlaying}
-            onPlayPause={toggle}
-            onPrev={playPrev} // Gắn hàm lùi
-            onNext={playNext} // Gắn hàm tới
-            volume={volume}
-            onVolumeChange={setVolume}
+          isPlaying={isPlaying}
+          onPlayPause={toggle}
+          onPrev={playPrev} // Gắn hàm lùi
+          onNext={playNext} // Gắn hàm tới
+          volume={volume}
+          onVolumeChange={setVolume}
         />
       </div>
 
@@ -214,9 +215,7 @@ export function GlobalPlayer() {
       <audio ref={audioRef} preload="metadata" />
 
       {/* 👇 HIỂN THỊ DANH SÁCH CHỜ (POPUP) */}
-      {showQueue && (
-          <NextUpList onClose={() => setShowQueue(false)} />
-      )}
+      {showQueue && <NextUpList onClose={() => setShowQueue(false)} />}
     </div>
   );
 }

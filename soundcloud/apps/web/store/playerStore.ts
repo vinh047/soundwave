@@ -29,6 +29,9 @@ interface PlayerState {
   playNext: () => void;
   playPrev: () => void;
   removeFromQueue: (index: number) => void;
+
+  autoplay: boolean;
+  toggleAutoplay: () => void;
 }
 
 export const usePlayerStore = create<PlayerState>()(
@@ -43,13 +46,31 @@ export const usePlayerStore = create<PlayerState>()(
       queue: [],
       currentIndex: -1,
 
+      autoplay: true,
+
       play: (track) => {
-        set({
-          currentTrack: track,
-          isPlaying: true,
-          queue: [track],
-          currentIndex: 0,
-        });
+        const { queue } = get();
+
+        // 1. Kiểm tra xem bài hát đã tồn tại trong queue chưa
+        const foundIndex = queue.findIndex((t) => t.id === track.id);
+
+        if (foundIndex !== -1) {
+          // TH1: Đã có trong queue -> Nhảy đến bài đó và hát
+          set({
+            currentTrack: track,
+            currentIndex: foundIndex,
+            isPlaying: true,
+          });
+        } else {
+          // TH2: Chưa có -> Thêm vào cuối queue -> Hát bài mới thêm
+          const newQueue = [...queue, track];
+          set({
+            queue: newQueue,
+            currentTrack: track,
+            currentIndex: newQueue.length - 1, // Vị trí cuối cùng
+            isPlaying: true,
+          });
+        }
       },
 
       setQueue: (tracks, clickedTrackId) => {
@@ -118,7 +139,7 @@ export const usePlayerStore = create<PlayerState>()(
           set({ currentIndex: 0, currentTrack: queue[0], isPlaying: true });
         }
       },
-      
+
       removeFromQueue: (indexToRemove) => {
         const { queue, currentIndex, currentTrack, isPlaying } = get();
 
@@ -143,6 +164,7 @@ export const usePlayerStore = create<PlayerState>()(
           set({ queue: newQueue, currentIndex: newIndex });
         }
       },
+      toggleAutoplay: () => set((state) => ({ autoplay: !state.autoplay })),
     }),
 
     {
@@ -155,6 +177,7 @@ export const usePlayerStore = create<PlayerState>()(
         queue: state.queue, // Nên lưu queue để F5 vẫn còn danh sách
         currentIndex: state.currentIndex,
         // currentTime: state.currentTime, // Có thể bỏ currentTime nếu muốn F5 nghe lại từ đầu bài
+        autoplay: state.autoplay,
       }),
     }
   )
