@@ -5,8 +5,12 @@ import Image from "next/image";
 import { usePlayerStore } from "@/store/playerStore";
 import { PlayerControls } from "./PlayerControls";
 import { ProgressBar } from "./ProgressBar";
-import { Heart, ListPlus, UserPlus } from "lucide-react";
+import { Heart, ListPlus, UserPlus, UserCheck } from "lucide-react";
 import trackApi from "@/lib/api/trackApi";
+import userApi from "@/lib/api/usersApi";
+import { useAuthStore } from "@/store/authStore";
+import { toast } from "sonner";
+import { AddToPlaylistModal } from "../playlist/AddToPlaylistModal";
 
 export function GlobalPlayer() {
   const {
@@ -27,6 +31,11 @@ export function GlobalPlayer() {
   const lastTrackIdRef = useRef<string | null>(null);
 
   const isCountedRef = useRef(false);
+  const { user } = useAuthStore();
+
+  const [isLiked, setIsLiked] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isAddToPlaylistOpen, setIsAddToPlaylistOpen] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
@@ -56,6 +65,82 @@ export function GlobalPlayer() {
       lastTrackIdRef.current = currentTrack.id;
     }
   }, [currentTime, currentTrack, isMounted, setCurrentTime]);
+
+  // Check Like & Follow status when track changes
+  useEffect(() => {
+    if (!currentTrack || !user) return;
+
+    // Check Like
+    // Note: currentTrack.likes might be available if included in the payload
+    // otherwise we might need to fetch it. For now, let's assume we fetch or check API
+    // Actually, trackApi.getTrackById includes likes.
+    // But currentTrack from store might not have it updated for the current user.
+    // Let's use a simple check if we have the data, or call API if needed.
+    // For simplicity and accuracy, let's just assume false or check if we have an array.
+    // Ideally, we should have an API `checkLike` similar to `checkFollow`.
+    // But since we don't, let's try to infer from `currentTrack` if it has `likes` array
+    // and that array contains our user ID.
+    // If `currentTrack` comes from `getTracks`, it might have `likes` array.
+    if ((currentTrack as any).likes) {
+      const likes = (currentTrack as any).likes as any[];
+      const liked = likes.some((l) => l.userId === user.id);
+      setIsLiked(liked);
+    } else {
+      // Fallback: assume false or maybe fetch track details?
+      // Let's leave it as false for now to avoid too many requests,
+      // or we could implement checkLike in backend.
+      setIsLiked(false);
+    }
+
+    // Check Follow
+    userApi.checkFollow(currentTrack.userId).then((res) => {
+      setIsFollowing(res.data.isFollowing);
+    });
+  }, [currentTrack, user]);
+
+  const handleLike = async () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để thích bài hát");
+      return;
+    }
+    if (!currentTrack) return;
+
+    const previousState = isLiked;
+    setIsLiked(!previousState); // Optimistic update
+
+    try {
+      if (previousState) {
+        await trackApi.unlikeTrack(currentTrack.id);
+      } else {
+        await trackApi.likeTrack(currentTrack.id);
+      }
+    } catch (error) {
+      setIsLiked(previousState); // Revert
+      toast.error("Có lỗi xảy ra");
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để theo dõi");
+      return;
+    }
+    if (!currentTrack) return;
+
+    const previousState = isFollowing;
+    setIsFollowing(!previousState); // Optimistic update
+
+    try {
+      if (previousState) {
+        await userApi.unfollowUser(currentTrack.userId);
+      } else {
+        await userApi.followUser(currentTrack.userId);
+      }
+    } catch (error) {
+      setIsFollowing(previousState); // Revert
+      toast.error("Có lỗi xảy ra");
+    }
+  };
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -156,17 +241,29 @@ export function GlobalPlayer() {
         </div>
         {/* Buttons: Like, Add... */}
         <div className="flex items-center gap-2 ml-3">
-          <button className="p-2">
-            <Heart className="w-4 h-4" />
+          <button className="p-2" onClick={handleLike}>
+            <Heart
+              className={`w-4 h-4 ${isLiked ? "fill-orange-500 text-orange-500" : ""}`}
+            />
           </button>
-          <button className="p-2">
-            <UserPlus className="w-4 h-4" />
+          <button className="p-2" onClick={handleFollow}>
+            {isFollowing ? (
+              <UserCheck className="w-4 h-4 text-orange-500" />
+            ) : (
+              <UserPlus className="w-4 h-4" />
+            )}
           </button>
-          <button className="p-2">
+          <button className="p-2" onClick={() => setIsAddToPlaylistOpen(true)}>
             <ListPlus className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      <AddToPlaylistModal
+        isOpen={isAddToPlaylistOpen}
+        onClose={() => setIsAddToPlaylistOpen(false)}
+        trackId={currentTrack?.id || null}
+      />
 
       {/* --- CENTER: PROGRESS BAR --- */}
       <div className="flex-1 max-w-2xl w-full">

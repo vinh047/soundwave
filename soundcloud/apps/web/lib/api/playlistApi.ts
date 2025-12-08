@@ -1,12 +1,8 @@
 import axiosClient from "./apiClient";
-import { PaginationParams } from "@/type/PaginationParams"; 
+import { PaginationParams } from "@/type/PaginationParams";
 import { PaginatedResult } from "@/types/common";
 
-// Bạn có thể import type Playlist từ component hoặc định nghĩa ở đây để strict type
-// interface Playlist { ... }
-
 const playlistApi = {
-  // Chỉ giữ lại hàm search
   searchPlaylists: (params: PaginationParams & { q: string }) => {
     return axiosClient.get<PaginatedResult<any>>("/playlists/search", {
       params: {
@@ -15,6 +11,26 @@ const playlistApi = {
         limit: params.limit,
       },
     });
+  },
+
+  createPlaylist: (data: { title: string; isPublic?: boolean }) => {
+    return axiosClient.post("/playlists", data);
+  },
+
+  getMyPlaylists: () => {
+    return axiosClient.get("/playlists/me");
+  },
+
+  getPlaylistById: (id: string) => {
+    return axiosClient.get(`/playlists/${id}`);
+  },
+
+  addTrackToPlaylist: (playlistId: string, trackId: string) => {
+    return axiosClient.post(`/playlists/${playlistId}/tracks`, { trackId });
+  },
+
+  removeTrackFromPlaylist: (playlistId: string, trackId: string) => {
+    return axiosClient.delete(`/playlists/${playlistId}/tracks/${trackId}`);
   },
 };
 
