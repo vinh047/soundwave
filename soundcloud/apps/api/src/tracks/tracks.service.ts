@@ -553,4 +553,17 @@ export class TracksService {
       limit: take,
     };
   }
+
+  async checkLike(trackId: string, userId: string) {
+    const like = await this.prisma.like.findUnique({
+      where: {
+        userId_trackId: {
+          userId: userId,
+          trackId: trackId,
+        },
+      },
+    });
+
+    return { isLiked: !!like }; // Trả về true nếu tìm thấy, false nếu null
+  }
 }

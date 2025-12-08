@@ -302,6 +302,8 @@ function MoreMenu({ track }: { track: TrackData }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const { addToQueue } = usePlayerStore();
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -314,6 +316,9 @@ function MoreMenu({ track }: { track: TrackData }) {
 
   const handleNextUp = (e: React.MouseEvent) => {
     e.stopPropagation();
+
+    addToQueue(track as any);
+
     setIsOpen(false);
     toast.success("Added to Next up");
   };

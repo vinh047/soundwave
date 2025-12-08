@@ -92,7 +92,6 @@ export class TracksController {
     @Query('q') q: string,
     @Req() req,
   ) {
-
     const userId = req.user?.id || null;
 
     return this.tracksService.searchEverything(
@@ -188,6 +187,12 @@ export class TracksController {
   @Get(':id/comments')
   async getComments(@Param('id') trackId: string) {
     return this.tracksService.getComments(trackId);
+  }
+
+  @UseGuards(JwtAuthGuard) // Bắt buộc đăng nhập mới check được
+  @Get(':id/check-like')
+  checkLike(@Param('id') id: string, @Req() req) {
+    return this.tracksService.checkLike(id, req.user.id);
   }
 
   @Public()
