@@ -83,7 +83,7 @@ export function SearchPeopleCard({ user }: SearchPeopleCardProps) {
     <div className="group relative flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-800">
       
       {/* --- PHẦN TRÁI: AVATAR & INFO --- */}
-      <Link href={`/profile/${user.id}`} className="flex items-center gap-4 flex-1 min-w-0">
+      <Link href={`/artist/${user.id}`} className="flex items-center gap-4 flex-1 min-w-0">
         {/* Avatar Hình Tròn */}
         <div className="relative w-16 h-16 shrink-0">
           <Image

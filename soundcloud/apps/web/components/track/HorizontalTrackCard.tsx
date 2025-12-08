@@ -76,7 +76,7 @@ export function HorizontalTrackCard({ track }: HorizontalTrackCardProps) {
       <div className="flex flex-1 flex-col justify-center min-w-0">
         {/* Link Artist nằm bên trong div cha -> Hợp lệ */}
         <Link
-          href={`/profile/${track.user.id}`}
+          href={`/artist/${track.user.id}`}
           className="truncate text-xs text-gray-500 dark:text-neutral-400 hover:text-orange-500 hover:underline mb-0.5 w-fit"
           onClick={(e) => e.stopPropagation()} // Quan trọng: Ngăn click vào artist mà lại nhảy sang trang bài hát
         >

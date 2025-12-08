@@ -89,7 +89,7 @@ export default async function HomePage({
                   <li key={artist.id}>
                     {/* Dùng Link để click vào xem profile */}
                     <Link
-                      href={`/profile/${artist.id}`}
+                      href={`/artist/${artist.id}`}
                       className="flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-md transition-colors"
                     >
                       <Image
