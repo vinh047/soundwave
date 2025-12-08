@@ -11,6 +11,7 @@ import {
 } from "@/components/ui2/Tabs";
 import trackApi from "@/lib/api/trackApi";
 import userApi from "@/lib/api/usersApi";
+import playlistApi from "@/lib/api/playlistApi";
 import { Prisma } from "@repo/database";
 import { Loader2, Play, Pause, Heart, MoreHorizontal, LayoutGrid, List, User } from "lucide-react";
 import Image from "next/image";
@@ -19,7 +20,12 @@ import { useEffect, useState } from "react";
 
 // Types for our data
 type TrackWithUser = Prisma.TrackGetPayload<{ include: { user: true } }>;
-type Playlist = Prisma.PlaylistGetPayload<{}>;
+type Playlist = Prisma.PlaylistGetPayload<{
+    include: {
+        tracks: { include: { track: true } };
+        _count: { select: { tracks: true } };
+    };
+}>;
 type UserWithProfile = Prisma.UserGetPayload<{}>;
 
 export default function LibraryPage() {
@@ -57,9 +63,10 @@ export default function LibraryPage() {
                         setLikedTracks(tracks);
                     }
 
+
                     // Playlists
-                    const playlistsRes = await userApi.getPlaylistsByUserId(user.id);
-                    setPlaylists(playlistsRes.data.data);
+                    const playlistsRes = await playlistApi.getMyPlaylists();
+                    setPlaylists(playlistsRes.data as any); // Cast to any to avoid strict type check if needed, or ensure types match
 
                     // Following
                     if (userDetails.following && Array.isArray(userDetails.following)) {
@@ -263,8 +270,64 @@ export default function LibraryPage() {
                             </TabsContent>
 
                             {/* Playlists Tab */}
-                            <TabsContent value="playlists">
-                                <EmptyState message="Your playlists will appear here." />
+                            <TabsContent value="playlists" className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-base font-medium text-gray-400">
+                                        Hear your own playlists and the playlists you've liked:
+                                    </h2>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Filter"
+                                            className="h-8 rounded bg-gray-100 dark:bg-zinc-800 border-none px-3 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-1 focus:ring-orange-500 w-48"
+                                        />
+                                    </div>
+                                </div>
+
+                                {playlists.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                                        {playlists.map((playlist) => (
+                                            <Link
+                                                href={`/playlists/${playlist.id}`}
+                                                key={playlist.id}
+                                                className="group block"
+                                            >
+                                                <div className="relative mb-3 aspect-square overflow-hidden rounded-md bg-gray-200 dark:bg-gray-800 group-hover:opacity-80 transition-opacity">
+                                                    {playlist.tracks?.[0]?.track?.imagePath ? (
+                                                        <Image
+                                                            src={playlist.tracks[0].track.imagePath}
+                                                            alt={playlist.title}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-full w-full items-center justify-center text-gray-400">
+                                                            <span className="text-4xl">♪</span>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Overlay Play Button (Optional) */}
+                                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <div className="bg-orange-500 rounded-full p-3 text-white shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+                                                            <Play size={24} fill="currentColor" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <h3 className="truncate font-medium text-lg text-gray-900 dark:text-white group-hover:text-orange-500 transition-colors">
+                                                    {playlist.title}
+                                                </h3>
+                                                <p className="truncate text-sm text-gray-500">
+                                                    {user?.name}
+                                                </p>
+                                                <p className="text-xs text-gray-400 mt-1">
+                                                    {playlist._count?.tracks || 0} tracks
+                                                </p>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <EmptyState message="You haven't created any playlists yet." />
+                                )}
                             </TabsContent>
 
                             {/* Albums Tab */}
@@ -333,8 +396,22 @@ export default function LibraryPage() {
                                     <EmptyState message="You are not following anyone yet." />
                                 )}
                             </TabsContent>
-                            <TabsContent value="history">
-                                <EmptyState message="Your listening history." />
+                            <TabsContent value="history" className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-base font-medium text-gray-400">
+                                        Tracks you've listened to recently:
+                                    </h2>
+                                </div>
+
+                                {recentTracks.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                                        {recentTracks.map((track) => (
+                                            <TrackCard key={track.id} track={track} />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <EmptyState message="You haven't listened to anything yet." />
+                                )}
                             </TabsContent>
                         </div>
                     </Tabs>
