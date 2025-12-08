@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { NextUpList } from "./NextUpList";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { toast } from "sonner";
-import { Heart, ListPlus, UserPlus, UserCheck } from "lucide-react";
+import { Heart, ListPlus, UserPlus, UserCheck, ListMusic } from "lucide-react";
 import trackApi from "@/lib/api/trackApi";
 import userApi from "@/lib/api/usersApi";
 import { useAuthStore } from "@/store/authStore";
@@ -261,10 +261,24 @@ export function GlobalPlayer() {
     if (!audio) return;
 
     const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
+      if (!currentTrack) return;
+      const current = audio.currentTime;
+      const limit = currentTrack.duration || 0; // Lấy giới hạn từ DB
 
-      // Logic tính lượt nghe (nghe > 10s)
-      if (currentTrack && audio.currentTime > 10 && !isCountedRef.current) {
+      // --- 1. LOGIC MỚI: Ép dừng nếu chạy lố thời gian ---
+      // Nếu có duration trong DB và thời gian thực >= duration
+      if (limit > 0 && current >= limit) {
+        audio.pause(); // Dừng audio thật
+        audio.currentTime = 0; // Reset về đầu
+        handleEnded(); // Gọi hàm xử lý hết bài (để next hoặc dừng hẳn)
+        return; // Thoát luôn, không chạy đoạn dưới nữa
+      }
+
+      // --- 2. LOGIC CŨ: Cập nhật UI ---
+      setCurrentTime(current);
+
+      // --- 3. LOGIC CŨ: Tăng view (Giữ nguyên) ---
+      if (currentTrack && current > 10 && !isCountedRef.current) {
         isCountedRef.current = true;
         console.log("📈 Tăng play count cho:", currentTrack.title);
 
@@ -275,10 +289,17 @@ export function GlobalPlayer() {
     };
 
     const handleEnded = () => {
+      const { autoplay, playNext, resetTime } = usePlayerStore.getState();
+      const audio = audioRef.current;
       if (autoplay) {
-        playNext(); // Nếu bật Autoplay -> Chuyển bài
+        playNext();
       } else {
-        usePlayerStore.setState({ isPlaying: false }); // Nếu tắt -> Dừng nhạc
+        // Dừng nhạc
+        usePlayerStore.setState({ isPlaying: false });
+
+        resetTime();
+
+        if (audio) audio.currentTime = 0;
       }
     };
 
@@ -366,23 +387,10 @@ export function GlobalPlayer() {
             </button>
           )}
 
-          {/* NEXT UP BUTTON */}
-           {/* <button
-            onClick={() => setShowQueue(!showQueue)}
-            className={cn(
-              "relative rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-white/10",
-              showQueue
-                ? "text-orange-500"
-                : "text-gray-400 hover:text-orange-500"
-            )}
-          >
-            <ListPlus className="h-4 w-4" /> */}
-           <button className="p-2" onClick={() => setIsAddToPlaylistOpen(true)}>
+          <button className="p-2" onClick={() => setIsAddToPlaylistOpen(true)}>
             <ListPlus className="w-4 h-4" />
-            {queue.length > 1 && !showQueue && (
-              <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full border border-white bg-orange-500 dark:border-black" />
-            )}
           </button>
+
         </div>
       </div>
 
@@ -413,6 +421,20 @@ export function GlobalPlayer() {
         />
       </div>
 
+      {/* NEXT UP BUTTON */}
+      <button
+        onClick={() => setShowQueue(!showQueue)}
+        className={cn(
+          "p-2 transition-colors relative",
+          showQueue ? "text-orange-500" : "text-gray-500 hover:text-orange-500"
+        )}
+      >
+        <ListMusic className="w-4 h-4" />
+        {/* Dot thông báo nếu có bài trong queue (Optional) */}
+        {queue.length > 1 && !showQueue && (
+          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-orange-500 rounded-full border border-white dark:border-black" />
+        )}
+      </button>
       {/* --- HIDDEN AUDIO --- */}
       <audio ref={audioRef} preload="metadata" />
 

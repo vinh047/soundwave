@@ -19,7 +19,7 @@ function formatDuration(seconds: number) {
 }
 
 export function NextUpList({ onClose }: NextUpListProps) {
-  // 👇 Lấy thêm autoplay và toggleAutoplay từ store
+  // Lấy thêm autoplay và toggleAutoplay từ store
   const { queue, currentTrack, play, setQueue, removeFromQueue, autoplay, toggleAutoplay } = usePlayerStore();
 
   const handleClear = () => {
@@ -31,7 +31,7 @@ export function NextUpList({ onClose }: NextUpListProps) {
   };
 
   return (
-    <div className="fixed bottom-20 left-4 w-[400px] max-w-[calc(100vw-32px)] h-[calc(100vh-150px)] max-h-[600px] bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#333] rounded-lg shadow-2xl z-50 flex flex-col animate-in slide-in-from-bottom-5 fade-in duration-200">
+    <div className="fixed bottom-20 right-4 w-[400px] max-w-[calc(100vw-32px)] h-[calc(100vh-150px)] max-h-[600px] bg-white dark:bg-[#121212] border border-gray-200 dark:border-[#333] rounded-lg shadow-2xl z-50 flex flex-col animate-in slide-in-from-bottom-5 fade-in duration-200">
       
       {/* --- HEADER --- */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-[#2a2a2a]">
