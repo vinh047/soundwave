@@ -53,10 +53,9 @@ const NavLink = ({
       className={`
         flex items-center h-16 px-3 text-sm font-medium
         border-b-2 transition-all
-        ${
-          isActive
-            ? "border-orange-500 text-gray-900 dark:text-white"
-            : "border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+        ${isActive
+          ? "border-orange-500 text-gray-900 dark:text-white"
+          : "border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
         }
       `}
     >
@@ -307,10 +306,9 @@ const MobileNavLink = ({
       className={`
         flex items-center w-full px-3 py-2 rounded-md text-base font-medium
         transition-colors
-        ${
-          isActive
-            ? "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white"
-            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+        ${isActive
+          ? "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white"
+          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
         }
       `}
     >
@@ -365,11 +363,11 @@ export function Navbar() {
   // Tạo ký tự đầu tên cho Avatar fallback
   const userInitials = user?.name
     ? user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .substring(0, 2)
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2)
     : "SC";
 
   const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);

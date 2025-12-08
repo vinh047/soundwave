@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui2/Button";
 import { Star } from "lucide-react";
+import Link from "next/link";
 import { useRef } from "react";
 
 export default function TryArtistPro() {
@@ -27,12 +28,14 @@ export default function TryArtistPro() {
             <p>Join millions of artists that use SoundCloud to get heard.</p>
           </div>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button
-              size="lg"
-              className="h-12 rounded-full bg-white px-8 text-base font-bold text-black hover:bg-gray-200"
-            >
-              Get Artist Pro
-            </Button>
+            <Link href="/checkout/artist">
+              <Button
+                size="lg"
+                className="h-12 rounded-full bg-white px-8 text-base font-bold text-black hover:bg-gray-200"
+              >
+                Get Artist Pro
+              </Button>
+            </Link>
             <Button
               variant="outline"
               size="lg"
@@ -69,9 +72,11 @@ export default function TryArtistPro() {
                 </div>
                 <p className="text-sm text-gray-400 mt-1">billed yearly for ₫480,000</p>
               </div>
-              <Button className="mb-8 w-full rounded-full bg-black py-6 text-base font-bold text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200">
-                Get started
-              </Button>
+              <Link href="/checkout/artist" className="w-full">
+                <Button className="mb-8 w-full rounded-full bg-black py-6 text-base font-bold text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200">
+                  Get started
+                </Button>
+              </Link>
               <ul className="space-y-4 text-sm">
                 <li className="flex items-start gap-3">
                   <span className="mt-0.5"><CloudUploadIcon /></span>
@@ -131,9 +136,11 @@ export default function TryArtistPro() {
                 </div>
                 <p className="text-sm text-gray-400 mt-1">billed yearly for ₫1,140,000</p>
               </div>
-              <Button className="mb-8 w-full rounded-full bg-black py-6 text-base font-bold text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200">
-                Get started
-              </Button>
+              <Link href="/checkout/artist" className="w-full">
+                <Button className="mb-8 w-full rounded-full bg-black py-6 text-base font-bold text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200">
+                  Get started
+                </Button>
+              </Link>
               <ul className="space-y-4 text-sm">
                 <li className="flex items-start gap-3">
                   <span className="mt-0.5"><CloudUploadIcon /></span>
@@ -365,23 +372,23 @@ function TableRow({ title, desc, basic, artist, pro, proColor }: { title: string
         <div className="font-bold text-base">{title}</div>
         {desc && <div className="mt-1 text-sm text-gray-500 font-normal">{desc}</div>}
       </td>
-      <td className="py-6 text-center align-top text-gray-500">{basic}</td>
-      <td className="py-6 text-center align-top font-medium">{artist}</td>
-      <td className={`py-6 text-center align-top ${proColor || 'font-medium'}`}>{pro}</td>
+      <td className="py-6 text-center align-middle text-gray-500">{basic}</td>
+      <td className="py-6 text-center align-middle font-medium">{artist}</td>
+      <td className={`py-6 text-center align-middle ${proColor || 'font-medium'}`}>{pro}</td>
     </tr>
   )
 }
 
 // Icons
-function CloudUploadIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" /><path d="M12 12v9" /><path d="m16 16-4-4-4 4" /></svg> }
-function BoltIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><circle cx="12" cy="12" r="4" /></svg> } // Using a generic icon for now
-function DollarSignIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg> }
-function RefreshCwIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M3 21v-5h5" /></svg> }
-function SlidersIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="4" y1="21" y2="14" /><line x1="4" x2="4" y1="10" y2="3" /><line x1="12" x2="12" y1="21" y2="12" /><line x1="12" x2="12" y1="8" y2="3" /><line x1="20" x2="20" y1="21" y2="16" /><line x1="20" x2="20" y1="12" y2="3" /><line x1="2" x2="6" y1="14" y2="14" /><line x1="10" x2="14" y1="8" y2="8" /><line x1="18" x2="22" y1="16" y2="16" /></svg> }
-function LineChartIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg> }
-function MessageSquareIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg> }
-function CheckCircleIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#16a34a" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg> }
-function CheckCircleGrayIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#6b7280" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg> }
+function CloudUploadIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" /><path d="M12 12v9" /><path d="m16 16-4-4-4 4" /></svg> }
+function BoltIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><circle cx="12" cy="12" r="4" /></svg> } // Using a generic icon for now
+function DollarSignIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto"><line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg> }
+function RefreshCwIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M3 21v-5h5" /></svg> }
+function SlidersIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto"><line x1="4" x2="4" y1="21" y2="14" /><line x1="4" x2="4" y1="10" y2="3" /><line x1="12" x2="12" y1="21" y2="12" /><line x1="12" x2="12" y1="8" y2="3" /><line x1="20" x2="20" y1="21" y2="16" /><line x1="20" x2="20" y1="12" y2="3" /><line x1="2" x2="6" y1="14" y2="14" /><line x1="10" x2="14" y1="8" y2="8" /><line x1="18" x2="22" y1="16" y2="16" /></svg> }
+function LineChartIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg> }
+function MessageSquareIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg> }
+function CheckCircleIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#16a34a" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto"><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg> }
+function CheckCircleGrayIcon() { return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#6b7280" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto"><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg> }
 
 function Badge({ text, color }: { text: string, color: string }) {
   return (
