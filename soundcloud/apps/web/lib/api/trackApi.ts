@@ -79,6 +79,33 @@ const trackApi = {
     ),
   increasePlayCount: (id: string) =>
     axiosClient.post<{ message: string }>(`/tracks/${id}/listen`),
+
+  searchEverything: (params: PaginationParams & { q: string }) => {
+    return axiosClient.get<
+      PaginatedResult<
+        Prisma.TrackGetPayload<{
+          include: {
+            user: true;
+            likes: true;
+            reposts: true;
+            _count: {
+              select: {
+                likes: true;
+                reposts: true;
+                comments: true;
+              };
+            };
+          };
+        }>
+      >
+    >("/tracks/search/everything", {
+      params: {
+        page: params.page,
+        limit: params.limit,
+        q: params.q,
+      },
+    });
+  },
 };
 
 export default trackApi;

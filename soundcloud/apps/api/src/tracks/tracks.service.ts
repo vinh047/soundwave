@@ -23,21 +23,48 @@ export type TrackWithStats = Prisma.TrackGetPayload<{
   };
 }>;
 
+export type TrackWithDetails = Prisma.TrackGetPayload<{
+  include: {
+    user: true;
+    likes: true;
+    reposts: true;
+    _count: {
+      select: {
+        likes: true;
+        reposts: true;
+        comments: true;
+      };
+    };
+  };
+}>;
+
 @Injectable()
 export class TracksService {
   constructor(
     private prisma: PrismaService,
     private cloudinaryService: CloudinaryService,
-  ) { }
+  ) {}
 
   async findAll(
     page: number = 1,
     limit: number = 10,
-  ): Promise<PaginatedResult<Omit<Track, 'comments' | 'likes'>>> {
+    search?: string,
+    userId?: string | null,
+  ): Promise<PaginatedResult<TrackWithDetails>> {
     const take = Math.max(1, limit);
     const skip = (Math.max(1, page) - 1) * take;
 
-    const whereCondition = { isPublic: true, isBanned: false };
+    const whereCondition: Prisma.TrackWhereInput = {
+      isPublic: true,
+      isBanned: false,
+    };
+
+    if (search) {
+      whereCondition.title = {
+        contains: search,
+        mode: 'insensitive',
+      };
+    }
 
     const total = await this.prisma.track.count({
       where: whereCondition,
@@ -46,15 +73,36 @@ export class TracksService {
     const tracks = await this.prisma.track.findMany({
       skip,
       take,
-      where: whereCondition,
+      where: {
+        isPublic: true,
+        isBanned: false,
+        title: search ? { contains: search, mode: 'insensitive' } : undefined,
+      },
       include: {
         user: true,
+        likes: userId ? { where: { userId: userId } } : false,
+        reposts: userId ? { where: { userId: userId } } : false,
+        _count: {
+          select: {
+            likes: true,
+            reposts: true,
+            comments: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: search
+        ? {
+            _relevance: {
+              fields: ['title'], // Chọn trường để chấm điểm
+              search: search, // Từ khóa
+              sort: 'desc', // Điểm cao (giống nhất) lên đầu
+            },
+          }
+        : { createdAt: 'desc' }, // Mặc định thì xếp theo ngày
     });
 
     return {
-      data: tracks as unknown as Track[],
+      data: tracks as unknown as TrackWithDetails[],
       total,
       page: Math.max(1, page),
       limit: take,
@@ -454,5 +502,55 @@ export class TracksService {
       orderBy: { createdAt: 'desc' },
       include: { user: true },
     });
+  }
+
+  async searchEverything(
+    page: number = 1,
+    limit: number = 10,
+    keyword: string,
+    userId: string | null,
+  ): Promise<PaginatedResult<TrackWithDetails>> {
+    const take = Math.max(1, limit);
+    const skip = (Math.max(1, page) - 1) * take;
+
+    // Logic: Tìm trong Title HOẶC User Name
+    const whereCondition: Prisma.TrackWhereInput = {
+      isPublic: true,
+      isBanned: false,
+      OR: [
+        { title: { contains: keyword, mode: 'insensitive' } },
+        { user: { name: { contains: keyword, mode: 'insensitive' } } },
+      ],
+    };
+
+    const total = await this.prisma.track.count({ where: whereCondition });
+
+    const tracks = await this.prisma.track.findMany({
+      skip,
+      take,
+      where: whereCondition,
+      include: {
+        user: true,
+        likes: userId ? { where: { userId: userId } } : false,
+        reposts: userId ? { where: { userId: userId } } : false,
+
+        // Vẫn đếm tổng số lượng để hiển thị số (10k likes...)
+        _count: {
+          select: {
+            likes: true,
+            reposts: true,
+            comments: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' }, // Hoặc dùng logic _relevance nếu muốn xịn
+    });
+
+    return {
+      data: tracks,
+      total,
+      page: Math.max(1, page),
+      limit: take,
+    };
   }
 }

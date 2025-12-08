@@ -1,4 +1,5 @@
 export interface PaginationParams {
-  page?: number | string | string [];
+  page?: number | string | string[];
   limit?: number;
+  search?: string;
 }
