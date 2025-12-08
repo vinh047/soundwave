@@ -244,7 +244,7 @@ const UserDropdown = ({
               </DropdownItem>
               <DropdownItem
                 onClick={() => {
-                  router.push("/playlists");
+                  router.push("/library");
                   setIsOpen(false);
                 }}
                 icon={<List className="h-4 w-4" />}
