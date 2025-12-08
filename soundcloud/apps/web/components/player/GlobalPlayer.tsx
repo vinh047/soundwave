@@ -30,12 +30,11 @@ export function GlobalPlayer() {
     autoplay,
   } = usePlayerStore();
 
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [showQueue, setShowQueue] = useState(false);
 
-  const [isLiked, setIsLiked] = useState(false);
   const [isFollowed, setIsFollowed] = useState(false);
 
   const lastTrackIdRef = useRef<string | null>(null);
@@ -368,7 +367,7 @@ export function GlobalPlayer() {
           )}
 
           {/* NEXT UP BUTTON */}
-<!--           <button
+           {/* <button
             onClick={() => setShowQueue(!showQueue)}
             className={cn(
               "relative rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-white/10",
@@ -377,7 +376,7 @@ export function GlobalPlayer() {
                 : "text-gray-400 hover:text-orange-500"
             )}
           >
-            <ListPlus className="h-4 w-4" /> -->
+            <ListPlus className="h-4 w-4" /> */}
            <button className="p-2" onClick={() => setIsAddToPlaylistOpen(true)}>
             <ListPlus className="w-4 h-4" />
             {queue.length > 1 && !showQueue && (
