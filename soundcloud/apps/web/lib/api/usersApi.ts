@@ -87,6 +87,16 @@ const userApi = {
   unfollowUser: (id: string) => axiosClient.delete(`/users/${id}/follow`),
   checkFollow: (id: string) =>
     axiosClient.get<{ isFollowing: boolean }>(`/users/${id}/follow`),
+
+  searchUsers: (params: PaginationParams & { q: string }) => {
+    return axiosClient.get("/users/search", {
+      params: {
+        q: params.q,
+        page: params.page,
+        limit: params.limit,
+      },
+    });
+  },
 };
 
 export default userApi;

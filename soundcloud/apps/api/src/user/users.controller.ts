@@ -21,7 +21,7 @@ import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Public()
   @Get('check-email')
@@ -45,6 +45,24 @@ export class UsersController {
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ): Promise<PaginatedResult<any>> {
     return this.usersService.findAll(page, limit);
+  }
+
+  @Public()
+  @Get('search')
+  search(
+    @Query('q') q: string,
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @Req() req,
+  ) {
+    const currentUserId = req.user?.id || null;
+
+    return this.usersService.searchUsers(
+      q || '',
+      currentUserId,
+      page ? parseInt(page) : 1,
+      limit ? parseInt(limit) : 10,
+    );
   }
 
   @Public()

@@ -13,6 +13,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
 import { LoggerMiddleware } from 'middleware/logger.middleware';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { PlaylistsModule } from './playlists/playlists.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
       }),
       inject: [ConfigService],
     }),
+    PlaylistsModule,
   ],
   controllers: [AppController],
   providers: [
