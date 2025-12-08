@@ -57,7 +57,7 @@ export function Navbar() {
                   <Bell className="h-5 w-5" />
                 </Button>
 
-                <Link href={`/profile/${user.id}`}>
+                <Link href={`/artist/${user.id}`}>
                   <Avatar src={user.image} alt={user.name} size={36} />
                 </Link>
               </>

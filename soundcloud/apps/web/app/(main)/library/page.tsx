@@ -194,7 +194,7 @@ export default function LibraryPage() {
                                         <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                                             {following.slice(0, 6).map((followedUser) => (
                                                 <Link
-                                                    href={`/profile/${followedUser.id}`}
+                                                    href={`/artist/${followedUser.id}`}
                                                     key={followedUser.id}
                                                     className="flex flex-col items-center group"
                                                 >
@@ -296,7 +296,7 @@ export default function LibraryPage() {
                                     <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                                         {following.map((followedUser: any) => (
                                             <Link
-                                                href={`/profile/${followedUser.id}`}
+                                                href={`/artist/${followedUser.id}`}
                                                 key={followedUser.id}
                                                 className="flex flex-col items-center group"
                                             >

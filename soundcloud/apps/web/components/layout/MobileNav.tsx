@@ -18,7 +18,7 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
       ? [
         { icon: Upload, label: "Upload", href: "/tracks/upload" },
         { icon: Library, label: "Your Library", href: "/library" },
-        { icon: User, label: "Profile", href: `/profile/${user?.id}` },
+        { icon: User, label: "Profile", href: `/artist/${user?.id}` },
       ]
       : [
         { icon: LogIn, label: "Login", href: "/login" },
