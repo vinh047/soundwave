@@ -106,6 +106,10 @@ const trackApi = {
       },
     });
   },
+
+  checkLike: (id: string) => {
+    return axiosClient.get<{ isLiked: boolean }>(`/tracks/${id}/check-like`);
+  },
 };
 
 export default trackApi;

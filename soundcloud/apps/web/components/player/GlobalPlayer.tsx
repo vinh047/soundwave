@@ -5,10 +5,13 @@ import Image from "next/image";
 import { usePlayerStore } from "@/store/playerStore";
 import { PlayerControls } from "./PlayerControls";
 import { ProgressBar } from "./ProgressBar";
-import { Heart, ListPlus, UserPlus } from "lucide-react";
+import { Heart, ListPlus, UserCheck, UserPlus } from "lucide-react";
 import trackApi from "@/lib/api/trackApi";
 import { cn } from "@/lib/utils";
 import { NextUpList } from "./NextUpList";
+import { useAuth } from "@/app/contexts/AuthContext";
+import userApi from "@/lib/api/usersApi";
+import { toast } from "sonner";
 
 export function GlobalPlayer() {
   const {
@@ -25,17 +28,100 @@ export function GlobalPlayer() {
     autoplay,
   } = usePlayerStore();
 
+  const { user } = useAuth();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [showQueue, setShowQueue] = useState(false);
 
+  const [isLiked, setIsLiked] = useState(false);
+  const [isFollowed, setIsFollowed] = useState(false);
+
   const lastTrackIdRef = useRef<string | null>(null);
   const isCountedRef = useRef(false);
+
+  const isOwner = user?.id === currentTrack?.user?.id;
 
   // 1. Mount Check
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // --- LOGIC CHECK FOLLOW TỪ API ---
+  useEffect(() => {
+    // Reset state mỗi khi đổi bài hoặc logout
+    if (!currentTrack || !user) {
+      setIsLiked(false);
+      setIsFollowed(false);
+      return;
+    }
+
+    const artistId = currentTrack.user?.id; // Lấy ID tác giả bài hát
+
+    // Gọi API check follow nếu có ID tác giả
+    if (artistId && artistId !== user.id) {
+      userApi
+        .checkFollow(artistId)
+        .then((res) => {
+          setIsFollowed(res.data.isFollowing);
+        })
+        .catch((err) => {
+          console.error("Check follow failed:", err);
+          setIsFollowed(false);
+        });
+    } else {
+      setIsFollowed(false);
+    }
+
+    trackApi
+      .checkLike(currentTrack.id)
+      .then((res) => setIsLiked(res.data.isLiked))
+      .catch(() => setIsLiked(false));
+  }, [currentTrack, user]);
+
+  const handleToggleFollow = async () => {
+    if (!user) return toast.error("Please login to follow");
+    if (!currentTrack?.user?.id) return;
+    if (isOwner) return;
+
+    const artistId = currentTrack.user.id;
+    const previousState = isFollowed;
+
+    // Optimistic Update: Cập nhật UI ngay lập tức
+    setIsFollowed(!previousState);
+
+    try {
+      if (previousState) {
+        await userApi.unfollowUser(artistId);
+        toast.success(`Unfollowed ${currentTrack.user.name}`);
+      } else {
+        await userApi.followUser(artistId);
+        toast.success(`Following ${currentTrack.user.name}`);
+      }
+    } catch {
+      setIsFollowed(previousState); // Revert nếu lỗi
+      toast.error("Failed to update follow status");
+    }
+  };
+
+  const handleToggleLike = async () => {
+    if (!user) return toast.error("Please login to like tracks");
+    if (!currentTrack) return;
+
+    // Logic Like tạm thời (giống cũ)
+    const previousState = isLiked;
+    setIsLiked(!previousState);
+
+    try {
+      if (previousState) {
+        await trackApi.unlikeTrack(currentTrack.id);
+      } else {
+        await trackApi.likeTrack(currentTrack.id);
+      }
+    } catch {
+      setIsLiked(previousState);
+      toast.error("Failed to update like");
+    }
+  };
 
   // 2. Xử lý khi đổi bài hát
   useEffect(() => {
@@ -163,28 +249,54 @@ export function GlobalPlayer() {
           </p>
         </div>
 
-        <div className="flex items-center gap-1">
-          <button className="p-2 text-gray-500 hover:text-orange-500 transition-colors">
-            <Heart className="w-4 h-4" />
-          </button>
-          <button className="p-2 text-gray-500 hover:text-orange-500 transition-colors hidden sm:block">
-            <UserPlus className="w-4 h-4" />
+        <div className="hidden lg:flex items-center gap-1 ml-2">
+          {/* LIKE BUTTON */}
+          <button
+            onClick={handleToggleLike}
+            className={cn(
+              "rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-white/10",
+              isLiked
+                ? "text-orange-500"
+                : "text-gray-400 hover:text-orange-500"
+            )}
+            title={isLiked ? "Unlike" : "Like"}
+          >
+            <Heart className={cn("h-4 w-4", isLiked && "fill-current")} />
           </button>
 
-          {/* 👇 BUTTON TOGGLE NEXT UP LIST */}
+          {/* FOLLOW BUTTON (Đã tích hợp API checkFollow) */}
+          {!isOwner && (
+            <button
+              onClick={handleToggleFollow}
+              className={cn(
+                "rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-white/10",
+                isFollowed
+                  ? "text-orange-500"
+                  : "text-gray-400 hover:text-orange-500"
+              )}
+              title={isFollowed ? "Unfollow" : "Follow"}
+            >
+              {isFollowed ? (
+                <UserCheck className="h-4 w-4" />
+              ) : (
+                <UserPlus className="h-4 w-4" />
+              )}
+            </button>
+          )}
+
+          {/* NEXT UP BUTTON */}
           <button
             onClick={() => setShowQueue(!showQueue)}
             className={cn(
-              "p-2 transition-colors relative",
+              "relative rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-white/10",
               showQueue
                 ? "text-orange-500"
-                : "text-gray-500 hover:text-orange-500"
+                : "text-gray-400 hover:text-orange-500"
             )}
           >
-            <ListPlus className="w-4 h-4" />
-            {/* Dot thông báo nếu có bài trong queue (Optional) */}
+            <ListPlus className="h-4 w-4" />
             {queue.length > 1 && !showQueue && (
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-orange-500 rounded-full border border-white dark:border-black" />
+              <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full border border-white bg-orange-500 dark:border-black" />
             )}
           </button>
         </div>

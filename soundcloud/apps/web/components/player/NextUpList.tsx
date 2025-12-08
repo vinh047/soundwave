@@ -9,7 +9,6 @@ interface NextUpListProps {
   onClose: () => void;
 }
 
-// Hàm format giây thành phút:giây (ví dụ: 260 -> 04:20)
 function formatDuration(seconds: number) {
   if (!seconds) return "00:00";
   const minutes = Math.floor(seconds / 60);
@@ -20,15 +19,13 @@ function formatDuration(seconds: number) {
 }
 
 export function NextUpList({ onClose }: NextUpListProps) {
-  const { queue, currentTrack, play, setQueue, removeFromQueue } = usePlayerStore();
+  // 👇 Lấy thêm autoplay và toggleAutoplay từ store
+  const { queue, currentTrack, play, setQueue, removeFromQueue, autoplay, toggleAutoplay } = usePlayerStore();
 
-  // Logic xóa danh sách chờ
   const handleClear = () => {
     if (currentTrack) {
-      // Nếu đang hát, giữ lại bài hiện tại, xóa hết các bài khác
       setQueue([currentTrack]);
     } else {
-      // Nếu không hát gì, xóa sạch
       setQueue([]);
     }
   };
@@ -73,7 +70,7 @@ export function NextUpList({ onClose }: NextUpListProps) {
               
               return (
                 <div 
-                  key={`${track.id}-${index}`} // Dùng index để cho phép 1 bài xuất hiện nhiều lần
+                  key={`${track.id}-${index}`}
                   onClick={() => play(track)}
                   className={cn(
                     "flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors group",
@@ -90,18 +87,15 @@ export function NextUpList({ onClose }: NextUpListProps) {
                       fill
                       className="object-cover rounded-[3px]"
                     />
-                    
-                    {/* Overlay khi hover hoặc active */}
                     <div className={cn(
                         "absolute inset-0 bg-black/40 items-center justify-center rounded-[3px]",
                         isActive ? "flex" : "hidden group-hover:flex"
                     )}>
-                        {/* Icon sóng nhạc gif hoặc chấm tròn đơn giản */}
                         <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
                     </div>
                   </div>
 
-                  {/* Thông tin bài hát */}
+                  {/* Thông tin */}
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <h4 className={cn(
                         "text-sm font-medium truncate leading-tight",
@@ -119,11 +113,10 @@ export function NextUpList({ onClose }: NextUpListProps) {
                     {formatDuration(track.duration || 0)}
                   </span>
                   
-                  {/* Nút xóa lẻ từng bài (Optional - Giống ảnh mẫu thường có nút X nhỏ khi hover) */}
+                  {/* Nút xóa */}
                   <button 
                     onClick={(e) => {
                         e.stopPropagation();
-                        // Logic xóa lẻ bài hát khỏi queue (cần viết thêm hàm removeFromQueue trong store nếu muốn)
                         removeFromQueue(index);
                     }}
                     className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-500"
@@ -136,6 +129,30 @@ export function NextUpList({ onClose }: NextUpListProps) {
           </div>
         )}
       </div>
+
+      {/* 👇 FOOTER: AUTOPLAY TOGGLE */}
+      <div className="p-3 border-t border-gray-100 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#1a1a1a]/50 flex items-center justify-between">
+        <div>
+            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Autoplay</p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-500">Play similar tracks automatically</p>
+        </div>
+        
+        <button
+          onClick={toggleAutoplay}
+          className={cn(
+            "w-9 h-5 rounded-full transition-colors relative focus:outline-none",
+            autoplay ? "bg-orange-500" : "bg-gray-300 dark:bg-gray-600"
+          )}
+        >
+          <span
+            className={cn(
+              "absolute top-1 w-3 h-3 bg-white rounded-full transition-all shadow-sm",
+              autoplay ? "right-1" : "left-1"
+            )}
+          />
+        </button>
+      </div>
+
     </div>
   );
 }

@@ -17,6 +17,7 @@ interface PlayerState {
   queue: TrackWithUser[];
   currentIndex: number;
 
+  autoplay: boolean;
   play: (track: TrackWithUser) => void;
   toggle: () => void;
   setVolume: (volume: number) => void;
@@ -30,7 +31,6 @@ interface PlayerState {
   playPrev: () => void;
   removeFromQueue: (index: number) => void;
 
-  autoplay: boolean;
   toggleAutoplay: () => void;
 }
 
