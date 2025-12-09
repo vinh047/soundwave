@@ -20,6 +20,7 @@ import { Public } from 'src/decorator/customize';
 import { AuthDto } from './dto/create-auth.dto';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
+import { GoogleAuthGuard } from './passport/google-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -220,7 +221,7 @@ export class AuthController {
 
   @Public()
   @Get('google')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleAuthGuard)
   async googleAuth(@Req() req) {
     // Guard sẽ tự động redirect người dùng sang trang đăng nhập Google.
   }
@@ -230,7 +231,7 @@ export class AuthController {
    */
   @Public()
   @Get('google/callback')
-  @UseGuards(AuthGuard('google')) // 2. Kích hoạt GoogleStrategy để xử lý callback
+  @UseGuards(GoogleAuthGuard) // 2. Kích hoạt GoogleStrategy để xử lý callback
   async googleAuthRedirect(
     @Req() req, // 3. Passport đã chạy validate() và gắn 'user' vào req
     @Res({ passthrough: true }) res: Response,
