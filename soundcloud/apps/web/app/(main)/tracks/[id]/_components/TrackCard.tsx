@@ -1,3 +1,4 @@
+// fileName: TrackCard.tsx
 "use client";
 
 import { useRef, useEffect } from "react";
@@ -45,9 +46,7 @@ export default function TrackCard({ track }: { track: TrackWithUser }) {
   }, [isCurrent, setGlobalDuration, track.duration]);
 
   const handleSkip = (sec: number) => {
-    // Logic tìm global audio element hơi thủ công nhưng giữ nguyên theo code cũ của bạn
     const globalAudio = document.querySelector("audio") as HTMLAudioElement;
-    // Lưu ý: nên tìm cách access ref tốt hơn trong tương lai
     if (!globalAudio || !displayDuration) return;
 
     const nextTime = Math.max(
@@ -59,17 +58,28 @@ export default function TrackCard({ track }: { track: TrackWithUser }) {
   };
 
   const handleSeek = (p: number) => {
+    const newTime = p * displayDuration;
     const globalAudio = document.querySelector("audio") as HTMLAudioElement;
-    if (!globalAudio || !displayDuration) return;
 
-    const nextTime = p * displayDuration;
-    globalAudio.currentTime = nextTime;
-    setCurrentTime(nextTime);
+    // 1. Nếu là bài hiện tại VÀ audio đã tải, thì tua vật lý
+    if (isCurrent && globalAudio) {
+      globalAudio.currentTime = newTime;
+      setCurrentTime(newTime);
+    } else {
+      // 2. Nếu là bài KHÁC, CHUYỂN BÀI VÀ BẮT ĐẦU TỪ VỊ TRÍ SEEK
+      // Dùng play() để khởi tạo bài mới, sau đó set currentTime
+      // Đây là cách giải quyết khi không thể sửa hàm play() trong store:
+      usePlayerStore.setState({
+        currentTrack: track,
+        isPlaying: true,
+        currentTime: newTime, // ✅ Khởi tạo bài mới tại newTime
+      });
+    }
   };
 
   const handlePlay = () => {
     if (!isCurrent) {
-      play(track);
+      play(track); // Bắt đầu từ 0
     } else {
       toggle();
     }

@@ -38,7 +38,6 @@ input[type="password"]::-ms-reveal {
   right: 0;
 }
 
-
 @keyframes modalOut {
   from {
     opacity: 1;
@@ -53,4 +52,17 @@ input[type="password"]::-ms-reveal {
 /* class dùng để animation đóng */
 .animate-modal-out {
   animation: modalOut 240ms ease-in forwards;
+}
+
+@keyframes pulse-fast {
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.animate-pulse-fast {
+  animation: pulse-fast 0.5s ease-in-out infinite alternate;
 }

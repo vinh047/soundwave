@@ -1,5 +1,5 @@
 import { PaginatedResult } from "@/types/common";
-import { Prisma, Track, Track as TrackType, User } from "@repo/database";
+import { Prisma, Track as TrackType } from "@repo/database";
 import axiosClient from "./apiClient";
 import { PaginationParams } from "@/type/PaginationParams";
 

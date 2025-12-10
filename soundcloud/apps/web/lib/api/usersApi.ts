@@ -1,23 +1,50 @@
 import { PaginatedResult } from "@/types/common";
-import { Playlist, Prisma, User } from "@repo/database";
+import { Prisma, User } from "@repo/database";
 import axiosClient from "./apiClient";
 import { PaginationParams } from "@/type/PaginationParams";
 
-type CreateUserPayload = Omit<
-  User,
-  "id" | "createdAt" | "updatedAt" | "emailVerified"
-> & {
-  password: string;
-};
+export type ArtistProfileData = Prisma.UserGetPayload<{
+  select: {
+    _count: {
+      select: {
+        tracks: true;
+        likes: true;
+        comments: true;
+        following: true;
+        followers: true;
+      };
+    };
+  };
+  include: {
+    profile: {
+      include: {
+        websiteProfiles: {
+          include: {
+            websiteType: true;
+          };
+        };
+      };
+    };
 
-type UpdateUserPayload = Partial<User>;
+    tracks: {
+      include: {
+        user: true;
+        likes: true;
+        reposts: true;
+      };
+    };
 
-type RepostWithTrack = Prisma.RepostGetPayload<{
-  include: { track: { include: { user: true } } };
-}>;
-
-type TrackWithUser = Prisma.TrackGetPayload<{
-  include: { user: true };
+    playlists: {
+      orderBy: { createdAt: "desc" };
+      take: 3;
+      select: {
+        id: true;
+        title: true;
+        isPublic: true;
+        tracks: { select: { track: { select: { imagePath: true } } } };
+      };
+    };
+  };
 }>;
 
 const userApi = {
@@ -57,20 +84,81 @@ const userApi = {
       }>
     >(`/users/${id}`),
 
-  getPlaylistsByUserId: (id: string) =>
-    axiosClient.get<{ data: Playlist[] }>(`/users/${id}/playlists`),
+  getArtistProfileData: (id: string) =>
+    axiosClient.get<ArtistProfileData>(`/users/${id}/profile-data`),
 
-  getRepostsByUserId: (id: string) =>
-    axiosClient.get<{ data: RepostWithTrack[] }>(`/users/${id}/reposts`),
+  getAllTracksByUserId: (id: string) =>
+    axiosClient.get<{
+      data: Prisma.TrackGetPayload<{
+        include: { user: true; likes: true; reposts: true };
+      }>[];
+    }>(`/users/${id}/tracks`),
+
+  getAllPlaylistsByUserId: (id: string) =>
+    axiosClient.get<{
+      data: Prisma.PlaylistGetPayload<{
+        include: { tracks: { include: { track: true } } };
+      }>[];
+    }>(`/users/${id}/playlists`),
+
+  getAllRepostsByUserId: (id: string) =>
+    axiosClient.get<{
+      data: Prisma.RepostGetPayload<{
+        include: {
+          track: { include: { user: true; likes: true; comments: true } };
+        };
+      }>[];
+    }>(`/users/${id}/reposts`),
 
   getPopularTracksByUserId: (id: string) =>
-    axiosClient.get<{ data: TrackWithUser[] }>(`/users/${id}/popular-tracks`),
+    axiosClient.get<{
+      data: Prisma.TrackGetPayload<{
+        include: { user: true; likes: true };
+      }>[];
+    }>(`/users/${id}/popular-tracks`),
 
-  createUser: (data: CreateUserPayload) =>
-    axiosClient.post<User>("/users", data),
+  getFollowersByUserId: (id: string) =>
+    axiosClient.get<{
+      data: Prisma.FollowGetPayload<{
+        include: { follower: true };
+      }>[];
+    }>(`/users/${id}/followers`),
 
-  updateUser: (id: string, data: UpdateUserPayload) =>
-    axiosClient.patch<User>(`/users/${id}`, data),
+  getFollowingByUserId: (id: string) =>
+    axiosClient.get<{
+      data: Prisma.FollowGetPayload<{
+        include: { following: true };
+      }>[];
+    }>(`/users/${id}/following`),
+
+  getLikesByUserId: (id: string) =>
+    axiosClient.get<{
+      data: Prisma.LikeGetPayload<{
+        include: {
+          track: { include: { user: true; likes: true } };
+        };
+      }>[];
+    }>(`/users/${id}/likes`),
+
+  createUser: (
+    data: Omit<
+      User,
+      | "id"
+      | "createdAt"
+      | "updatedAt"
+      | "emailVerified"
+      | "hashedRefreshToken"
+      | "image"
+    > & {
+      password: string;
+      image?: string;
+    }
+  ) => axiosClient.post<User>("/users", data),
+
+  updateUser: (id: string, data: FormData) =>
+    axiosClient.patch<User>(`/users/${id}`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
 
   deleteUser: (id: string) => axiosClient.delete<void>(`/users/${id}`),
 
