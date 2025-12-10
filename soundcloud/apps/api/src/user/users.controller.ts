@@ -9,6 +9,9 @@ import {
   Body,
   ParseIntPipe,
   DefaultValuePipe,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
   UseGuards,
   Req,
 } from '@nestjs/common';
@@ -17,6 +20,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginatedResult } from '../dto/PaginatedResult';
 import { Public } from 'src/decorator/customize';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
 
 @Controller('users')
@@ -29,14 +33,14 @@ export class UsersController {
     const user = await this.usersService.findOneWithPasswordHashByEmail(email);
 
     if (!user) {
-      return { method: 'NEW_USER' }; // Email mới
+      return { method: 'NEW_USER' };
     }
 
     if (user.hashedPassword) {
-      return { method: 'PASSWORD' }; // Đã đăng ký bằng mật khẩu
+      return { method: 'PASSWORD' };
     }
 
-    return { method: 'GOOGLE' }; // Đã đăng ký bằng Google
+    return { method: 'GOOGLE' };
   }
 
   @Get()
@@ -105,16 +109,29 @@ export class UsersController {
   }
 
   @Public()
+  @Get(':id/profile-data')
+  findProfile(@Param('id') id: string) {
+    return this.usersService.getArtistProfileData(id);
+  }
+
+  @Public()
   @Get(':id/playlists')
   async getPlaylists(@Param('id') id: string) {
-    const data = await this.usersService.findPlaylistsByUser(id);
+    const data = await this.usersService.getAllPlaylistsByUserId(id);
     return { data };
   }
 
   @Public()
   @Get(':id/reposts')
   async getReposts(@Param('id') id: string) {
-    const data = await this.usersService.findRepostByUser(id);
+    const data = await this.usersService.getAllRepostsByUserId(id);
+    return { data };
+  }
+
+  @Public()
+  @Get(':id/tracks')
+  async getTracks(@Param('id') id: string) {
+    const data = await this.usersService.getAllTracksByUserId(id);
     return { data };
   }
 
@@ -125,18 +142,68 @@ export class UsersController {
     return { data };
   }
 
+  @Public()
+  @Get(':id/followers')
+  async getFlowers(@Param('id') id: string) {
+    const data = await this.usersService.getFollowersByUserId(id);
+    return { data };
+  }
+  @Public()
+  @Get(':id/following')
+  async getFollowing(@Param('id') id: string) {
+    const data = await this.usersService.getFollowingByUserId(id);
+    return { data };
+  }
+  @Public()
+  @Get(':id/likes')
+  async getLikes(@Param('id') id: string) {
+    const data = await this.usersService.getLikesByUserId(id);
+    return { data };
+  }
+
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
-  @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
-  }
-
   @Delete(':id')
   async remove(@Param('id') id: string) {
     await this.usersService.remove(id);
+  }
+
+  @Patch(':id')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'avatar', maxCount: 1 },
+      { name: 'cover', maxCount: 1 },
+    ]),
+  )
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+    @UploadedFiles()
+    files: {
+      avatar?: Express.Multer.File[];
+      cover?: Express.Multer.File[];
+    },
+  ) {
+    if (dto.websiteProfiles && typeof dto.websiteProfiles === 'string') {
+      try {
+        dto.websiteProfiles = JSON.parse(dto.websiteProfiles);
+      } catch (error) {
+        console.error('Failed to parse websiteProfiles:', error);
+        throw new BadRequestException('Invalid websiteProfiles JSON format');
+      }
+    }
+
+    if (Array.isArray(dto.websiteProfiles)) {
+      const validLinks = dto.websiteProfiles.filter(
+        (link) => link.url && link.websiteTypeId,
+      );
+
+      dto.websiteProfiles = validLinks;
+    }
+
+    return this.usersService.updateUser(id, dto, files);
   }
 }

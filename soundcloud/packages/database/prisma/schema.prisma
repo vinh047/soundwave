@@ -66,6 +66,7 @@ model Profile {
   id       String  @id @default(cuid())
   bio      String?
   location String?
+  coverUrl String? 
 
   websiteProfiles WebsiteProfile[]
 
