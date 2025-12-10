@@ -14,6 +14,7 @@ import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
 import { LoggerMiddleware } from 'middleware/logger.middleware';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { WebsiteTypeModule } from './website-type/website-type.module';
+import { PlaylistsModule } from './playlists/playlists.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { WebsiteTypeModule } from './website-type/website-type.module';
       }),
       inject: [ConfigService],
     }),
+    PlaylistsModule,
   ],
   controllers: [AppController],
   providers: [

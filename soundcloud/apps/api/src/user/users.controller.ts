@@ -12,6 +12,8 @@ import {
   UseInterceptors,
   UploadedFiles,
   BadRequestException,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -19,6 +21,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PaginatedResult } from '../dto/PaginatedResult';
 import { Public } from 'src/decorator/customize';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
@@ -49,6 +52,24 @@ export class UsersController {
   }
 
   @Public()
+  @Get('search')
+  search(
+    @Query('q') q: string,
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @Req() req,
+  ) {
+    const currentUserId = req.user?.id || null;
+
+    return this.usersService.searchUsers(
+      q || '',
+      currentUserId,
+      page ? parseInt(page) : 1,
+      limit ? parseInt(limit) : 10,
+    );
+  }
+
+  @Public()
   @Get('trending')
   async getTrendingArtists(@Query('limit') limit: string) {
     const take = Number(limit) || 10;
@@ -60,6 +81,25 @@ export class UsersController {
       message: 'Lấy danh sách nghệ sĩ thịnh hành thành công',
       data: artists,
     };
+  }
+
+  // --- FOLLOW ---
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/follow')
+  async followUser(@Param('id') followingId: string, @Req() req) {
+    return this.usersService.followUser(req.user.id, followingId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/follow')
+  async unfollowUser(@Param('id') followingId: string, @Req() req) {
+    return this.usersService.unfollowUser(req.user.id, followingId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/follow')
+  async checkFollow(@Param('id') followingId: string, @Req() req) {
+    return this.usersService.checkFollow(req.user.id, followingId);
   }
 
   @Public()

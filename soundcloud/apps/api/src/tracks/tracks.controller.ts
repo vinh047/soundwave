@@ -16,6 +16,8 @@ import {
   UseInterceptors,
   UploadedFiles,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { TracksService } from './tracks.service';
 import { CreateTrackDto } from './dto/create-track.dto';
@@ -63,8 +65,41 @@ export class TracksController {
 
   @Public()
   @Get()
-  findAll() {
-    return this.tracksService.findAll();
+  findAll(
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+
+    @Query('q') q: string,
+    @Query('search') search: string,
+    @Req() req,
+  ) {
+    const keyword = q || search;
+    const userId = req.user?.id || null;
+
+    return this.tracksService.findAll(
+      page ? parseInt(page) : 1,
+      limit ? parseInt(limit) : 10,
+      keyword,
+      userId,
+    );
+  }
+
+  @Public()
+  @Get('search/everything')
+  searchEverything(
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+    @Query('q') q: string,
+    @Req() req,
+  ) {
+    const userId = req.user?.id || null;
+
+    return this.tracksService.searchEverything(
+      page ? parseInt(page) : 1,
+      limit ? parseInt(limit) : 10,
+      q || '',
+      userId,
+    );
   }
 
   // GET /tracks/trending?limit=5
@@ -94,17 +129,70 @@ export class TracksController {
   }
 
   /**
-   * POST /tracks/:id/listen
-   * Ghi nhận lượt nghe của user
+   * API: Ghi nhận lượt nghe
+   * POST /api/tracks/:id/listen
+   * - Public: Khách nghe cũng tính view.
+   * - UseGuards: Vẫn chạy qua Guard để lấy userId (nếu có token).
    */
-  @UseGuards(JwtAuthGuard) // nếu muốn yêu cầu token
+  @Public()
+  @UseGuards(JwtAuthGuard)
   @Post(':id/listen')
+  @HttpCode(HttpStatus.OK)
   async recordListen(@Param('id') trackId: string, @Req() req) {
     const userId = req.user?.id ?? null;
+    console.log('User from Req:', req.user);
 
     await this.tracksService.recordListen(userId, trackId);
 
-    return { message: 'Listen recorded' };
+    return { message: 'Listen recorded successfully' };
+  }
+
+  // --- SOCIAL INTERACTIONS ---
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/like')
+  async likeTrack(@Param('id') trackId: string, @Req() req) {
+    return this.tracksService.likeTrack(req.user.id, trackId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/like')
+  async unlikeTrack(@Param('id') trackId: string, @Req() req) {
+    return this.tracksService.unlikeTrack(req.user.id, trackId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/repost')
+  async repostTrack(@Param('id') trackId: string, @Req() req) {
+    return this.tracksService.repostTrack(req.user.id, trackId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id/repost')
+  async unrepostTrack(@Param('id') trackId: string, @Req() req) {
+    return this.tracksService.unrepostTrack(req.user.id, trackId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/comments')
+  async commentTrack(
+    @Param('id') trackId: string,
+    @Body('content') content: string,
+    @Req() req,
+  ) {
+    return this.tracksService.commentTrack(req.user.id, trackId, content);
+  }
+
+  @Public()
+  @Get(':id/comments')
+  async getComments(@Param('id') trackId: string) {
+    return this.tracksService.getComments(trackId);
+  }
+
+  @UseGuards(JwtAuthGuard) // Bắt buộc đăng nhập mới check được
+  @Get(':id/check-like')
+  checkLike(@Param('id') id: string, @Req() req) {
+    return this.tracksService.checkLike(id, req.user.id);
   }
 
   @Public()

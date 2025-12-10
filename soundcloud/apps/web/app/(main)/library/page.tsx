@@ -11,15 +11,21 @@ import {
 } from "@/components/ui2/Tabs";
 import trackApi from "@/lib/api/trackApi";
 import userApi from "@/lib/api/usersApi";
+import playlistApi from "@/lib/api/playlistApi";
 import { Prisma } from "@repo/database";
-import { Loader2 } from "lucide-react";
+import { Loader2, Play, Pause, Heart, MoreHorizontal, LayoutGrid, List, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 // Types for our data
 type TrackWithUser = Prisma.TrackGetPayload<{ include: { user: true } }>;
-type Playlist = Prisma.PlaylistGetPayload<{}>;
+type Playlist = Prisma.PlaylistGetPayload<{
+    include: {
+        tracks: { include: { track: true } };
+        _count: { select: { tracks: true } };
+    };
+}>;
 type UserWithProfile = Prisma.UserGetPayload<{}>;
 
 export default function LibraryPage() {
@@ -41,9 +47,7 @@ export default function LibraryPage() {
             try {
                 // 1. Recent Tracks
                 const recentRes = await trackApi.getRecentTracks();
-                // Map RecentListen to Track
-                const recent = recentRes.data.map((item) => item.track);
-                setRecentTracks(recent as unknown as TrackWithUser[]);
+                setRecentTracks(recentRes.data);
 
                 // 2. User Data (Likes, Following, etc.)
                 // Note: getUserById returns a lot, we might want to optimize this later
@@ -54,29 +58,21 @@ export default function LibraryPage() {
 
                 if (userDetails) {
                     // Likes
-                    // userDetails.likes is array of Like objects, we need the tracks
-                    // Wait, getUserById includes likes: true, but does it include the track inside the like?
-                    // Let's check the API definition again.
-                    // userApi.getUserById include: { likes: true } -> returns Like[]
-                    // We need Like & { track: Track }
-                    // The current userApi.getUserById definition in the file I read ONLY includes `likes: true`.
-                    // It does NOT include the track relation inside the like.
-                    // So we might not get the liked tracks details from here.
-                    // We might need to fetch liked tracks separately or update the API.
-                    // For now, let's assume we might need a new endpoint or use `getPopularTracksByUserId` as a placeholder?
-                    // No, `getPopularTracksByUserId` returns tracks created by user.
+                    if (userDetails.likes && Array.isArray(userDetails.likes)) {
+                        const tracks = userDetails.likes.map((like: any) => like.track);
+                        setLikedTracks(tracks);
+                    }
 
-                    // Let's try to fetch playlists
-                    const playlistsRes = await userApi.getPlaylistsByUserId(user.id);
-                    setPlaylists(playlistsRes.data.data);
+
+                    // Playlists
+                    const playlistsRes = await playlistApi.getMyPlaylists();
+                    setPlaylists(playlistsRes.data as any); // Cast to any to avoid strict type check if needed, or ensure types match
 
                     // Following
-                    // userDetails.following is Follow[]
-                    // We need the user details of the people being followed.
-                    // Again, check if `following` include relations.
-                    // The API definition: `following: true`.
-                    // This usually just returns the relation table data (followerId, followingId).
-                    // We need `following: { include: { following: true } }` to get the user data.
+                    if (userDetails.following && Array.isArray(userDetails.following)) {
+                        const followedUsers = userDetails.following.map((follow: any) => follow.following);
+                        setFollowing(followedUsers);
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching library data:", error);
@@ -121,7 +117,7 @@ export default function LibraryPage() {
                         onValueChange={setActiveTab}
                         className="w-full"
                     >
-                        <TabsList className="h-auto w-full justify-start gap-6 bg-transparent p-0">
+                        <TabsList className="h-auto w-full justify-start gap-8 bg-transparent p-0 border-b border-gray-800">
                             {[
                                 "Overview",
                                 "Likes",
@@ -134,19 +130,19 @@ export default function LibraryPage() {
                                 <TabsTrigger
                                     key={tab}
                                     value={tab.toLowerCase()}
-                                    className="rounded-none border-b-2 border-transparent px-0 pb-3 pt-0 text-base font-medium text-gray-500 hover:text-gray-900 data-[state=active]:border-orange-500 data-[state=active]:bg-transparent data-[state=active]:text-orange-500 dark:text-gray-400 dark:hover:text-white"
+                                    className="rounded-none border-b-2 border-transparent px-0 pb-4 pt-0 text-lg font-semibold text-gray-500 hover:text-gray-300 data-[state=active]:border-orange-500 data-[state=active]:bg-transparent data-[state=active]:text-orange-500 transition-colors"
                                 >
                                     {tab}
                                 </TabsTrigger>
                             ))}
                         </TabsList>
 
-                        <div className="mt-8">
-                            <TabsContent value="overview" className="space-y-12">
+                        <div className="mt-10">
+                            <TabsContent value="overview" className="space-y-16">
                                 {/* Recently Played */}
                                 <Section title="Recently played">
                                     {recentTracks.length > 0 ? (
-                                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                                        <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                                             {recentTracks.slice(0, 6).map((track) => (
                                                 <TrackCard key={track.id} track={track} />
                                             ))}
@@ -158,22 +154,21 @@ export default function LibraryPage() {
 
                                 {/* Likes */}
                                 <Section title="Likes">
-                                    {/* Placeholder for Likes since we need to fix the API */}
-                                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                                        {/* Dummy skeletons or empty for now */}
-                                        {[1, 2, 3, 4, 5].map((i) => (
-                                            <div
-                                                key={i}
-                                                className="aspect-square rounded-md bg-gray-200 dark:bg-gray-800"
-                                            />
-                                        ))}
-                                    </div>
+                                    {likedTracks.length > 0 ? (
+                                        <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                                            {likedTracks.slice(0, 6).map((track) => (
+                                                <TrackCard key={track.id} track={track} />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <EmptyState message="You haven't liked any tracks yet." />
+                                    )}
                                 </Section>
 
                                 {/* Playlists */}
                                 <Section title="Playlists">
                                     {playlists.length > 0 ? (
-                                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                                        <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                                             {playlists.slice(0, 6).map((playlist) => (
                                                 <Link
                                                     href={`/playlists/${playlist.id}`}
@@ -186,7 +181,7 @@ export default function LibraryPage() {
                                                             <span className="text-4xl">♪</span>
                                                         </div>
                                                     </div>
-                                                    <h3 className="truncate font-medium text-gray-900 dark:text-white">
+                                                    <h3 className="truncate font-medium text-lg text-gray-900 dark:text-white">
                                                         {playlist.title}
                                                     </h3>
                                                     <p className="truncate text-sm text-gray-500">
@@ -202,35 +197,221 @@ export default function LibraryPage() {
 
                                 {/* Following */}
                                 <Section title="Following">
-                                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                                        {/* Placeholder */}
-                                        <div className="flex flex-col items-center">
-                                            <div className="h-32 w-32 rounded-full bg-gray-200 dark:bg-gray-800 mb-2"></div>
-                                            <span className="text-sm font-medium">Artist Name</span>
+                                    {following.length > 0 ? (
+                                        <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                                            {following.slice(0, 6).map((followedUser) => (
+                                                <Link
+                                                    href={`/artist/${followedUser.id}`}
+                                                    key={followedUser.id}
+                                                    className="flex flex-col items-center group"
+                                                >
+                                                    <div className="h-40 w-40 rounded-full overflow-hidden mb-4 border-2 border-transparent group-hover:border-orange-500 transition-all shadow-lg">
+                                                        {followedUser.image ? (
+                                                            <Image
+                                                                src={followedUser.image}
+                                                                alt={followedUser.name || "User"}
+                                                                width={160}
+                                                                height={160}
+                                                                className="object-cover h-full w-full"
+                                                            />
+                                                        ) : (
+                                                            <div className="h-full w-full bg-linear-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-5xl font-bold">
+                                                                {followedUser.name?.[0]?.toUpperCase() || "U"}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-base font-semibold text-gray-900 dark:text-white group-hover:text-orange-500 transition-colors text-center truncate w-full px-2">
+                                                        {followedUser.name}
+                                                    </span>
+                                                </Link>
+                                            ))}
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <EmptyState message="You are not following anyone yet." />
+                                    )}
                                 </Section>
 
                             </TabsContent>
 
-                            {/* Other tabs content placeholders */}
-                            <TabsContent value="likes">
-                                <EmptyState message="Your liked tracks will appear here." />
+                            {/* Likes Tab */}
+                            <TabsContent value="likes" className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-base font-medium text-gray-400">
+                                        Hear the tracks you've liked:
+                                    </h2>
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-1 bg-gray-100 dark:bg-zinc-800 rounded p-1">
+                                            <button className="p-1.5 rounded hover:bg-white dark:hover:bg-zinc-700 text-orange-500 shadow-sm">
+                                                <LayoutGrid size={18} />
+                                            </button>
+                                            <button className="p-1.5 rounded hover:bg-white dark:hover:bg-zinc-700 text-gray-500">
+                                                <List size={18} />
+                                            </button>
+                                        </div>
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                placeholder="Filter"
+                                                className="h-8 rounded bg-gray-100 dark:bg-zinc-800 border-none px-3 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-1 focus:ring-orange-500 w-48"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {likedTracks.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                                        {likedTracks.map((track) => (
+                                            <TrackCard key={track.id} track={track} />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <EmptyState message="You haven't liked any tracks yet." />
+                                )}
                             </TabsContent>
-                            <TabsContent value="playlists">
-                                <EmptyState message="Your playlists will appear here." />
+
+                            {/* Playlists Tab */}
+                            <TabsContent value="playlists" className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-base font-medium text-gray-400">
+                                        Hear your own playlists and the playlists you've liked:
+                                    </h2>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Filter"
+                                            className="h-8 rounded bg-gray-100 dark:bg-zinc-800 border-none px-3 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-1 focus:ring-orange-500 w-48"
+                                        />
+                                    </div>
+                                </div>
+
+                                {playlists.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                                        {playlists.map((playlist) => (
+                                            <Link
+                                                href={`/playlists/${playlist.id}`}
+                                                key={playlist.id}
+                                                className="group block"
+                                            >
+                                                <div className="relative mb-3 aspect-square overflow-hidden rounded-md bg-gray-200 dark:bg-gray-800 group-hover:opacity-80 transition-opacity">
+                                                    {playlist.tracks?.[0]?.track?.imagePath ? (
+                                                        <Image
+                                                            src={playlist.tracks[0].track.imagePath}
+                                                            alt={playlist.title}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-full w-full items-center justify-center text-gray-400">
+                                                            <span className="text-4xl">♪</span>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Overlay Play Button (Optional) */}
+                                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <div className="bg-orange-500 rounded-full p-3 text-white shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+                                                            <Play size={24} fill="currentColor" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <h3 className="truncate font-medium text-lg text-gray-900 dark:text-white group-hover:text-orange-500 transition-colors">
+                                                    {playlist.title}
+                                                </h3>
+                                                <p className="truncate text-sm text-gray-500">
+                                                    {user?.name}
+                                                </p>
+                                                <p className="text-xs text-gray-400 mt-1">
+                                                    {playlist._count?.tracks || 0} tracks
+                                                </p>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <EmptyState message="You haven't created any playlists yet." />
+                                )}
                             </TabsContent>
+
+                            {/* Albums Tab */}
                             <TabsContent value="albums">
                                 <EmptyState message="Your albums will appear here." />
                             </TabsContent>
+
+                            {/* Stations Tab */}
                             <TabsContent value="stations">
                                 <EmptyState message="Your stations will appear here." />
                             </TabsContent>
-                            <TabsContent value="following">
-                                <EmptyState message="People you follow will appear here." />
+
+                            {/* Following Tab */}
+                            <TabsContent value="following" className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-base font-medium text-gray-400">
+                                        Hear what the people you follow have posted:
+                                    </h2>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Filter"
+                                            className="h-8 rounded bg-gray-100 dark:bg-zinc-800 border-none px-3 text-sm text-gray-900 dark:text-white placeholder-gray-500 focus:ring-1 focus:ring-orange-500 w-48"
+                                        />
+                                    </div>
+                                </div>
+
+                                {following.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                                        {following.map((followedUser: any) => (
+                                            <Link
+                                                href={`/artist/${followedUser.id}`}
+                                                key={followedUser.id}
+                                                className="flex flex-col items-center group"
+                                            >
+                                                <div className="h-40 w-40 rounded-full overflow-hidden mb-3 border-2 border-transparent group-hover:border-orange-500 transition-all shadow-lg relative">
+                                                    {followedUser.image ? (
+                                                        <Image
+                                                            src={followedUser.image}
+                                                            alt={followedUser.name || "User"}
+                                                            width={160}
+                                                            height={160}
+                                                            className="object-cover h-full w-full"
+                                                        />
+                                                    ) : (
+                                                        <div className="h-full w-full bg-linear-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-5xl font-bold">
+                                                            {followedUser.name?.[0]?.toUpperCase() || "U"}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="text-center w-full px-2">
+                                                    <span className="block text-base font-semibold text-gray-900 dark:text-white group-hover:text-orange-500 transition-colors truncate">
+                                                        {followedUser.name}
+                                                    </span>
+                                                    <div className="flex items-center justify-center gap-1 text-xs text-gray-500 mt-1">
+                                                        <User size={12} />
+                                                        <span>
+                                                            {followedUser._count?.followers || 0} followers
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <EmptyState message="You are not following anyone yet." />
+                                )}
                             </TabsContent>
-                            <TabsContent value="history">
-                                <EmptyState message="Your listening history." />
+                            <TabsContent value="history" className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-base font-medium text-gray-400">
+                                        Tracks you've listened to recently:
+                                    </h2>
+                                </div>
+
+                                {recentTracks.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                                        {recentTracks.map((track) => (
+                                            <TrackCard key={track.id} track={track} />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <EmptyState message="You haven't listened to anything yet." />
+                                )}
                             </TabsContent>
                         </div>
                     </Tabs>
@@ -249,8 +430,8 @@ function Section({
 }) {
     return (
         <section>
-            <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            <div className="mb-6 flex items-center justify-between border-b border-gray-800 pb-2">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                     {title}
                 </h2>
             </div>

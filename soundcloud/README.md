@@ -1,135 +1,90 @@
-# Turborepo starter
+# Hệ Thống Nghe Nhạc Trực Tuyến (SoundCloud Clone)
 
-This Turborepo starter is maintained by the Turborepo core team.
+Một nền tảng nghe nhạc trực tuyến hiện đại, được xây dựng với Next.js, Turborepo và các công nghệ web mới nhất.
 
-## Using this example
+## 🚀 Tính Năng Chính
 
-Run the following command:
+- **Nghe Nhạc Trực Tuyến**: Trải nghiệm nghe nhạc mượt mà với trình phát nhạc tích hợp, hỗ trợ visualization sóng nhạc.
+- **Quản Lý Playlist**: Tạo, chỉnh sửa, xóa và chia sẻ playlist cá nhân.
+- **Thư Viện Cá Nhân**: 
+  - **History**: Xem lại lịch sử nghe nhạc gần đây.
+  - **Likes**: Lưu và quản lý các bài hát yêu thích.
+  - **Following**: Theo dõi nghệ sĩ và cập nhật bài hát mới từ họ.
+- **Hồ Sơ Nghệ Sĩ**: Trang cá nhân đầy đủ cho nghệ sĩ với danh sách bài hát, album và thông tin chi tiết.
+- **Tải Lên Nhạc**: Tính năng tải lên bài hát hỗ trợ kéo thả (Drag & Drop).
+- **Giao Diện Hiện Đại**: Thiết kế đẹp mắt, hỗ trợ Dark Mode, Responsive trên mọi thiết bị.
 
-```sh
-npx create-turbo@latest
+## 🛠️ Công Nghệ Sử Dụng
+
+Dự án được xây dựng trên cấu trúc Monorepo sử dụng **Turborepo**.
+
+### Frontend (`apps/web`)
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Ngôn ngữ**: TypeScript
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **UI Components**: [Radix UI](https://www.radix-ui.com/), [Lucide React](https://lucide.dev/) (Icons)
+- **State Management**: [Zustand](https://github.com/pmndrs/zustand)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+- **Audio Visualization**: [Wavesurfer.js](https://wavesurfer-js.org/)
+- **Authentication**: [NextAuth.js](https://next-auth.js.org/)
+
+### Backend & Database
+- **Database**: PostgreSQL / MySQL
+- **ORM**: [Prisma](https://www.prisma.io/) (`@repo/database`)
+
+### Tools
+- **Package Manager**: [pnpm](https://pnpm.io/)
+- **Build System**: [Turbo](https://turbo.build/)
+
+## 📦 Cài Đặt & Chạy Dự Án
+
+### 1. Yêu cầu tiên quyết
+- Node.js (phiên bản LTS mới nhất)
+- pnpm (`npm install -g pnpm`)
+
+### 2. Cài đặt dependencies
+Tại thư mục gốc của dự án:
+
+```bash
+pnpm install
 ```
 
-## What's inside?
+### 3. Cấu hình môi trường
+Tạo file `.env` trong thư mục `apps/web` và cấu hình các biến môi trường cần thiết (ví dụ: kết nối Database, NextAuth secret, Cloudinary/S3 nếu có).
 
-This Turborepo includes the following packages/apps:
+### 4. Chạy Database
+Đảm bảo database đã được khởi chạy và schema được đẩy lên:
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+```bash
+# Từ thư mục gốc
+pnpm db:push
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### 5. Chạy ứng dụng (Development)
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+```bash
+pnpm dev
 ```
 
-### Develop
+Ứng dụng sẽ chạy tại: `http://localhost:3000`
 
-To develop all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+## 📂 Cấu Trúc Dự Án
 
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
+.
+├── apps
+│   └── web              # Ứng dụng Next.js chính (Frontend & API Routes)
+├── packages
+│   ├── database         # Prisma schema và client configuration
+│   ├── ui               # Shared UI components
+│   ├── types            # Shared TypeScript types
+│   ├── eslint-config    # Cấu hình ESLint chung
+│   └── typescript-config # Cấu hình TypeScript chung
+├── package.json         # Root package.json
+├── pnpm-workspace.yaml  # Cấu hình workspace
+└── turbo.json           # Cấu hình Turborepo
 ```
 
-### Remote Caching
+## 🤝 Đóng Góp
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+Mọi đóng góp đều được hoan nghênh! Vui lòng tạo Pull Request hoặc mở Issue nếu bạn tìm thấy lỗi hoặc muốn đề xuất tính năng mới.

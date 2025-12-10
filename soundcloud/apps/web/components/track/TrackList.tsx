@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { EmblaCarouselType } from "embla-carousel";
 import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
+
 interface TrackListProps {
   tracks: Prisma.TrackGetPayload<{ include: { user: true } }>[];
 }
@@ -49,10 +50,10 @@ export function TrackList({ tracks }: TrackListProps) {
   if (!tracks.length) return null;
 
   return (
-    <div className="relative group">
+    // 👇 SỬA 1: Đổi 'group' thành 'group/list' để định danh riêng cho list
+    <div className="relative group/list">
       {/* Viewport của Carousel */}
       <div className="overflow-hidden" ref={emblaRef}>
-        {/* Container chứa các slides - Dùng flex thay vì grid */}
         <div className="flex gap-4 sm:gap-6 touch-pan-y">
           {tracks.map((track) => (
             <div
@@ -65,7 +66,7 @@ export function TrackList({ tracks }: TrackListProps) {
         </div>
       </div>
 
-      {/* --- Nút điều hướng (Chỉ hiện khi hover vào group trên PC) --- */}
+      {/* --- Nút điều hướng --- */}
 
       {/* Nút Previous */}
       <button
@@ -78,8 +79,12 @@ export function TrackList({ tracks }: TrackListProps) {
           transition-all duration-200
           hover:scale-110 hover:bg-orange-500 hover:text-white hover:border-orange-500
           disabled:opacity-0 disabled:cursor-default
-          opacity-0 group-hover:opacity-100 
+          opacity-0 
           dark:bg-zinc-800 dark:border-zinc-700 dark:text-white
+          
+          /* 👇 SỬA 2: Dùng group-hover/list để chỉ hiện khi hover vào list */
+          group-hover/list:opacity-100 
+          
           ${!prevBtnEnabled && "hidden"} 
         `}
         aria-label="Previous slide"
@@ -98,8 +103,12 @@ export function TrackList({ tracks }: TrackListProps) {
           transition-all duration-200
           hover:scale-110 hover:bg-orange-500 hover:text-white hover:border-orange-500
           disabled:opacity-0 disabled:cursor-default
-          opacity-0 group-hover:opacity-100
+          opacity-0 
           dark:bg-zinc-800 dark:border-zinc-700 dark:text-white
+
+          /* 👇 SỬA 3: Tương tự cho nút Next */
+          group-hover/list:opacity-100
+
            ${!nextBtnEnabled && "hidden"}
         `}
         aria-label="Next slide"

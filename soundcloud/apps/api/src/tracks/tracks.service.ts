@@ -23,6 +23,21 @@ export type TrackWithStats = Prisma.TrackGetPayload<{
   };
 }>;
 
+export type TrackWithDetails = Prisma.TrackGetPayload<{
+  include: {
+    user: true;
+    likes: true;
+    reposts: true;
+    _count: {
+      select: {
+        likes: true;
+        reposts: true;
+        comments: true;
+      };
+    };
+  };
+}>;
+
 @Injectable()
 export class TracksService {
   constructor(
@@ -33,11 +48,23 @@ export class TracksService {
   async findAll(
     page: number = 1,
     limit: number = 10,
-  ): Promise<PaginatedResult<Omit<Track, 'comments' | 'likes'>>> {
+    search?: string,
+    userId?: string | null,
+  ): Promise<PaginatedResult<TrackWithDetails>> {
     const take = Math.max(1, limit);
     const skip = (Math.max(1, page) - 1) * take;
 
-    const whereCondition = { isPublic: true, isBanned: false };
+    const whereCondition: Prisma.TrackWhereInput = {
+      isPublic: true,
+      isBanned: false,
+    };
+
+    if (search) {
+      whereCondition.title = {
+        contains: search,
+        mode: 'insensitive',
+      };
+    }
 
     const total = await this.prisma.track.count({
       where: whereCondition,
@@ -46,15 +73,36 @@ export class TracksService {
     const tracks = await this.prisma.track.findMany({
       skip,
       take,
-      where: whereCondition,
+      where: {
+        isPublic: true,
+        isBanned: false,
+        title: search ? { contains: search, mode: 'insensitive' } : undefined,
+      },
       include: {
         user: true,
+        likes: userId ? { where: { userId: userId } } : false,
+        reposts: userId ? { where: { userId: userId } } : false,
+        _count: {
+          select: {
+            likes: true,
+            reposts: true,
+            comments: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: search
+        ? {
+            _relevance: {
+              fields: ['title'], // Chọn trường để chấm điểm
+              search: search, // Từ khóa
+              sort: 'desc', // Điểm cao (giống nhất) lên đầu
+            },
+          }
+        : { createdAt: 'desc' }, // Mặc định thì xếp theo ngày
     });
 
     return {
-      data: tracks as unknown as Track[],
+      data: tracks as unknown as TrackWithDetails[],
       total,
       page: Math.max(1, page),
       limit: take,
@@ -120,7 +168,7 @@ export class TracksService {
           // Làm trơn số liệu một chút
           let normalized = max / 32767;
           if (normalized > 1) normalized = 1;
-          samples.push(Number(normalized.toFixed(4)));
+          samples.push(normalized || 0); // Tránh NaN
         }
 
         resolve(samples);
@@ -194,7 +242,12 @@ export class TracksService {
 
     const track = await this.prisma.track.findUnique({
       where: { id },
-      include: { user: true, likes: true, comments: true },
+      include: {
+        user: true,
+        likes: true,
+        comments: { include: { user: true } },
+        reposts: true,
+      },
     });
 
     if (!track) {
@@ -319,26 +372,55 @@ export class TracksService {
     return items.slice(0, limit).map((i) => i.track);
   }
 
+  /**
+   * 1. GHI NHẬN LƯỢT NGHE
+   * - Luôn tăng playCount của Track (+1).
+   * - Nếu có userId (đã đăng nhập) -> Lưu vào bảng RecentListen.
+   */
   async recordListen(userId: string | null, trackId: string) {
-    if (!userId) {
-      // anonymous: you can still insert Play log (if using Play), or ignore
-      return;
+    const track = await this.prisma.track.findUnique({
+      where: { id: trackId },
+    });
+    if (!track) {
+      throw new NotFoundException('Bài hát không tồn tại');
     }
 
-    // Upsert RecentListen
-    await this.prisma.recentListen.upsert({
-      where: { userId_trackId: { userId, trackId } }, // needs @@unique([userId, trackId]) and a compound name
-      update: {
-        lastPlayedAt: new Date(),
-        playCount: { increment: 1 as any }, // Prisma numeric increment syntax may vary
-      },
-      create: {
-        userId,
-        trackId,
-        lastPlayedAt: new Date(),
-        playCount: 1,
-      },
+    // Task 1: Tăng playCount cho Track
+    const incrementTrackView = this.prisma.track.update({
+      where: { id: trackId },
+      data: { playCount: { increment: 1 } },
     });
+
+    // Task 2: Nếu là User -> Lưu lịch sử nghe (Upsert)
+    if (userId) {
+      const updateHistory = this.prisma.recentListen.upsert({
+        where: {
+          // Khóa unique kết hợp [userId, trackId] trong schema
+          userId_trackId: {
+            userId: userId,
+            trackId: trackId,
+          },
+        },
+        create: {
+          userId: userId,
+          trackId: trackId,
+          playCount: 1,
+          lastPlayedAt: new Date(),
+        },
+        update: {
+          lastPlayedAt: new Date(), // Cập nhật thời gian mới nhất
+          playCount: { increment: 1 }, // Tăng số lần user này nghe bài này
+        },
+      });
+
+      // Chạy cả 2 lệnh trong 1 transaction (đảm bảo tính toàn vẹn)
+      await this.prisma.$transaction([incrementTrackView, updateHistory]);
+    } else {
+      // Khách vãng lai -> Chỉ tăng view bài hát
+      await incrementTrackView;
+    }
+
+    return { success: true };
   }
 
   async getUserRecentTracks(
@@ -355,5 +437,133 @@ export class TracksService {
       take: limit,
       include: { track: { include: { user: true } } },
     });
+  }
+
+  // --- SOCIAL INTERACTIONS ---
+
+  async likeTrack(userId: string, trackId: string) {
+    // Check if already liked
+    const existing = await this.prisma.like.findUnique({
+      where: { userId_trackId: { userId, trackId } },
+    });
+    if (existing) return existing;
+
+    return this.prisma.like.create({
+      data: { userId, trackId },
+    });
+  }
+
+  async unlikeTrack(userId: string, trackId: string) {
+    try {
+      return await this.prisma.like.delete({
+        where: { userId_trackId: { userId, trackId } },
+      });
+    } catch (error) {
+      // Ignore if not found
+      return null;
+    }
+  }
+
+  async repostTrack(userId: string, trackId: string) {
+    const existing = await this.prisma.repost.findUnique({
+      where: { userId_trackId: { userId, trackId } },
+    });
+    if (existing) return existing;
+
+    return this.prisma.repost.create({
+      data: { userId, trackId },
+    });
+  }
+
+  async unrepostTrack(userId: string, trackId: string) {
+    try {
+      return await this.prisma.repost.delete({
+        where: { userId_trackId: { userId, trackId } },
+      });
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async commentTrack(userId: string, trackId: string, content: string) {
+    return this.prisma.comment.create({
+      data: {
+        userId,
+        trackId,
+        content,
+      },
+      include: { user: true },
+    });
+  }
+
+  async getComments(trackId: string) {
+    return this.prisma.comment.findMany({
+      where: { trackId },
+      orderBy: { createdAt: 'desc' },
+      include: { user: true },
+    });
+  }
+
+  async searchEverything(
+    page: number = 1,
+    limit: number = 10,
+    keyword: string,
+    userId: string | null,
+  ): Promise<PaginatedResult<TrackWithDetails>> {
+    const take = Math.max(1, limit);
+    const skip = (Math.max(1, page) - 1) * take;
+
+    // Logic: Tìm trong Title HOẶC User Name
+    const whereCondition: Prisma.TrackWhereInput = {
+      isPublic: true,
+      isBanned: false,
+      OR: [
+        { title: { contains: keyword, mode: 'insensitive' } },
+        { user: { name: { contains: keyword, mode: 'insensitive' } } },
+      ],
+    };
+
+    const total = await this.prisma.track.count({ where: whereCondition });
+
+    const tracks = await this.prisma.track.findMany({
+      skip,
+      take,
+      where: whereCondition,
+      include: {
+        user: true,
+        likes: userId ? { where: { userId: userId } } : false,
+        reposts: userId ? { where: { userId: userId } } : false,
+
+        // Vẫn đếm tổng số lượng để hiển thị số (10k likes...)
+        _count: {
+          select: {
+            likes: true,
+            reposts: true,
+            comments: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' }, // Hoặc dùng logic _relevance nếu muốn xịn
+    });
+
+    return {
+      data: tracks,
+      total,
+      page: Math.max(1, page),
+      limit: take,
+    };
+  }
+
+  async checkLike(trackId: string, userId: string) {
+    const like = await this.prisma.like.findUnique({
+      where: {
+        userId_trackId: {
+          userId: userId,
+          trackId: trackId,
+        },
+      },
+    });
+
+    return { isLiked: !!like }; // Trả về true nếu tìm thấy, false nếu null
   }
 }

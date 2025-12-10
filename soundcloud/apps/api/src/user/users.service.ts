@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -302,11 +306,27 @@ export class UsersService {
         playlists: {
           include: { tracks: true },
         },
-        likes: true,
+        likes: {
+          include: {
+            track: {
+              include: { user: true },
+            },
+          },
+        },
         reposts: true,
         reports: true,
         comments: true,
-        following: true,
+        following: {
+          include: {
+            following: {
+              include: {
+                _count: {
+                  select: { followers: true },
+                },
+              },
+            },
+          },
+        },
         followers: true,
         profile: {
           include: {
@@ -486,5 +506,106 @@ export class UsersService {
       ...artist,
       recentPlays: Number(artist.recentPlays),
     }));
+  }
+
+  // --- SOCIAL ---
+  async followUser(followerId: string, followingId: string) {
+    if (followerId === followingId) {
+      throw new BadRequestException('Cannot follow yourself');
+    }
+
+    // Check if already following
+    const existing = await this.prisma.follow.findUnique({
+      where: { followerId_followingId: { followerId, followingId } },
+    });
+    if (existing) return existing;
+
+    return this.prisma.follow.create({
+      data: { followerId, followingId },
+    });
+  }
+
+  async unfollowUser(followerId: string, followingId: string) {
+    try {
+      return await this.prisma.follow.delete({
+        where: { followerId_followingId: { followerId, followingId } },
+      });
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async checkFollow(followerId: string, followingId: string) {
+    const follow = await this.prisma.follow.findUnique({
+      where: { followerId_followingId: { followerId, followingId } },
+    });
+    return { isFollowing: !!follow };
+  }
+
+  async searchUsers(
+    keyword: string,
+    currentUserId: string | null,
+    page: number = 1,
+    limit: number = 10,
+  ) {
+    const take = Math.max(1, limit);
+    const skip = (Math.max(1, page) - 1) * take;
+
+    // 1. Điều kiện tìm kiếm: Tên hoặc Email chứa keyword
+    const whereCondition = {
+      OR: [
+        { name: { contains: keyword, mode: 'insensitive' as const } },
+        { email: { contains: keyword, mode: 'insensitive' as const } },
+        // Nếu có username thì thêm: { username: { contains: keyword, ... } }
+      ],
+    };
+
+    // 2. Query Database
+    const [total, users] = await Promise.all([
+      this.prisma.user.count({ where: whereCondition }),
+      this.prisma.user.findMany({
+        where: whereCondition,
+        take,
+        skip,
+        include: {
+          // 👇 LOGIC CHECK FOLLOW:
+          // Tìm trong danh sách người theo dõi user này, xem có 'currentUserId' không?
+          followers: currentUserId
+            ? {
+                where: { followerId: currentUserId },
+                select: { followerId: true }, // Chỉ cần lấy ID để check length
+              }
+            : false, // Nếu khách thì không lấy
+
+          // Đếm số lượng followers/tracks để hiển thị UI
+          _count: {
+            select: {
+              followers: true,
+              tracks: true, // Nếu user có quan hệ tracks
+            },
+          },
+        },
+      }),
+    ]);
+
+    // 3. Map dữ liệu để thêm trường 'isFollowed' (boolean)
+    const data = users.map((user) => {
+      const isFollowed = currentUserId ? user.followers.length > 0 : false;
+
+      // Xóa mảng followers đi cho nhẹ response, chỉ giữ lại isFollowed
+      const { followers, ...rest } = user;
+
+      return {
+        ...rest,
+        isFollowed, // ✅ Field này sẽ được FE dùng để active nút Follow
+      };
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
   }
 }

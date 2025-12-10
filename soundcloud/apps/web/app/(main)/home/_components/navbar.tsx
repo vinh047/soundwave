@@ -53,10 +53,9 @@ const NavLink = ({
       className={`
         flex items-center h-16 px-3 text-sm font-medium
         border-b-2 transition-all
-        ${
-          isActive
-            ? "border-orange-500 text-gray-900 dark:text-white"
-            : "border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+        ${isActive
+          ? "border-orange-500 text-gray-900 dark:text-white"
+          : "border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
         }
       `}
     >
@@ -245,7 +244,7 @@ const UserDropdown = ({
               </DropdownItem>
               <DropdownItem
                 onClick={() => {
-                  router.push("/playlists");
+                  router.push("/library");
                   setIsOpen(false);
                 }}
                 icon={<List className="h-4 w-4" />}
@@ -307,10 +306,9 @@ const MobileNavLink = ({
       className={`
         flex items-center w-full px-3 py-2 rounded-md text-base font-medium
         transition-colors
-        ${
-          isActive
-            ? "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white"
-            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+        ${isActive
+          ? "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white"
+          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
         }
       `}
     >
@@ -326,6 +324,8 @@ export function Navbar() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+
+  const [search, setSearch] = useState<string>("");
 
   const authModal = useAuthModal();
   const handleAuth = () => {
@@ -348,16 +348,26 @@ export function Navbar() {
     fetchUser();
   }, []);
 
+  const onSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const q = search.trim();
+    if (!q) return;
+    // navigate to /search?q=...
+    router.push(`/search?q=${encodeURIComponent(q)}`);
+    // optional: clear input or keep it (here chúng ta giữ nội dung)
+    // setSearch("");
+  };
+
   const isAdmin = user?.email === "demo@soundcloud.com"; // Logic admin tạm thời
 
   // Tạo ký tự đầu tên cho Avatar fallback
   const userInitials = user?.name
     ? user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .substring(0, 2)
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2)
     : "SC";
 
   const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);
@@ -391,14 +401,16 @@ export function Navbar() {
 
           {/* === CENTER: Search Bar === */}
           <div className="flex-1 max-w-lg mx-4 hidden md:block">
-            <div className="relative">
+            <form onSubmit={onSearchSubmit} className="relative">
               <BaseInput
                 type="search"
                 placeholder="Tìm kiếm nghệ sĩ, bài hát..."
                 className="w-full pl-10 h-10"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
               <Search className="h-5 w-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+            </form>
           </div>
 
           {/* === RIGHT: Actions & User Menu === */}
@@ -440,10 +452,7 @@ export function Navbar() {
                 >
                   Sign In
                 </BaseButton>
-                <BaseButton
-                  onClick={handleAuth}
-                  variant="primary"
-                >
+                <BaseButton onClick={handleAuth} variant="primary">
                   Create account
                 </BaseButton>
               </>
@@ -471,11 +480,26 @@ export function Navbar() {
         <div className="md:hidden bg-white border-t border-gray-200 dark:bg-[#1a1a1a] dark:border-gray-800 shadow-xl">
           <div className="px-4 pt-2 pb-3 space-y-1 sm:px-3">
             <div className="mb-4 relative">
-              <BaseInput
-                type="search"
-                placeholder="Tìm kiếm..."
-                className="w-full pl-10"
-              />
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const q = search.trim();
+                  if (!q) return;
+                  router.push(`/search?q=${encodeURIComponent(q)}`);
+                  // đóng menu nếu muốn:
+                  closeMobileMenu();
+                }}
+              >
+                <BaseInput
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Tìm kiếm..."
+                  className="w-full pl-10"
+                  aria-label="Tìm kiếm"
+                />
+              </form>
+
               <Search className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             </div>
 

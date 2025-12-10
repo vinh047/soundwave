@@ -30,14 +30,13 @@ package "Database Entities" {
         - imageUrl: string
         - isLocked: boolean = false
         - role: Role
-        - createdAt: Date = now()
+        - createdAt: Date = now
         - updatedAt: Date
     }
 
     class Profile {
         - id: string
         - bio: string
-        - userId: string
     }
 
     class Song {
@@ -49,17 +48,14 @@ package "Database Entities" {
         - duration: number
         - playCount: number
         - isPublic: boolean = true
-        - createdAt: Date = now()
+        - createdAt: Date = now
         - updatedAt: Date
         - isBanned: boolean = false
-        - userId: string
     }
 
     class PlaylistSong {
         - id: string
-        - addedAt: Date = now()
-        - playlistId: string
-        - songId: string
+        - addedAt: Date = now
     }
 
     class Playlist {
@@ -68,103 +64,89 @@ package "Database Entities" {
         - description: string
         - imageUrl: string
         - isPublic: boolean = true
-        - createdAt: Date = now()
+        - createdAt: Date = now
         - updatedAt: Date
-        - userId: string
     }
 
     class Like {
         - id: string
-        - createdAt: Date = now()
-        - userId: string
-        - songId: string
+        - createdAt: Date = now
     }
 
     class Comment {
         - id: string
         - content: string
-        - createdAt: Date = now()
-        - userId: string
-        - songId: string
+        - createdAt: Date = now
     }
 
     class Follow {
         - id: string
-        - createdAt: Date = now()
-        - followerId: string
-        - followingId: string
+        - createdAt: Date = now
     }
 
     class Repost {
         - id: string
-        - createdAt: Date = now()
-        - userId: string
-        - songId: string
+        - createdAt: Date = now
     }
 
     class Share {
         - id: string
-        - createdAt: Date = now()
-        - userId: string
-        - songId: string
+        - createdAt: Date = now
         - platform: string
     }
 
     class Report {
         - id: string
         - content: string
-        - createdAt: Date = now()
+        - createdAt: Date = now
         - status: ReportStatus
         - action: ReportAction
-        - songId: string
-        - reporterId: string
     }
 
     class Notification {
         - id: string
         - content: string
         - isRead: boolean = false
-        - createdAt: Date = now()
-        - receiverId: string
+        - createdAt: Date = now
     }
 }
 
 ' --- RELATIONSHIPS ---
 
 ' 1. USER & AUTH
-User "1" -- "1" Profile : có >
+User "1" *-- "1" Profile : có >
 
 ' 2. FOLLOW
 User "1" -- "0..*" Follow : theo dõi >
 User "1" -- "0..*" Follow : được theo dõi bởi <
 
 ' 3. PLAYLIST & SONG
-User "1" -- "0..*" Playlist : tạo >
+User "1" *-- "0..*" Playlist : tạo >
 User "1" -- "0..*" Song : tải lên >
 
 ' Quan hệ tập hợp: Playlist chứa nhiều bài hát
 Playlist "1" *-- "*" PlaylistSong : Chứa
-PlaylistSong "*" --> "1" Song : Tham chiếu
+PlaylistSong "*" -- "1" Song : Tham chiếu
 
 ' 4. INTERACTIONS
 User "1" -- "0..*" Like : thích >
-Like "0..*" --> "1" Song : thuộc về >
+Song "1" *-- "*" Like : thuộc về
 
 User "1" -- "0..*" Comment : viết >
-Comment "0..*" --> "1" Song : thuộc về >
+Song "1" *-- "*" Comment : thuộc về
 
 User "1" -- "0..*" Repost : đăng lại >
-Repost "0..*" --> "1" Song : thuộc về >
+Song "1" *-- "*" Repost : thuộc về
 
 User "1" -- "0..*" Share : chia sẻ >
-Share "0..*" --> "1" Song : thuộc về >
+Song "1" *-- "*" Share : thuộc về
 
 ' 5. REPORT SYSTEM
 User "1" -- "0..*" Report : báo cáo >
-Report "0..*" --> "1" Song : thuộc về >
+Report "0..*" -- "1" Song : thuộc về >
 User "1" -- "0..*" Report : xử lý (Admin) >
 
 ' 6. NOTIFICATION
-User "1" -- "0..*" Notification : nhận >
+User "1" *-- "0..*" Notification : nhận >
 
 @enduml
