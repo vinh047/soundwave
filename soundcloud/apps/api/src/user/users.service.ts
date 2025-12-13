@@ -73,7 +73,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private cloudinaryService: CloudinaryService,
-  ) {}
+  ) { }
 
   async getArtistProfileData(id: string): Promise<ArtistProfileResult> {
     const user = await this.prisma.user.findUnique({
@@ -421,9 +421,29 @@ export class UsersService {
 
     // Xử lý websiteProfiles
     if (Array.isArray(dto.websiteProfiles)) {
+      const processedLinks = await Promise.all(
+        dto.websiteProfiles.map(async (link) => {
+          if (link.websiteTypeId === 'instagram-mock') {
+            let type = await this.prisma.websiteType.findUnique({
+              where: { type: 'INSTAGRAM' },
+            });
+            if (!type) {
+              type = await this.prisma.websiteType.create({
+                data: { type: 'INSTAGRAM', icon: 'instagram' },
+              });
+            }
+            return { ...link, websiteTypeId: type.id };
+          }
+          return link;
+        }),
+      );
+
+      // Update DTO so that the 'create' block below uses the correct IDs
+      dto.websiteProfiles = processedLinks;
+
       profileData.websiteProfiles = {
         deleteMany: {}, // Xóa tất cả cái cũ
-        create: dto.websiteProfiles.map((link) => ({
+        create: processedLinks.map((link) => ({
           url: link.url,
           websiteTypeId: link.websiteTypeId,
         })),
@@ -439,20 +459,20 @@ export class UsersService {
         profile: existingProfile
           ? { update: profileData }
           : {
-              create: {
-                bio: dto.bio ?? null,
-                location: dto.location ?? null,
-                coverUrl: coverUrl ?? null,
-                websiteProfiles: Array.isArray(dto.websiteProfiles)
-                  ? {
-                      create: dto.websiteProfiles.map((link) => ({
-                        url: link.url,
-                        websiteTypeId: link.websiteTypeId,
-                      })),
-                    }
-                  : undefined,
-              },
+            create: {
+              bio: dto.bio ?? null,
+              location: dto.location ?? null,
+              coverUrl: coverUrl ?? null,
+              websiteProfiles: Array.isArray(dto.websiteProfiles)
+                ? {
+                  create: dto.websiteProfiles.map((link) => ({
+                    url: link.url,
+                    websiteTypeId: link.websiteTypeId,
+                  })),
+                }
+                : undefined,
             },
+          },
       },
       include: {
         profile: {
@@ -600,9 +620,9 @@ export class UsersService {
           // Tìm trong danh sách người theo dõi user này, xem có 'currentUserId' không?
           followers: currentUserId
             ? {
-                where: { followerId: currentUserId },
-                select: { followerId: true }, // Chỉ cần lấy ID để check length
-              }
+              where: { followerId: currentUserId },
+              select: { followerId: true }, // Chỉ cần lấy ID để check length
+            }
             : false, // Nếu khách thì không lấy
 
           // Đếm số lượng followers/tracks để hiển thị UI

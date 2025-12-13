@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/app/contexts/AuthContext";
+import ShareModal from "@/components/modals/ShareModal";
 import { PlaylistHeader } from "@/components/playlist/PlaylistHeader";
 import { PlaylistTrackList } from "@/components/playlist/PlaylistTrackList";
 import { Button } from "@/components/ui2/Button";
@@ -24,6 +25,13 @@ export default function PlaylistPage() {
     const { user } = useAuth();
     const [playlist, setPlaylist] = useState<PlaylistWithDetails | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [shareUrl, setShareUrl] = useState("");
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            setShareUrl(window.location.href);
+        }
+    }, []);
 
     useEffect(() => {
         const fetchPlaylist = async () => {
@@ -68,9 +76,15 @@ export default function PlaylistPage() {
                 {/* Action Bar */}
                 <div className="mt-6 flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-4">
                     <div className="flex items-center gap-2">
-                        <Button variant="secondary" size="icon" className="h-10 w-10 rounded-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-zinc-800">
-                            <Share size={18} />
-                        </Button>
+                        <ShareModal
+                            shareUrl={shareUrl}
+                            shareTitle={playlist.title}
+                            trigger={
+                                <Button variant="secondary" size="icon" className="h-10 w-10 rounded-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-zinc-800">
+                                    <Share size={18} />
+                                </Button>
+                            }
+                        />
                         <Button variant="secondary" size="icon" className="h-10 w-10 rounded-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-zinc-800">
                             <Copy size={18} />
                         </Button>

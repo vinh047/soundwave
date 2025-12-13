@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Avatar } from "@/components/ui2/Avatar";
 import Link from "next/link";
 import { usePlayerStore } from "@/store/playerStore";
+import ShareModal from "@/components/modals/ShareModal";
 
 type TrackWithInteractions = Track & {
   user: User;
@@ -161,6 +162,14 @@ export default function TrackInteraction({
     }
   };
 
+  const [shareUrl, setShareUrl] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setShareUrl(window.location.href);
+    }
+  }, []);
+
   const actions = [
     {
       icon: Heart,
@@ -191,8 +200,9 @@ export default function TrackInteraction({
       icon: Share2,
       label: "Share",
       color: "hover:text-white",
-      onClick: () => {},
+      onClick: () => { },
       fill: false,
+      isShare: true, // Mark as Share button
     },
     {
       icon: MoreVertical,
@@ -209,6 +219,25 @@ export default function TrackInteraction({
       {/* 2. Action Buttons */}
       <div className="flex flex-wrap justify-center gap-3">
         {actions.map((btn, i) => {
+          // Nếu là nút Share -> Wrap bằng ShareModal
+          if (btn.isShare) {
+            return (
+              <ShareModal
+                key={i}
+                shareUrl={shareUrl}
+                shareTitle={track.title}
+                trigger={
+                  <button
+                    className={`flex items-center gap-2 px-5 py-2.5 bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 transition-all hover:bg-gray-200 dark:hover:bg-white/10 ${btn.color}`}
+                  >
+                    <btn.icon size={18} />
+                    <span>{btn.label}</span>
+                  </button>
+                }
+              />
+            );
+          }
+
           // Nếu là nút More -> Render logic riêng với Dropdown
           if (btn.isMore) {
             return (
