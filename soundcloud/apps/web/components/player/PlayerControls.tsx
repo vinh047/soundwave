@@ -58,7 +58,7 @@ export function PlayerControls({
           size="sm"
           variant="ghost"
           onClick={onPrev}
-          className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+          className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
         >
           <SkipBack className="h-5 w-5" />
         </Button>
@@ -79,7 +79,7 @@ export function PlayerControls({
           size="sm"
           variant="ghost"
           onClick={onNext}
-          className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+          className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
         >
           <SkipForward className="h-5 w-5" />
         </Button>
@@ -90,7 +90,7 @@ export function PlayerControls({
         <button
           onClick={toggleMute}
           className={cn(
-            "p-1 rounded-full transition-colors focus:outline-none",
+            "p-1 rounded-full transition-colors focus:outline-none cursor-pointer",
             volume === 0
               ? "text-gray-400 hover:text-red-500"
               : "text-gray-500 hover:text-orange-500 dark:text-gray-400 dark:hover:text-orange-500"
@@ -116,14 +116,14 @@ export function PlayerControls({
         <Button
           size="sm"
           variant="ghost"
-          className="text-gray-400 hover:text-orange-500 transition-colors"
+          className="text-gray-400 hover:text-orange-500 transition-colors cursor-pointer"
         >
           <Repeat className="h-4 w-4" />
         </Button>
         <Button
           size="sm"
           variant="ghost"
-          className="text-gray-400 hover:text-orange-500 transition-colors"
+          className="text-gray-400 hover:text-orange-500 transition-colors cursor-pointer"
         >
           <Shuffle className="h-4 w-4" />
         </Button>
