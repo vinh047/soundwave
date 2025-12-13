@@ -1,17 +1,24 @@
 import { Prisma } from "@repo/database";
 import EmptyDisplay from "../../_components/EmptyDisplay";
 import userApi from "@/lib/api/usersApi";
-import { Heart } from "lucide-react";
-import TrackListItem from "../../_components/TrackListItem";
+import LikeTrackItem from "../../_components/LikeTrackItem";
 
 type LikeData = Prisma.LikeGetPayload<{
-  include: { track: { include: { user: true; likes: true } } };
-}>;
+  include: {
+    track: {
+      include: {
+        user: true;
+        likes: true;
+        reposts: true;
+        comments: { include: { user: true } };
+        _count: {
+          select: { likes: true; reposts: true; comments: true };
+        };
+      };
+    };
+  };
+}>[];
 
-/**
- * Trang hiển thị các bài hát đã thích (Likes) của một người dùng cụ thể.
- * Đây là một Server Component.
- */
 export default async function LikesPage({
   params,
 }: {
@@ -19,33 +26,24 @@ export default async function LikesPage({
 }) {
   const userId = params.id;
 
-  let likedItems: LikeData[] = [];
+  let likedItems: LikeData = [];
+
   try {
     const res = await userApi.getLikesByUserId(userId);
     likedItems = res.data.data ?? [];
   } catch (error) {
-    console.error("Failed to fetch user likes:", error);
+    console.error("Failed to fetch liked tracks", error);
   }
 
-  if (likedItems.length === 0) {
-    return (
-      <EmptyDisplay
-        message="This user hasn't liked any tracks yet."
-        icon={Heart}
-      />
-    );
+  if (!likedItems.length) {
+    return <EmptyDisplay message="No liked tracks yet" />;
   }
 
   return (
-    <div className="space-y-2">
-      {likedItems.map((like) =>
-        like.track ? (
-          <div key={like.id}>
-            {/* Truyền dữ liệu bài hát và thông tin người dùng */}
-            <TrackListItem track={like.track} user={like.track.user} />
-          </div>
-        ) : null
-      )}
+    <div className="space-y-4">
+      {likedItems.map((item) => (
+        <LikeTrackItem key={item.id} like={item} />
+      ))}
     </div>
   );
 }
