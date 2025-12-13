@@ -15,6 +15,7 @@ rectangle "Hệ thống nghe nhạc trực tuyến" {
 
   ' Use case cho User
   (Quản lý hồ sơ cá nhân) as UC_ManageProfile
+  (Quản lý thư viện cá nhân) as UC_ManageLibrary
   (Quản lý Playlist cá nhân) as UC_ManagePlaylist
   (Báo cáo vi phạm) as UC_Report
   (Quản lý bài hát cá nhân) as UC_ManageSongs
@@ -34,6 +35,7 @@ rectangle "Hệ thống nghe nhạc trực tuyến" {
 
   ' Quan hệ <<include>>
   UC_ManageProfile ..> UC_Login : <<include>>
+  UC_ManageLibrary ..> UC_Login : <<include>>
   UC_ManagePlaylist ..> UC_Login: <<include>>>
   UC_Report ..> UC_Login : <<include>>
   UC_ManageSongs ..> UC_Login : <<include>>

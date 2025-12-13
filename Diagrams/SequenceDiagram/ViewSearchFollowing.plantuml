@@ -1,0 +1,43 @@
+@startuml SD
+
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+
+title Sequence Diagram: Xem danh sách và tìm kiếm Following
+
+autonumber
+
+User -> View: User chọn chức năng Xem danh sách và tìm kiếm Following
+activate View
+View -> Controller: Yêu cầu danh sách Following
+activate Controller
+Controller -> Service: Yêu cầu danh sách Following
+activate Service
+Service --> Controller: Trả về danh sách Following
+deactivate Service
+Controller --> View: Trả về danh sách Following
+deactivate Controller
+View --> View: Hiển thị danh sách bài hát đăng lại và nút Bỏ theo dõi
+
+group Bỏ theo dõi
+    User -> View: Chọn 1 người dùng và nhấn Bỏ theo dõi
+    View -> Controller: Yêu cầu xử lý Bỏ theo dõi
+    activate Controller
+    Controller -> Service: Yêu cầu xử lý Bỏ theo dõi
+    activate Service
+    Service --> Controller: Trả về kết quả xử lý Bỏ theo dõi
+    deactivate Service
+    alt Bỏ theo dõi thất bại
+        Controller --> View: Thông báo "Hành động thất bại, vui lòng thử lại"
+    else Bỏ theo dõi thành công
+        Controller --> View: Thông báo "Hành động thành công"
+    end
+    deactivate Controller
+    View --> User: Hiển thị thông báo
+    View --> View: Cập nhật danh sách Following
+end
+
+deactivate View
+@enduml

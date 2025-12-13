@@ -21,25 +21,8 @@ Controller --> View: Trả về hồ sơ cá nhân
 deactivate Controller
 View --> View: Hiển thị hồ sơ cá nhân
 
-User -> View: Chọn chức năng Sửa hồ sơ (Chuyển sang Usecase Sửa hồ sơ cá nhân)
-User -> View: Chọn chức năng Xem danh sách bài hát yêu thích (Chuyển sang Usecase Xem danh sách và tìm kiếm bài hát yêu thích)
+User -> View: Chọn chức năng Sửa hồ sơ cá nhân (Chuyển sang Usecase Sửa hồ sơ cá nhân)
+User -> View: Chọn chức năng Xem danh sách bài hát đăng lại (Chuyển sang Usecase Xem danh sách và tìm kiếm bài hát đăng lại)
 
-group Tương tác bài hát
-    User -> View: Chọn 1 bài hát và nhấn tương tác
-    View -> Controller: Yêu cầu xử lý tương tác bài hát
-    activate Controller
-    Controller -> Service: Yêu cầu xử lý tương tác bài hát
-    activate Service
-    Service --> Controller: Trả về kết quả xử lý tương tác bài hát
-    deactivate Service
-    alt Tương tác thất bại
-        Controller --> View: Thông báo "Hành động thất bại, vui lòng thử lại"
-    else Tương tác thành công
-        Controller --> View: Thông báo "Hành động thành công"
-    end
-    deactivate Controller
-    View --> User: Hiển thị thông báo
-    View --> View: Cập nhật số lượt tương tác
-end
 deactivate View
 @enduml

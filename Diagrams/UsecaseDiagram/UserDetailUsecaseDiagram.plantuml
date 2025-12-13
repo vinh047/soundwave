@@ -22,8 +22,12 @@ rectangle "Chức năng người dùng" {
     (Sửa hồ sơ cá nhân) as UC_EditProfile
 
     (Sửa tài khoản cá nhân) as UC_EditAccount
-    (Xem danh sách và tìm kiếm bài hát yêu thích) as UC_ViewSearchLikedSongs
     (Xem danh sách và tìm kiếm bài hát đăng lại) as UC_ViewSearchRepostedSongs
+
+    (Quản lý thư viện cá nhân) as UC_ManageLibrary
+    (Xem danh sách và tìm kiếm bài hát yêu thích) as UC_ViewSearchLikedSongs
+    (Xem danh sách và tìm kiếm Follower) as UC_ViewSearchFollowers
+    (Xem danh sách và tìm kiếm Following) as UC_ViewSearchFollowings
 
     (Quản lý Playlist cá nhân) as UC_ManagePlaylist
     (Xem danh sách và tìm kiếm Playlist cá nhân) as UC_ViewSearchPlaylists
@@ -75,9 +79,12 @@ rectangle "Chức năng người dùng" {
     
     UC_ViewProfile ..> UC_ManageProfile: <<extend>>
     UC_EditProfile ..> UC_ManageProfile: <<extend>>
-    UC_ViewSearchLikedSongs ..> UC_ManageProfile: <<extend>>
     UC_ViewSearchRepostedSongs ..> UC_ManageProfile: <<extend>>
     
+    UC_ViewSearchLikedSongs ..> UC_ManageLibrary: <<extend>>
+    UC_ViewSearchFollowers ..> UC_ManageLibrary: <<extend>>
+    UC_ViewSearchFollowings ..> UC_ManageLibrary: <<extend>>
+
     UC_ViewSearchArtists ..> UC_ExploreArtists: <<extend>>
     UC_Follow ..> UC_ExploreArtists: <<extend>>
 
@@ -90,6 +97,7 @@ rectangle "Chức năng người dùng" {
 
     ' Quan hệ <<include>> (các chức năng cần đăng nhập)
     UC_ManageProfile ..> UC_Login : <<include>>
+    UC_ManageLibrary ..> UC_Login : <<include>>
     UC_ManagePlaylist ..> UC_Login: <<include>>
     UC_ManageSongs ..> UC_Login: <<include>>
     UC_Follow ..> UC_Login : <<include>>

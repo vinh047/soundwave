@@ -1,0 +1,32 @@
+@startuml SD
+
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+
+title Sequence Diagram: Quản lý thư viện cá nhân
+
+autonumber
+
+User -> View: User chọn chức năng Quản lý thư viện cá nhân
+activate View
+View -> View: Hiển thị thư viện cá nhân
+
+User -> View: Chọn chức năng Xem danh sách bài hát yêu thích (Chuyển sang Usecase Xem danh sách và tìm kiếm bài hát yêu thích)
+User -> View: Chọn chức năng Xem danh sách Following (Chuyển sang Usecase Xem danh sách và tìm kiếm Following)
+User -> View: Chọn chức năng Xem danh sách Follower
+
+group Xem danh sách và tìm kiếm Follower
+    View -> Controller: Yêu cầu lấy danh sách Follower
+    activate Controller
+    Controller -> Service: Yêu cầu lấy danh sách Follower từ CSDL
+    activate Service
+    Service --> Controller: Trả về danh sách Follower
+    deactivate Service
+    Controller --> View: Trả về danh sách Follower
+    deactivate Controller
+    View -> View: Hiển thị danh sách Follower
+end
+deactivate View
+@enduml

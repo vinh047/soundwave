@@ -19,7 +19,7 @@ rectangle "Quản trị hệ thống" {
 
     (Quản lý tài khoản người dùng) as UC_ManageUserAccount
     (Xem danh sách và tìm kiếm tài khoản người dùng) as UC_ViewSearchUserAccount
-    (Khoá tài khoản người dùng) as UC_LockUserAccount
+    (Khoá/Mở tài khoản người dùng) as UC_LockUserAccount
 
     ' Use case cho tất cả Actor
     (Đăng xuất) as UC_Logout
