@@ -1,15 +1,15 @@
 "use client";
-import HeroBanner from "@/components/home/HeroBanner";
-import HomeHeader from "@/components/home/HomeHeader";
-import JoinSection from "@/components/home/JoinSection";
-import MainSearch from "@/components/home/MainSearch";
-import TrendingSection from "@/components/home/TrendingSection";
-import { useAuthModal } from "@/hooks/use-auth-modal";
-import { useAuth } from "./contexts/AuthContext";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuthModal } from "@/hooks/use-auth-modal";
+import { useAuth } from "./contexts/AuthContext";
 import Spinner from "@/components/common/Spinner";
 import { toast } from "sonner";
+
+import HomeHeader from "@/components/home/HomeHeader";
+import LandingHero from "@/components/home/LandingHero";
+import TrendingSection from "@/components/home/TrendingSection";
+import JoinSection from "@/components/home/JoinSection";
 
 export default function HomePage() {
   const authModal = useAuthModal();
@@ -22,19 +22,15 @@ export default function HomePage() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (!isLoading) {
-      if (isLoggedIn) {
-        router.push("/home");
-      }
+    if (!isLoading && isLoggedIn) {
+      router.push("/home");
     }
   }, [isLoading, isLoggedIn, router]);
 
   useEffect(() => {
     const error = searchParams.get("error");
-
     if (error) {
       toast.error(error);
-
       router.replace("/", { scroll: false });
     }
   }, [searchParams, router]);
@@ -42,19 +38,22 @@ export default function HomePage() {
   if (isLoading || isLoggedIn) {
     return <Spinner fullscreen />;
   }
-  return (
-    <div className="max-w-7xl mx-auto bg-white text-gray-900 mt-8 px-5">
-      <div className="relative h-[450px] w-full">
-        <HomeHeader handleAuth={handleAuth} />
-        <HeroBanner handleAuth={handleAuth}/>
-      </div>
 
-      {/* Phần nội dung chính bên dưới */}
-      <main className="mx-auto max-w-7xl px-4">
-        <MainSearch />
+  return (
+    <div className="min-h-screen w-full bg-white dark:bg-[#121212] text-gray-900 dark:text-white transition-colors duration-300">
+      {/* Header & Hero */}
+      <HomeHeader handleAuth={handleAuth} />
+      <LandingHero />
+
+      {/* Main Content */}
+      <main>
         <TrendingSection />
         <JoinSection handleAuth={handleAuth} />
       </main>
+
+      <footer className="py-8 text-center text-xs text-gray-500 dark:text-gray-400 border-t border-gray-200 dark:border-gray-800 transition-colors">
+        <p>&copy; 2024 SoundWave. All rights reserved.</p>
+      </footer>
     </div>
   );
 }
