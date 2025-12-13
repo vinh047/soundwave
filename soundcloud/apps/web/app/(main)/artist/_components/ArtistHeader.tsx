@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { UserPlus, MessageSquare, Pencil } from "lucide-react";
+import { UserPlus, MessageSquare, Pencil, BadgeCheck } from "lucide-react";
 import { Prisma } from "@repo/database";
 import EditProfileModal from "@/components/modals/EditProfileModal";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -30,8 +30,9 @@ export default function ArtistHeader({ user }: ArtistHeaderProps) {
 
   const isOwner = currentUser?.id === user.id;
 
+  // TODO: Remove this cast once Prisma client is regenerated to include coverUrl
   const coverImage =
-    user.profile?.coverUrl || "https://picsum.photos/id/10/1200/400";
+    (user.profile as any)?.coverUrl || "https://picsum.photos/id/10/1200/400";
 
   const shareUrl =
     typeof window !== "undefined"
@@ -65,9 +66,9 @@ export default function ArtistHeader({ user }: ArtistHeaderProps) {
           <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent group-hover:bg-black/40 transition duration-500"></div>
         </div>
 
-        <div className="absolute inset-0 max-w-7xl mx-auto px-4 md:px-8">
+        <div className="absolute inset-0 max-w-7xl mx-auto px-4 md:px-8 pointer-events-none">
           {/* Actions Bar */}
-          <div className="absolute bottom-4 right-4 md:bottom-8 md:right-8 flex gap-2 md:gap-3 z-20 items-end">
+          <div className="absolute bottom-4 right-4 md:bottom-8 md:right-8 flex gap-2 md:gap-3 z-20 items-end pointer-events-auto">
             {/* === LOGIC HIỂN THỊ NÚT === */}
             {isOwner ? (
               <button
@@ -121,7 +122,22 @@ export default function ArtistHeader({ user }: ArtistHeaderProps) {
             </div>
 
             {/* ... Text Info ... */}
-            <div className="flex-1 pb-6 md:pb-8 z-20 md:pl-2">{/* ... */}</div>
+            <div className="flex-1 pb-6 md:pb-8 z-20 md:pl-2">
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl md:text-4xl font-bold text-white shadow-black drop-shadow-md bg-black/40 px-3 py-1 rounded backdrop-blur-sm inline-block">
+                  {user.name || "Unknown Artist"}
+                </h1>
+                {/* Verification Badge */}
+                <div className="bg-white rounded-full p-0.5 shadow-sm" title="Verified Artist">
+                  <BadgeCheck size={24} className="text-blue-500 fill-white" />
+                </div>
+              </div>
+              {user.profile?.location && (
+                <p className="text-gray-200 text-sm mt-2 bg-black/30 px-2 py-0.5 rounded inline-block backdrop-blur-sm font-medium">
+                  {user.profile.location}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>
