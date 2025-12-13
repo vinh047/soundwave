@@ -117,7 +117,7 @@ export const AuthModal = () => {
       } else {
         setView("password");
       }
-    } catch (error) {
+    } catch {
       setApiError("Không thể kiểm tra email. Vui lòng thử lại.");
     } finally {
       setIsLoading(false);
@@ -213,7 +213,7 @@ export const AuthModal = () => {
                 setView("select");
                 setIsEmailFocused(false);
               }}
-              className="text-gray-400 hover:text-gray-700 absolute top-[10px] left-[10px] inline-flex h-6 w-6 items-center justify-center rounded-full focus:outline-none"
+              className="text-gray-400 hover:text-gray-700 absolute top-2.5 left-2.5 inline-flex h-6 w-6 items-center justify-center rounded-full focus:outline-none"
               aria-label="Back"
             >
               <ArrowLeft size={20} />
@@ -225,7 +225,7 @@ export const AuthModal = () => {
               onClick={() => {
                 setIsEmailFocused(false);
               }}
-              className="text-gray-400 hover:text-gray-700 absolute top-[10px] left-[10px] inline-flex h-6 w-6 items-center justify-center rounded-full focus:outline-none"
+              className="text-gray-400 hover:text-gray-700 absolute top-2.5 left-2.5 inline-flex h-6 w-6 items-center justify-center rounded-full focus:outline-none"
               aria-label="Back"
             >
               <ArrowLeft size={20} />
@@ -238,7 +238,7 @@ export const AuthModal = () => {
                 // khi user click X, trigger animation đóng rồi close qua onChange(false)
                 onChange(false);
               }}
-              className="text-gray-400 hover:text-gray-700 absolute top-[10px] right-[10px] inline-flex h-6 w-6 appearance-none items-center justify-center rounded-full focus:outline-none cursor-pointer"
+              className="text-gray-400 hover:text-gray-700 absolute top-2.5 right-2.5 inline-flex h-6 w-6 appearance-none items-center justify-center rounded-full focus:outline-none cursor-pointer"
               aria-label="Close"
             >
               <X size={20} />
@@ -255,8 +255,8 @@ export const AuthModal = () => {
               {!isEmailFocused && (
                 <>
                   <Dialog.Description className="text-gray-500 text-sm text-center mb-6">
-                    By clicking on "Continue with Google" or "Continue", you
-                    agree to SoundCloud's{" "}
+                    By clicking on &quot;Continue with Google&quot; or
+                    &quot;Continue&quot;, you agree to SoundWave&apos;s{" "}
                     <a href="#" className="text-blue-500 hover:underline">
                       Terms of Use
                     </a>{" "}
@@ -267,7 +267,12 @@ export const AuthModal = () => {
                     .
                   </Dialog.Description>
                   <div className="w-full space-y-3 mb-6">
-                    <Button light fullWidth size="lg" onClick={handleGoogleLogin}>
+                    <Button
+                      light
+                      fullWidth
+                      size="lg"
+                      onClick={handleGoogleLogin}
+                    >
                       <FcGoogle size={22} className="mr-3" />
                       Continue with Google
                     </Button>
@@ -318,7 +323,9 @@ export const AuthModal = () => {
               </Dialog.Title>
 
               <div className="w-full text-left mb-4">
-                <label className="text-gray-500 text-sm">Your email address</label>
+                <label className="text-gray-500 text-sm">
+                  Your email address
+                </label>
                 <p className="text-gray-900 font-medium">{email}</p>
               </div>
 
@@ -348,14 +355,24 @@ export const AuthModal = () => {
                   />
                 </div>
 
-                {apiError && <p className="text-red-500 text-sm mt-[-10px]">{apiError}</p>}
+                {apiError && (
+                  <p className="text-red-500 text-sm -mt-2.5">{apiError}</p>
+                )}
 
-                <Button dark fullWidth onClick={handlePasswordLogin} loading={isLoading}>
+                <Button
+                  dark
+                  fullWidth
+                  onClick={handlePasswordLogin}
+                  loading={isLoading}
+                >
                   Continue
                 </Button>
               </div>
 
-              <a href="#" className="text-blue-500 text-sm mt-5 hover:underline">
+              <a
+                href="#"
+                className="text-blue-500 text-sm mt-5 hover:underline"
+              >
                 Forgot your password?
               </a>
             </div>
