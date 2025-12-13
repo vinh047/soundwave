@@ -4,10 +4,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import type { Playlist, Repost, Track, User } from '@repo/database';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import type { Playlist, Repost, Track, User } from '@repo/database';
+
+import { Prisma } from '@prisma/client';
 
 interface PaginatedResult<T> {
   data: T[];
@@ -16,15 +19,246 @@ interface PaginatedResult<T> {
   limit: number;
 }
 
+type ArtistProfileResult = Prisma.UserGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    image: true;
+    email: true;
+    role: true;
+    createdAt: true;
+    updatedAt: true;
+    profile: {
+      include: {
+        websiteProfiles: {
+          include: {
+            websiteType: true;
+          };
+        };
+      };
+    };
+    tracks: {
+      orderBy: { createdAt: 'desc' };
+      take: 6;
+      include: {
+        user: true;
+        likes: true;
+        reposts: true;
+      };
+    };
+    playlists: {
+      orderBy: { createdAt: 'desc' };
+      take: 3;
+      select: {
+        id: true;
+        title: true;
+        isPublic: true;
+        tracks: { select: { track: { select: { imagePath: true } } } };
+      };
+    };
+    _count: {
+      select: {
+        tracks: true;
+        likes: true;
+        comments: true;
+        following: true;
+        followers: true;
+      };
+    };
+  };
+}>;
+
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cloudinaryService: CloudinaryService,
+  ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const newUser = await this.prisma.user.create({
-      data: createUserDto,
+  async getArtistProfileData(id: string): Promise<ArtistProfileResult> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+        profile: {
+          include: {
+            websiteProfiles: {
+              include: {
+                websiteType: true,
+              },
+            },
+          },
+        },
+
+        tracks: {
+          where: { isPublic: true, isBanned: false },
+          orderBy: { createdAt: 'desc' },
+          take: 6,
+
+          include: {
+            user: true,
+            likes: true,
+            reposts: true,
+          },
+        },
+
+        playlists: {
+          where: { isPublic: true },
+          orderBy: { createdAt: 'desc' },
+          take: 3,
+          select: {
+            id: true,
+            title: true,
+            isPublic: true,
+            tracks: {
+              select: {
+                track: {
+                  select: {
+                    imagePath: true,
+                    duration: true,
+                    playCount: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+
+        _count: {
+          select: {
+            tracks: true,
+            likes: true,
+            comments: true,
+            following: true,
+            followers: true,
+          },
+        },
+      },
     });
-    return newUser as User;
+
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+
+    return user as ArtistProfileResult;
+  }
+
+  async getAllTracksByUserId(userId: string): Promise<Track[]> {
+    return this.prisma.track.findMany({
+      where: {
+        userId,
+        isPublic: true,
+        isBanned: false,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        user: true,
+        likes: true,
+        reposts: true,
+      },
+    });
+  }
+
+  async getAllPlaylistsByUserId(userId: string): Promise<Playlist[]> {
+    return this.prisma.playlist.findMany({
+      where: { userId, isPublic: true },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        tracks: {
+          include: {
+            track: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getAllRepostsByUserId(userId: string): Promise<Repost[]> {
+    return this.prisma.repost.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        track: {
+          include: {
+            user: true,
+            likes: true,
+            comments: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getFollowersByUserId(
+    userId: string,
+  ): Promise<Prisma.FollowGetPayload<{ include: { follower: true } }>[]> {
+    return this.prisma.follow.findMany({
+      where: { followingId: userId },
+      include: {
+        follower: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // Lấy danh sách Following (user này đang theo dõi ai)
+  async getFollowingByUserId(
+    userId: string,
+  ): Promise<Prisma.FollowGetPayload<{ include: { following: true } }>[]> {
+    return this.prisma.follow.findMany({
+      where: { followerId: userId },
+      include: {
+        following:true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // Lấy danh sách Likes (bài hát user này đã thích)
+  async getLikesByUserId(
+    userId: string,
+  ): Promise<
+    Prisma.LikeGetPayload<{ include: { track: { include: { user: true } } } }>[]
+  > {
+    return this.prisma.like.findMany({
+      where: { userId: userId },
+      include: {
+        track: {
+          include: { user: true, likes: true }, // Cần user (nghệ sĩ gốc) và likes (để đếm)
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findPopularTracksByUser(userId: string): Promise<Track[]> {
+    return this.prisma.track.findMany({
+      where: {
+        userId,
+        isPublic: true,
+        isBanned: false,
+      },
+      orderBy: {
+        playCount: 'desc',
+      },
+      take: 10,
+      include: {
+        user: true,
+        likes: true,
+      },
+    });
   }
 
   async findAll(
@@ -64,6 +298,7 @@ export class UsersService {
   async findOne(id: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id },
+
       include: {
         tracks: {
           include: { user: true, likes: true, comments: true },
@@ -108,28 +343,112 @@ export class UsersService {
     return user as User;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    try {
-      const updatedUser = await this.prisma.user.update({
-        where: { id },
-        data: updateUserDto,
-      });
-      return updatedUser as User;
-    } catch (error) {
-      throw new NotFoundException(`User with ID "${id}" not found`);
+  async create(dto: CreateUserDto): Promise<User> {
+    const hashedPassword = dto.password
+      ? await bcrypt.hash(dto.password, 10)
+      : undefined;
 
-      throw error;
-    }
+    return this.prisma.user.create({
+      data: {
+        ...dto,
+        hashedPassword,
+      },
+    });
   }
 
+  async updateUser(
+    id: string,
+    dto: UpdateUserDto,
+    files?: {
+      avatar?: Express.Multer.File[];
+      cover?: Express.Multer.File[];
+    },
+  ) {
+    const avatarFile = files?.avatar?.[0];
+    const coverFile = files?.cover?.[0];
+
+    let avatarUrl: string | null = null;
+    let coverUrl: string | null = null;
+
+    if (avatarFile) {
+      const result = await this.cloudinaryService.uploadFile(avatarFile);
+      avatarUrl = result.secure_url;
+    }
+    if (coverFile) {
+      const result = await this.cloudinaryService.uploadFile(coverFile);
+      coverUrl = result.secure_url;
+    }
+
+    // Kiểm tra profile tồn tại
+    const existingProfile = await this.prisma.profile.findUnique({
+      where: { userId: id },
+    });
+
+    // Xây dựng dữ liệu update
+    const profileData: Prisma.ProfileUpdateInput = {};
+
+    if (dto.bio !== undefined) profileData.bio = dto.bio;
+    if (dto.location !== undefined) profileData.location = dto.location;
+    if (coverUrl) profileData.coverUrl = coverUrl;
+
+    // Xử lý websiteProfiles
+    if (Array.isArray(dto.websiteProfiles)) {
+      profileData.websiteProfiles = {
+        deleteMany: {}, // Xóa tất cả cái cũ
+        create: dto.websiteProfiles.map((link) => ({
+          url: link.url,
+          websiteTypeId: link.websiteTypeId,
+        })),
+      };
+    }
+
+    return await this.prisma.user.update({
+      where: { id },
+      data: {
+        ...(dto.name && { name: dto.name }),
+        ...(avatarUrl && { image: avatarUrl }),
+
+        profile: existingProfile
+          ? { update: profileData }
+          : {
+              create: {
+                bio: dto.bio ?? null,
+                location: dto.location ?? null,
+                coverUrl: coverUrl ?? null,
+                websiteProfiles: Array.isArray(dto.websiteProfiles)
+                  ? {
+                      create: dto.websiteProfiles.map((link) => ({
+                        url: link.url,
+                        websiteTypeId: link.websiteTypeId,
+                      })),
+                    }
+                  : undefined,
+              },
+            },
+      },
+      include: {
+        profile: {
+          include: {
+            websiteProfiles: {
+              include: { websiteType: true },
+            },
+          },
+        },
+      },
+    });
+  }
   async remove(id: string): Promise<void> {
     try {
       await this.prisma.user.delete({
         where: { id },
       });
     } catch (error) {
-      throw new NotFoundException(`User with ID "${id}" not found`);
-
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`User with ID "${id}" not found`);
+      }
       throw error;
     }
   }
@@ -166,47 +485,8 @@ export class UsersService {
       data: { email, hashedPassword, name },
     });
   }
-  async findPlaylistsByUser(userId: string): Promise<Playlist[]> {
-    return this.prisma.playlist.findMany({
-      where: { userId, isPublic: true },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        tracks: { take: 1, include: { track: true } },
-      },
-    });
-  }
 
-  async findRepostByUser(userId: string): Promise<Repost[]> {
-    return this.prisma.repost.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        track: {
-          include: { user: true },
-        },
-      },
-    });
-  }
-
-  async findPopularTracksByUser(userId: string): Promise<Track[]> {
-    return this.prisma.track.findMany({
-      where: {
-        userId,
-        isPublic: true,
-        isBanned: false,
-      },
-      orderBy: {
-        playCount: 'desc',
-      },
-      take: 10,
-      include: {
-        user: true,
-        likes: true,
-      },
-    });
-  }
   async getTrendingArtistsByRecentPlays(limit: number = 10) {
-    // Sử dụng $queryRaw để tối ưu hóa hiệu năng cho thống kê phức tạp
     const result = await this.prisma.$queryRaw<any[]>`
       SELECT 
         u.id, 
@@ -222,10 +502,8 @@ export class UsersService {
       LIMIT ${limit};
     `;
 
-    // Map lại dữ liệu nếu cần thiết để khớp với Frontend
     return result.map((artist) => ({
       ...artist,
-      // Raw query thường trả về BigInt cho count, cần convert nếu cần
       recentPlays: Number(artist.recentPlays),
     }));
   }

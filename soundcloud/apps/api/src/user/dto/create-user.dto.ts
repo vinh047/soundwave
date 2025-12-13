@@ -1,4 +1,5 @@
 import { Role } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
   IsEmail,
   IsOptional,
@@ -6,7 +7,10 @@ import {
   MinLength,
   MaxLength,
   IsEnum,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
+import { WebsiteProfileDto } from 'src/website-profile/dto/website-profile.dto';
 
 export class CreateUserDto {
   @IsOptional()
@@ -20,7 +24,7 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   @MinLength(8)
-  hashedPassword?: string;
+  password?: string;
 
   @IsOptional()
   @IsEnum(Role)
@@ -29,4 +33,15 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   image?: string;
+
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  websiteProfiles?: string | WebsiteProfileDto[];
 }
