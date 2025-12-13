@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Search } from "lucide-react";
+import { Search, X, CheckCircle, AlertCircle } from "lucide-react";
 
-// Mock data
-const users = [
+// Dữ liệu mẫu
+const INITIAL_USERS = [
   { 
     id: "USR001", 
     name: "Nguyen Van A", 
@@ -34,16 +34,65 @@ const users = [
 
 export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [userList, setUserList] = useState(INITIAL_USERS);
+  
+  // 1. State quản lý thông báo (Toast)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
-  // Logic tìm kiếm 
-  const filteredUsers = users.filter((user) => 
+  // 2. Hàm hiển thị thông báo (Tự tắt sau 3 giây)
+  const showToast = (message: string, type: "success" | "error") => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
+  };
+
+  // Logic xử lý Khóa/Mở khóa
+  const handleToggleStatus = (userId: string, currentStatus: string) => {
+    const isLocking = currentStatus === 'active';
+    const actionName = isLocking ? "Khoá" : "Mở khoá";
+
+    try {
+      // Cập nhật danh sách user
+      const updatedList = userList.map(user => {
+        if (user.id === userId) {
+          return { ...user, status: isLocking ? 'locked' : 'active' };
+        }
+        return user;
+      });
+      setUserList(updatedList);
+
+      // Thay alert bằng showToast
+      showToast(`Thành công: Đã ${actionName} tài khoản ${userId}`, "success");
+      
+    } catch (error) {
+      showToast(`Lỗi: Không thể ${actionName} tài khoản này`, "error");
+    }
+  };
+
+  const filteredUsers = userList.filter((user) => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.id.toLowerCase().includes(searchTerm.toLowerCase()) 
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* --- PHẦN TOAST NOTIFICATION --- */}
+      {/* Chỉ hiện khi state toast có dữ liệu */}
+      {toast && (
+        <div className={`fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 animate-in slide-in-from-bottom-5 ${
+          toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {toast.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+          <span className="text-sm font-medium">{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-2 hover:bg-white/20 p-1 rounded-full">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+      {/* ------------------------------- */}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-white">Quản lý người dùng</h2>
         
@@ -74,7 +123,6 @@ export default function UsersPage() {
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-zinc-900/80 transition-colors">
-                  {/* 3. Hiển thị dữ liệu ID */}
                   <td className="px-6 py-4 text-zinc-500 font-mono text-xs">
                     {user.id}
                   </td>
@@ -113,6 +161,7 @@ export default function UsersPage() {
                         <Button 
                           dark 
                           className="h-8 w-20 text-xs bg-red-600 hover:bg-red-700 text-white border-none"
+                          onClick={() => handleToggleStatus(user.id, user.status)}
                         >
                           Khóa
                         </Button>
@@ -120,6 +169,7 @@ export default function UsersPage() {
                         <Button 
                           light 
                           className="h-8 w-20 text-xs border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-white"
+                          onClick={() => handleToggleStatus(user.id, user.status)}
                         >
                           Mở khóa
                         </Button>

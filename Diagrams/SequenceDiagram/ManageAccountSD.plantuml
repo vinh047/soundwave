@@ -21,8 +21,8 @@ Controller --> View: Trả về danh sách tài khoản
 deactivate Controller
 View --> View: Hiển thị danh sách tài khoản
 
-Admin -> View: Chọn tài khoản để Khoá
-View -> Controller: Yêu cầu khoá tài khoản
+Admin -> View: Chọn tài khoản để Khoá/Mở
+View -> Controller: Yêu cầu cập nhật trạng thái tài khoản
 activate Controller
 Controller -> Service: Yêu cầu cập nhật trạng thái tài khoản
 activate Service

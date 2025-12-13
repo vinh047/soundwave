@@ -109,6 +109,12 @@ package "Database Entities" {
         - isRead: boolean = false
         - createdAt: Date = now
     }
+
+    class RecentListen {
+        - id: string
+        - lastPlayedAt: Date = now
+        - playCount: number = 1
+    }
 }
 
 ' --- RELATIONSHIPS ---
@@ -148,5 +154,9 @@ User "1" -- "0..*" Report : xử lý (Admin) >
 
 ' 6. NOTIFICATION
 User "1" *-- "0..*" Notification : nhận >
+
+'7. RECENT LISTEN
+User "1" *-- "0..*" RecentListen : có >
+Song "1" -- "0..*" RecentListen : thuộc về
 
 @enduml

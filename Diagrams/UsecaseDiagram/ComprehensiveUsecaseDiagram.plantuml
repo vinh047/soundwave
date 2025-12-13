@@ -15,6 +15,7 @@ rectangle "Hệ thống nghe nhạc trực tuyến" {
 
   ' Use case cho User
   (Quản lý hồ sơ cá nhân) as UC_ManageProfile
+  (Quản lý thư viện cá nhân) as UC_ManageLibrary
   (Quản lý Playlist cá nhân) as UC_ManagePlaylist
   (Báo cáo vi phạm) as UC_Report
   (Quản lý bài hát cá nhân) as UC_ManageSongs
@@ -23,6 +24,7 @@ rectangle "Hệ thống nghe nhạc trực tuyến" {
   ' Use case cho Admin
   (Quản lý báo cáo vi phạm) as UC_HandleReport
   (Quản lý tài khoản người dùng) as UC_ManageUserAccount
+  (Quản lý bài hát hệ thống) as UC_ManageSystemSongs
   (Đăng nhập Admin) as UC_LoginAdmin
 
   ' Use case cho tất cả
@@ -34,12 +36,14 @@ rectangle "Hệ thống nghe nhạc trực tuyến" {
 
   ' Quan hệ <<include>>
   UC_ManageProfile ..> UC_Login : <<include>>
+  UC_ManageLibrary ..> UC_Login : <<include>>
   UC_ManagePlaylist ..> UC_Login: <<include>>>
   UC_Report ..> UC_Login : <<include>>
   UC_ManageSongs ..> UC_Login : <<include>>
 
   UC_HandleReport ..> UC_LoginAdmin : <<include>>
   UC_ManageUserAccount ..> UC_LoginAdmin : <<include>>
+  UC_ManageSystemSongs ..> UC_LoginAdmin : <<include>>
 
   ' -- Gán các actor --
   User --> UC_ExploreSongs
@@ -50,7 +54,6 @@ rectangle "Hệ thống nghe nhạc trực tuyến" {
   User --> UC_Settings
 
   Admin --> UC_LoginAdmin
-  Admin --> UC_ExploreSongs
   Admin --> UC_Logout
 }
 @enduml
