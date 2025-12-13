@@ -28,6 +28,10 @@ export function GlobalPlayer() {
     playPrev,
     queue,
     autoplay,
+    repeatMode,
+    isShuffle,
+    toggleRepeat,
+    toggleShuffle,
   } = usePlayerStore();
 
   // const { user } = useAuth();
@@ -289,8 +293,18 @@ export function GlobalPlayer() {
     };
 
     const handleEnded = () => {
-      const { autoplay, playNext, resetTime } = usePlayerStore.getState();
+      const { autoplay, playNext, resetTime, repeatMode } = usePlayerStore.getState();
       const audio = audioRef.current;
+
+      // Logic Repeat One: Tự động phát lại bài hiện tại khi hết
+      if (repeatMode === "one") {
+        if (audio) {
+          audio.currentTime = 0;
+          audio.play();
+        }
+        return;
+      }
+
       if (autoplay) {
         playNext();
       } else {
@@ -418,6 +432,10 @@ export function GlobalPlayer() {
           onNext={playNext} // Gắn hàm tới
           volume={volume}
           onVolumeChange={setVolume}
+          repeatMode={repeatMode}
+          isShuffle={isShuffle}
+          onToggleRepeat={toggleRepeat}
+          onToggleShuffle={toggleShuffle}
         />
       </div>
 

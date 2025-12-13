@@ -24,6 +24,10 @@ export function PlayerControls({
   onNext,
   volume,
   onVolumeChange,
+  repeatMode,
+  isShuffle,
+  onToggleRepeat,
+  onToggleShuffle,
 }: {
   isPlaying: boolean;
   onPlayPause: () => void;
@@ -31,6 +35,10 @@ export function PlayerControls({
   onNext: () => void;
   volume: number;
   onVolumeChange: (value: number) => void;
+  repeatMode: "off" | "all" | "one";
+  isShuffle: boolean;
+  onToggleRepeat: () => void;
+  onToggleShuffle: () => void;
 }) {
   const lastVolumeRef = useRef(70);
 
@@ -116,14 +124,28 @@ export function PlayerControls({
         <Button
           size="sm"
           variant="ghost"
-          className="text-gray-400 hover:text-orange-500 transition-colors"
+          onClick={onToggleRepeat}
+          className={cn(
+            "transition-colors relative",
+            repeatMode !== "off"
+              ? "text-orange-500 hover:text-orange-600"
+              : "text-gray-400 hover:text-orange-500"
+          )}
+          title={`Repeat: ${repeatMode}`}
         >
           <Repeat className="h-4 w-4" />
         </Button>
         <Button
           size="sm"
           variant="ghost"
-          className="text-gray-400 hover:text-orange-500 transition-colors"
+          onClick={onToggleShuffle}
+          className={cn(
+            "transition-colors",
+            isShuffle
+              ? "text-orange-500 hover:text-orange-600"
+              : "text-gray-400 hover:text-orange-500"
+          )}
+          title={isShuffle ? "Shuffle On" : "Shuffle Off"}
         >
           <Shuffle className="h-4 w-4" />
         </Button>

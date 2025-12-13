@@ -5,6 +5,7 @@ import { Prisma } from "@repo/database";
 import useSWR from "swr";
 import userApi from "@/lib/api/usersApi";
 import Image from "next/image";
+import Link from "next/link";
 
 type PlaylistWithRelations = Prisma.PlaylistGetPayload<{
   include: { tracks: { include: { track: true } } };
@@ -57,7 +58,7 @@ export default function PlaylistsTab({ userId }: PlaylistsTabProps) {
       {playlists.map((pl) => {
         const coverImage = pl.tracks?.[0]?.track?.imagePath;
         return (
-          <div key={pl.id} className="group cursor-pointer">
+          <Link href={`/playlists/${pl.id}`} key={pl.id} className="group cursor-pointer">
             <div className="aspect-square rounded mb-2 relative overflow-hidden border border-transparent group-hover:border-[#ff5500] transition">
               <div className="absolute inset-0 flex items-center justify-center text-gray-500 bg-gray-100 dark:bg-[#181818]">
                 {coverImage ? (
@@ -71,6 +72,12 @@ export default function PlaylistsTab({ userId }: PlaylistsTabProps) {
                   <ListMusic size={32} />
                 )}
               </div>
+              {/* Play Overlay */}
+              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-[#ff5500] text-white flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+                  <ListMusic size={20} />
+                </div>
+              </div>
             </div>
             <h4 className="font-bold text-sm truncate group-hover:text-[#ff5500] dark:text-white transition-colors">
               {pl.title}
@@ -78,7 +85,7 @@ export default function PlaylistsTab({ userId }: PlaylistsTabProps) {
             <p className="text-xs text-gray-500">
               {pl.tracks?.length || 0} tracks
             </p>
-          </div>
+          </Link>
         );
       })}
     </div>
