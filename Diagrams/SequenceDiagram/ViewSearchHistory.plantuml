@@ -1,0 +1,43 @@
+@startuml SD
+
+actor "User" as User
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+
+title Sequence Diagram: Xem và tìm kiếm lịch sử nghe nhạc
+
+autonumber
+
+User -> View: User chọn chức năng Xem và tìm kiếm lịch sử nghe nhạc
+activate View
+View -> Controller: Yêu cầu lịch sử nghe nhạc
+activate Controller
+Controller -> Service: Yêu cầu lịch sử nghe nhạc
+activate Service
+Service --> Controller: Trả về lịch sử nghe nhạc
+deactivate Service
+Controller --> View: Trả về lịch sử nghe nhạc
+deactivate Controller
+View --> View: Hiển thị lịch sử nghe nhạc và các nút chức năng
+
+group Bỏ theo dõi
+    User -> View: Chọn 1 bài hát và nhấn Xoá
+    View -> Controller: Yêu cầu xử lý Xoá bài hát khỏi lịch sử
+    activate Controller
+    Controller -> Service: Yêu cầu xử lý Xoá bài hát khỏi lịch sử
+    activate Service
+    Service --> Controller: Trả về kết quả xử lý Xoá bài hát khỏi lịch sử
+    deactivate Service
+    alt Xoá bài hát khỏi lịch sử thất bại
+        Controller --> View: Thông báo "Hành động thất bại, vui lòng thử lại"
+    else Xoá bài hát khỏi lịch sử thành công
+        Controller --> View: Thông báo "Hành động thành công"
+    end
+    deactivate Controller
+    View --> User: Hiển thị thông báo
+    View --> View: Cập nhật lịch sử nghe nhạc
+end
+
+deactivate View
+@enduml

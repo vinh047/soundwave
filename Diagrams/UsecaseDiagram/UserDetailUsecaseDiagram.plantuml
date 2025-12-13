@@ -28,7 +28,8 @@ rectangle "Chức năng người dùng" {
     (Xem danh sách và tìm kiếm bài hát yêu thích) as UC_ViewSearchLikedSongs
     (Xem danh sách và tìm kiếm Follower) as UC_ViewSearchFollowers
     (Xem danh sách và tìm kiếm Following) as UC_ViewSearchFollowings
-
+    (Xem và tìm kiếm lịch sử nghe nhạc) as UC_ViewSearchHistory
+    
     (Quản lý Playlist cá nhân) as UC_ManagePlaylist
     (Xem danh sách và tìm kiếm Playlist cá nhân) as UC_ViewSearchPlaylists
     (Thêm Playlist cá nhân) as UC_AddPlaylist
@@ -84,6 +85,7 @@ rectangle "Chức năng người dùng" {
     UC_ViewSearchLikedSongs ..> UC_ManageLibrary: <<extend>>
     UC_ViewSearchFollowers ..> UC_ManageLibrary: <<extend>>
     UC_ViewSearchFollowings ..> UC_ManageLibrary: <<extend>>
+    UC_ViewSearchHistory ..> UC_ManageLibrary: <<extend>>
 
     UC_ViewSearchArtists ..> UC_ExploreArtists: <<extend>>
     UC_Follow ..> UC_ExploreArtists: <<extend>>
