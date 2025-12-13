@@ -25,8 +25,9 @@ else Lấy danh sách bài hát thất bại
 end
 deactivate Controller
 
-group Thích bài hát
 User -> View: Chọn 1 bài hát và nhấn Nghe nhạc (Chuyển sang Usecase Nghe nhạc)
+
+group Thích bài hát
 User -> View: Chọn 1 bài hát và nhấn Thích
 View -> Controller: Yêu cầu Thêm bài hát vào danh sách yêu thích
 activate Controller

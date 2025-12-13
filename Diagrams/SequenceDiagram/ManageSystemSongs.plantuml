@@ -1,0 +1,41 @@
+@startuml SD
+
+actor "Admin" as Admin
+participant "View" as View
+participant "Controller" as Controller
+participant "Service" as Service
+
+title Sequence Diagram: Quản lý bài hát hệ thống
+
+autonumber
+
+Admin -> View: Admin chọn chức năng Khám phá bài hát
+activate View
+View -> Controller: Yêu cầu danh sách bài hát
+activate Controller
+Controller -> Service: Yêu cầu danh sách bài hát
+activate Service
+Service --> Controller: Trả về danh sách bài hát
+deactivate Service
+Controller --> View: Trả về danh sách bài hát
+alt Lấy danh sách bài hát thành công
+    View --> View: Hiển thị danh sách bài hát và nút Ẩn bài hát
+else Lấy danh sách bài hát thất bại
+    View --> Admin: Hiển thị thông báo lỗi
+end
+deactivate Controller
+
+Admin -> View: Chọn 1 bài hát và nhấn Nghe nhạc (Chuyển sang Usecase Nghe nhạc)
+
+Admin -> View: Chọn bài hát để Ẩn/Hiện
+View -> Controller: Yêu cầu cập nhật trạng thái bài hát
+activate Controller
+Controller -> Service: Yêu cầu cập nhật trạng thái bài hát
+activate Service
+Service --> Controller: Trả về kết quả cập nhật trạng thái bài hát
+deactivate Service
+Controller --> View: Thông báo kết quả cập nhật trạng thái bài hát
+deactivate Controller
+View --> Admin: Hiển thị thông báo
+deactivate View
+@enduml

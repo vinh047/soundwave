@@ -6,8 +6,9 @@ actor "Quản trị viên" as Admin
 
 rectangle "Quản trị hệ thống" {
     ' Use Case cho mọi người (chưa đăng nhập)
-    (Khám phá bài hát) as UC_ExploreSongs
+    (Quản lý bài hát hệ thống) as UC_ManageSystemSongs
     (Xem danh sách và tìm kiếm bài hát) as UC_ViewSearchSongs
+    (Ẩn/Hiện bài hát) as UC_ToggleSongVisibility
     (Nghe nhạc) as UC_Play
     (Đăng nhập) as UC_Login
 
@@ -37,11 +38,12 @@ rectangle "Quản trị hệ thống" {
     ' Quan hệ <<include>> (các chức năng cần đăng nhập)
     UC_HandleReport ..> UC_Login : <<include>>
     UC_ManageUserAccount ..> UC_Login: <<include>>
+    UC_ManageSystemSongs ..> UC_Login: <<include>>
 
-    UC_ViewSearchSongs ..> UC_ExploreSongs: <<extend>>
-    UC_Play ..> UC_ExploreSongs: <<extend>>
+    UC_ViewSearchSongs ..> UC_ManageSystemSongs: <<extend>>
+    UC_ToggleSongVisibility ..> UC_ManageSystemSongs: <<extend>>
+    UC_Play ..> UC_ManageSystemSongs: <<extend>>
     ' Admin
     Admin --> UC_Login
-    Admin --> UC_ExploreSongs
     Admin --> UC_Logout
 }
