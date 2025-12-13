@@ -1,22 +1,8 @@
 // fileName: RepostsPage.tsx
 import { Repeat } from "lucide-react";
-import { Prisma } from "@repo/database";
 import userApi from "@/lib/api/usersApi";
 import EmptyDisplay from "../../_components/EmptyDisplay"; // Đảm bảo đường dẫn đúng
-import RepostTrackItem from "../../_components/RepostTrackItem";
-
-// Type definition
-type RepostWithRelations = Prisma.RepostGetPayload<{
-  include: {
-    track: {
-      include: {
-        user: true;
-        likes: true;
-        comments: true;
-      };
-    };
-  };
-}>;
+import { TrackListItemInteractive } from "../../_components/TrackListItemInteractive";
 
 /**
  * Trang hiển thị các bài hát đã repost của một user.
@@ -30,7 +16,7 @@ export default async function RepostsPage({
   const userId = params.id;
 
   // 1. Fetch dữ liệu trực tiếp trên Server
-  let reposts: RepostWithRelations[] = [];
+  let reposts;
   try {
     const res = await userApi.getAllRepostsByUserId(userId);
     reposts = res.data.data ?? [];
@@ -58,14 +44,9 @@ export default async function RepostsPage({
     <div className="flex flex-col gap-6">
       {reposts.map((repost) =>
         repost.track ? (
-          <RepostTrackItem
-            key={repost.id}
-            repost={repost}
-            track={repost.track}
-          />
+          <TrackListItemInteractive key={repost.id} track={repost.track} />
         ) : null
       )}
     </div>
   );
 }
-

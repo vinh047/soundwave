@@ -105,6 +105,9 @@ export class UsersService {
             user: true,
             likes: true,
             reposts: true,
+            _count: {
+              select: { likes: true, reposts: true, comments: true },
+            },
           },
         },
 
@@ -163,29 +166,39 @@ export class UsersService {
         user: true,
         likes: true,
         reposts: true,
-      },
-    });
-  }
-
-  async getAllPlaylistsByUserId(userId: string): Promise<Playlist[]> {
-    return this.prisma.playlist.findMany({
-      where: { userId, isPublic: true },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        tracks: {
-          include: {
-            track: {
-              include: {
-                user: true,
-              },
-            },
+        _count: {
+          select: {
+            likes: true,
+            reposts: true,
+            comments: true,
           },
         },
       },
     });
   }
+  async getAllPlaylistsByUserId(userId: string) {
+    return this.prisma.playlist.findMany({
+      where: { userId, isPublic: true },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: true,
+        tracks: {
+          orderBy: { order: 'asc' }, // Sắp xếp bài hát theo thứ tự trong playlist
+          take: 1, // Chỉ cần lấy 1 bài để làm ảnh bìa (tối ưu hiệu năng)
+          include: {
+            track: {
+              include: { user: true },
+            },
+          },
+        },
+        _count: {
+          select: { tracks: true }, // Lấy tổng số bài hát chính xác
+        },
+      },
+    });
+  }
 
-  async getAllRepostsByUserId(userId: string): Promise<Repost[]> {
+  async getAllRepostsByUserId(userId: string) {
     return this.prisma.repost.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -194,7 +207,17 @@ export class UsersService {
           include: {
             user: true,
             likes: true,
-            comments: true,
+            reposts: true,
+            comments: {
+              include: { user: true },
+            },
+            _count: {
+              select: {
+                likes: true,
+                reposts: true,
+                comments: true,
+              },
+            },
           },
         },
       },
@@ -220,26 +243,31 @@ export class UsersService {
     return this.prisma.follow.findMany({
       where: { followerId: userId },
       include: {
-        following:true,
+        following: true,
       },
       orderBy: { createdAt: 'desc' },
     });
   }
 
   // Lấy danh sách Likes (bài hát user này đã thích)
-  async getLikesByUserId(
-    userId: string,
-  ): Promise<
-    Prisma.LikeGetPayload<{ include: { track: { include: { user: true } } } }>[]
-  > {
+  async getLikesByUserId(userId: string) {
     return this.prisma.like.findMany({
       where: { userId: userId },
+      orderBy: { createdAt: 'desc' },
       include: {
         track: {
-          include: { user: true, likes: true }, // Cần user (nghệ sĩ gốc) và likes (để đếm)
+          // Include đầy đủ để component Interactive hoạt động
+          include: {
+            user: true,
+            likes: true,
+            reposts: true,
+            comments: { include: { user: true } },
+            _count: {
+              select: { likes: true, reposts: true, comments: true },
+            },
+          },
         },
       },
-      orderBy: { createdAt: 'desc' },
     });
   }
 

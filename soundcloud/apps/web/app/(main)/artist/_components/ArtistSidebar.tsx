@@ -61,17 +61,17 @@ export default function ArtistSidebar({ user }: ArtistSidebarProps) {
           {
             label: "Followers",
             value: stats.followers,
-            link: `/artist/${user.id}?tab=followers`,
+            link: `/artist/${user.id}/followers`,
           },
           {
             label: "Following",
             value: stats.following,
-            link: `/artist/${user.id}?tab=following`,
+            link: `/artist/${user.id}/following`,
           },
           {
             label: "Tracks",
             value: stats.tracks,
-            link: `/artist/${user.id}?tab=tracks`,
+            link: `/artist/${user.id}/tracks`,
           },
         ].map((item, idx) => (
           <Link key={idx} href={item.link}>

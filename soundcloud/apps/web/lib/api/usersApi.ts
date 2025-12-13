@@ -31,6 +31,9 @@ export type ArtistProfileData = Prisma.UserGetPayload<{
         user: true;
         likes: true;
         reposts: true;
+        _count: {
+          select: { likes: true; reposts: true; comments: true };
+        };
       };
     };
 
@@ -90,22 +93,52 @@ const userApi = {
   getAllTracksByUserId: (id: string) =>
     axiosClient.get<{
       data: Prisma.TrackGetPayload<{
-        include: { user: true; likes: true; reposts: true };
+        include: {
+          user: true;
+          likes: true;
+          reposts: true;
+          _count: {
+            select: { likes: true; reposts: true; comments: true };
+          };
+        };
       }>[];
     }>(`/users/${id}/tracks`),
 
   getAllPlaylistsByUserId: (id: string) =>
     axiosClient.get<{
       data: Prisma.PlaylistGetPayload<{
-        include: { tracks: { include: { track: true } } };
+        include: {
+          user: true;
+          tracks: {
+            include: {
+              track: {
+                include: { user: true };
+              };
+            };
+          };
+          _count: { select: { tracks: true } };
+        };
       }>[];
     }>(`/users/${id}/playlists`),
-
   getAllRepostsByUserId: (id: string) =>
     axiosClient.get<{
       data: Prisma.RepostGetPayload<{
         include: {
-          track: { include: { user: true; likes: true; comments: true } };
+          track: {
+            include: {
+              user: true;
+              likes: true;
+              reposts: true;
+              comments: { include: { user: true } };
+              _count: {
+                select: {
+                  likes: true;
+                  reposts: true;
+                  comments: true;
+                };
+              };
+            };
+          };
         };
       }>[];
     }>(`/users/${id}/reposts`),
@@ -135,7 +168,17 @@ const userApi = {
     axiosClient.get<{
       data: Prisma.LikeGetPayload<{
         include: {
-          track: { include: { user: true; likes: true } };
+          track: {
+            include: {
+              user: true;
+              likes: true;
+              reposts: true;
+              comments: { include: { user: true } };
+              _count: {
+                select: { likes: true; reposts: true; comments: true };
+              };
+            };
+          };
         };
       }>[];
     }>(`/users/${id}/likes`),
@@ -170,7 +213,6 @@ const userApi = {
   getTrendingArtists: (limit: number = 5) =>
     axiosClient.get<{ data: User[] }>(`/users/trending?limit=${limit}`),
 
-  // --- SOCIAL ---
   followUser: (id: string) => axiosClient.post(`/users/${id}/follow`),
   unfollowUser: (id: string) => axiosClient.delete(`/users/${id}/follow`),
   checkFollow: (id: string) =>
