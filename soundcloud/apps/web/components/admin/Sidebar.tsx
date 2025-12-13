@@ -22,7 +22,7 @@ const menuItems = [
     icon: Flag, 
   },
   {
-    title: "Kho bài hát",
+    title: "Quản lý bài hát",
     href: "/admin/tracks",
     icon: Music, 
   },

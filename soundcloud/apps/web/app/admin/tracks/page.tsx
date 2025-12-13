@@ -1,56 +1,98 @@
 "use client";
 
-import { Play, Pause, Search, Eye, Ban, CheckCircle } from "lucide-react"; // 1. Import icon Ban và CheckCircle
-import { useState } from "react";
+import { Play, Pause, Search, Eye, EyeOff } from "lucide-react"; // 1. Import thêm icon Eye, EyeOff
+import { useState, useRef, useEffect } from "react";
 
-const tracks = [
+// Định nghĩa Interface để tránh lỗi TypeScript
+interface Track {
+  id: string;
+  title: string;
+  artist: string;
+  plays: number;
+  duration: string;
+  image: string;
+  isPublic: boolean;
+  isBanned: boolean;
+  url: string;
+}
+
+// Mock Data ban đầu
+const INITIAL_TRACKS: Track[] = [
   { 
     id: "TRK001", 
     title: "Summer Vibes 2024", 
     artist: "DJ Snake", 
     plays: 12500, 
-    duration: "3:45", 
+    duration: "6:12", 
     image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100&h=100&fit=crop",
-    isPublic: true,
-    isBanned: false 
+    isPublic: true, // Đang hiện
+    isBanned: false,
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" 
   },
   { 
     id: "TRK002", 
     title: "Lofi Chill Study", 
     artist: "ChilledCow", 
     plays: 89000, 
-    duration: "2:20", 
+    duration: "7:05", 
     image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&h=100&fit=crop",
-    isPublic: true,
-    isBanned: false
+    isPublic: true, 
+    isBanned: false,
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3"
   },
   { 
     id: "TRK004", 
     title: "Copyrighted Track", 
     artist: "Bad User", 
     plays: 1200, 
-    duration: "3:10", 
+    duration: "5:44", 
     image: "https://plus.unsplash.com/premium_photo-1677589330352-509c3d18f3a0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c29uZyUyMGljb258ZW58MHx8MHx8fDA%3D",
-    isPublic: true,
-    isBanned: true 
+    isPublic: false, // Đang ẩn (Riêng tư)
+    isBanned: true,
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
   },
 ];
 
 export default function TracksPage() {
+  // 2. Chuyển đổi dữ liệu sang State để có thể chỉnh sửa
+  const [trackList, setTrackList] = useState<Track[]>(INITIAL_TRACKS);
+  
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const togglePlay = (id: string) => {
-    setPlayingId(playingId === id ? null : id);
+  // Hàm xử lý phát nhạc (Giữ nguyên)
+  const togglePlay = (track: Track) => {
+    if (playingId === track.id) {
+      audioRef.current?.pause();
+      setPlayingId(null);
+    } else {
+      if (audioRef.current) audioRef.current.pause();
+      audioRef.current = new Audio(track.url);
+      audioRef.current.play().catch(e => console.error("Lỗi phát nhạc:", e));
+      setPlayingId(track.id);
+      audioRef.current.onended = () => setPlayingId(null);
+    }
   };
 
-  // Mock function để minh họa hành động Ban
-  const handleToggleBan = (id: string, currentStatus: boolean) => {
-    console.log(`Toggle ban for ${id}. New status: ${!currentStatus}`);
-    // Sau này gọi API backend ở đây
+  // 3. Hàm xử lý Ẩn/Hiện bài hát (Logic mới)
+  const toggleVisibility = (id: string) => {
+    setTrackList(prevTracks => prevTracks.map(track => {
+      if (track.id === id) {
+        // Đảo ngược trạng thái isPublic
+        return { ...track, isPublic: !track.isPublic };
+      }
+      return track;
+    }));
   };
 
-  const filteredTracks = tracks.filter((track) => 
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) audioRef.current.pause();
+    };
+  }, []);
+
+  const filteredTracks = trackList.filter((track) => 
     track.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     track.artist.toLowerCase().includes(searchTerm.toLowerCase()) ||
     track.id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -81,7 +123,7 @@ export default function TracksPage() {
               <th className="px-4 py-3">Bài hát</th>
               <th className="px-4 py-3">Lượt nghe</th>
               <th className="px-4 py-3">Trạng thái</th>
-              <th className="px-4 py-3 text-right">Hành động</th>
+              <th className="px-4 py-3 text-center">Ẩn/Hiện</th> {/* Cột mới */}
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800">
@@ -94,7 +136,7 @@ export default function TracksPage() {
 
                   <td className="px-4 py-3 text-center">
                     <button 
-                      onClick={() => togglePlay(track.id)}
+                      onClick={() => togglePlay(track)}
                       className="w-8 h-8 rounded-full flex items-center justify-center bg-zinc-800 group-hover:bg-orange-500 text-white transition-all"
                     >
                       {playingId === track.id ? <Pause size={14} fill="white" /> : <Play size={14} fill="white" />}
@@ -127,34 +169,20 @@ export default function TracksPage() {
                       </span>
                     )}
                   </td>
-                  
-                  {/* Cột Hành Động Mới */}
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {/* Nút Xem chi tiết */}
-                      <button className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors" title="Xem chi tiết">
-                        <Eye size={18} />
-                      </button>
 
-                      {/* Nút Ban/Unban thay cho Thùng rác */}
-                      {track.isBanned ? (
-                        <button 
-                          onClick={() => handleToggleBan(track.id, track.isBanned)}
-                          className="p-2 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded transition-colors" 
-                          title="Gỡ cấm (Cho phép hoạt động lại)"
-                        >
-                          <CheckCircle size={18} />
-                        </button>
+                  {/* Cột Chức năng Ẩn/Hiện */}
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => toggleVisibility(track.id)}
+                      className="p-2 rounded-lg hover:bg-zinc-800 transition-colors text-zinc-400 hover:text-white"
+                      title={track.isPublic ? "Nhấn để ẩn bài hát" : "Nhấn để hiện bài hát"}
+                    >
+                      {track.isPublic ? (
+                        <Eye size={18} className="text-emerald-500" /> // Mắt mở (Màu xanh)
                       ) : (
-                        <button 
-                          onClick={() => handleToggleBan(track.id, track.isBanned)}
-                          className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors" 
-                          title="Cấm bài hát này"
-                        >
-                          <Ban size={18} />
-                        </button>
+                        <EyeOff size={18} className="text-zinc-500" /> // Mắt đóng (Màu xám)
                       )}
-                    </div>
+                    </button>
                   </td>
                 </tr>
               ))

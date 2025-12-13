@@ -6,32 +6,29 @@ export default function AdminDashboard() {
       <h2 className="text-2xl font-bold text-white">Tổng quan</h2>
       
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard 
           title="Tổng người dùng" 
           value="12,345" 
           icon={Users} 
-          trend="+12%" 
         />
         <StatCard 
           title="Tổng bài hát" 
           value="45,678" 
           icon={Music} 
-          trend="+5%" 
         />
         <StatCard 
           title="Báo cáo chờ xử lý" 
           value="23" 
           icon={AlertTriangle} 
-          trend="High" 
           urgent 
         />
-        <StatCard 
+        {/* <StatCard 
           title="Đang truy cập" 
           value="1,200" 
           icon={Activity} 
           trend="Live" 
-        />
+        /> */}
       </div>
       
     </div>
@@ -54,7 +51,6 @@ function StatCard({ title, value, icon: Icon, trend, urgent }: any) {
         <span className={urgent ? "text-red-400 font-bold" : "text-emerald-400"}>
           {trend}
         </span>
-        <span className="text-zinc-500 ml-2">so với tháng trước</span>
       </div>
     </div>
   );
