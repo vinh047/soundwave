@@ -44,6 +44,7 @@ type ArtistProfileResult = Prisma.UserGetPayload<{
         user: true;
         likes: true;
         reposts: true;
+        comments: true;
       };
     };
     playlists: {
@@ -105,6 +106,7 @@ export class UsersService {
             user: true,
             likes: true,
             reposts: true,
+            comments: true,
           },
         },
 

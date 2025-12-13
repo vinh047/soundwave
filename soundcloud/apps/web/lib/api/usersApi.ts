@@ -31,6 +31,7 @@ export type ArtistProfileData = Prisma.UserGetPayload<{
         user: true;
         likes: true;
         reposts: true;
+        comments: true;
       };
     };
 
