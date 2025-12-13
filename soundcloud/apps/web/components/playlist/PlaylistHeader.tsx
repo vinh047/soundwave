@@ -21,9 +21,23 @@ interface PlaylistHeaderProps {
 export function PlaylistHeader({ playlist }: PlaylistHeaderProps) {
     const [isPlaying, setIsPlaying] = useState(false);
 
-    // Calculate duration (mock logic for now as track duration might not be in DB yet)
-    // In a real app, sum up track.duration
-    const totalDuration = "2:47:03"; // Placeholder based on image
+    // Calculate total duration from tracks
+    const totalDurationSeconds = playlist.tracks?.reduce((acc, curr) => acc + (curr.track.duration || 0), 0) || 0;
+
+    // Helper to format duration
+    const formatDuration = (seconds: number) => {
+        if (!seconds) return "0:00";
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+
+        if (h > 0) {
+            return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    };
+
+    const totalDuration = formatDuration(totalDurationSeconds);
 
     return (
         <div className="relative h-[340px] w-full overflow-hidden rounded-md bg-linear-to-r from-neutral-800 to-neutral-900 text-white">
@@ -60,7 +74,7 @@ export function PlaylistHeader({ playlist }: PlaylistHeaderProps) {
                 <div className="flex items-end justify-between">
                     <div className="flex flex-col gap-1">
                         <div className="text-3xl font-bold">
-                            {playlist._count?.tracks || 0}
+                            {playlist.tracks?.length || 0}
                         </div>
                         <div className="text-sm font-medium uppercase tracking-wider opacity-80">
                             Tracks
