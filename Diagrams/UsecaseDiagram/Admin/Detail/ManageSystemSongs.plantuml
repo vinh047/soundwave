@@ -12,9 +12,6 @@ rectangle "Quản lý bài hát hệ thống" {
     (Nghe nhạc) as UC_Play
     (Đăng nhập) as UC_Login
 
-    ' Use case cho tất cả Actor
-    (Đăng xuất) as UC_Logout
-
     ' -- Mối quan hệ --
     ' Quan hệ <<extend>>
     UC_ViewSearchSongs ..> UC_ManageSystemSongs: <<extend>>
@@ -26,5 +23,4 @@ rectangle "Quản lý bài hát hệ thống" {
 
     ' Admin
     Admin --> UC_Login
-    Admin --> UC_Logout
 }

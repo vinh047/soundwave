@@ -15,9 +15,6 @@ rectangle "Quản lý báo cáo vi phạm" {
     (Cảnh cáo người dùng) as UC_WarnUser
     (Bỏ qua vi phạm) as UC_DismissReport
 
-    ' Use case cho tất cả Actor
-    (Đăng xuất) as UC_Logout
-
     ' -- Mối quan hệ --
     ' Quan hệ <<extend>>
     ' Xử lý báo cáo vi phạm
@@ -31,5 +28,4 @@ rectangle "Quản lý báo cáo vi phạm" {
 
     ' Admin
     Admin --> UC_Login
-    Admin --> UC_Logout
 }

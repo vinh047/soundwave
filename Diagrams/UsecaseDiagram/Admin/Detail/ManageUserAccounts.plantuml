@@ -13,9 +13,6 @@ rectangle "Quản lý tài khoản người dùng" {
     (Xem danh sách và tìm kiếm tài khoản người dùng) as UC_ViewSearchUserAccount
     (Khoá/Mở tài khoản người dùng) as UC_LockUserAccount
 
-    ' Use case cho tất cả Actor
-    (Đăng xuất) as UC_Logout
-
     ' -- Mối quan hệ --
     ' Quan hệ <<extend>>
     ' Quản lý tài khoản người dùng
@@ -27,5 +24,4 @@ rectangle "Quản lý tài khoản người dùng" {
 
     ' Admin
     Admin --> UC_Login
-    Admin --> UC_Logout
 }
