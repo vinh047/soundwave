@@ -17,6 +17,7 @@ import { AddToPlaylistModal } from "../playlist/AddToPlaylistModal";
 import { TrackCoverPlaceholder } from "../placeholders/TrackCover";
 import Link from "next/link";
 import { useAddToPlaylistModal } from "@/store/useAddToPlaylistModal";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 
 export function GlobalPlayer() {
   const {
@@ -53,6 +54,8 @@ export function GlobalPlayer() {
   const [isAddToPlaylistOpen, setIsAddToPlaylistOpen] = useState(false);
 
   const isOwner = user?.id === currentTrack?.user?.id;
+
+  const authModal = useAuthModal();
 
   // 1. Mount Check
   useEffect(() => {
@@ -92,7 +95,8 @@ export function GlobalPlayer() {
   }, [currentTrack, user]);
 
   const handleToggleFollow = async () => {
-    if (!user) return toast.error("Please login to follow");
+    if (!user) return authModal.onOpen();
+
     if (!currentTrack?.user?.id) return;
     if (isOwner) return;
 
@@ -117,7 +121,10 @@ export function GlobalPlayer() {
   };
 
   const handleToggleLike = async () => {
-    if (!user) return toast.error("Please login to like tracks");
+    if (!user) {
+      authModal.onOpen();
+      return;
+    }
     if (!currentTrack) return;
 
     // Logic Like tạm thời (giống cũ)
@@ -193,50 +200,6 @@ export function GlobalPlayer() {
       setIsFollowing(res.data.isFollowing);
     });
   }, [currentTrack, user]);
-
-  const handleLike = async () => {
-    if (!user) {
-      toast.error("Vui lòng đăng nhập để thích bài hát");
-      return;
-    }
-    if (!currentTrack) return;
-
-    const previousState = isLiked;
-    setIsLiked(!previousState); // Optimistic update
-
-    try {
-      if (previousState) {
-        await trackApi.unlikeTrack(currentTrack.id);
-      } else {
-        await trackApi.likeTrack(currentTrack.id);
-      }
-    } catch (error) {
-      setIsLiked(previousState); // Revert
-      toast.error("Có lỗi xảy ra");
-    }
-  };
-
-  const handleFollow = async () => {
-    if (!user) {
-      toast.error("Vui lòng đăng nhập để theo dõi");
-      return;
-    }
-    if (!currentTrack) return;
-
-    const previousState = isFollowing;
-    setIsFollowing(!previousState); // Optimistic update
-
-    try {
-      if (previousState) {
-        await userApi.unfollowUser(currentTrack.userId);
-      } else {
-        await userApi.followUser(currentTrack.userId);
-      }
-    } catch (error) {
-      setIsFollowing(previousState); // Revert
-      toast.error("Có lỗi xảy ra");
-    }
-  };
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -348,6 +311,13 @@ export function GlobalPlayer() {
 
   const uploadModal = useAddToPlaylistModal();
 
+  const handleOpenPlaylists = () => {
+    if(!user) {
+      authModal.onOpen();
+      return;
+    }
+  }
+
   if (!isMounted || !currentTrack) return null;
 
   return (
@@ -418,7 +388,10 @@ export function GlobalPlayer() {
             </button>
           )}
 
-          <button className="p-2 cursor-pointer" onClick={() => uploadModal.onOpen()}>
+          <button
+            className="p-2 cursor-pointer"
+            onClick={handleOpenPlaylists}
+          >
             <ListPlus className="w-4 h-4" />
           </button>
         </div>

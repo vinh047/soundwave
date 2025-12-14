@@ -8,14 +8,15 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuth } from "@/app/contexts/AuthContext";
 // 👇 Import API
-import userApi from "@/lib/api/usersApi"; 
+import userApi from "@/lib/api/usersApi";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 
 // --- TYPES ---
 interface UserData {
   id: string;
   name: string | null;
   image: string | null;
-  username?: string | null; 
+  username?: string | null;
   location?: string | null;
   _count?: {
     followers: number;
@@ -31,26 +32,30 @@ interface SearchPeopleCardProps {
 
 export function SearchPeopleCard({ user }: SearchPeopleCardProps) {
   const { user: currentUser } = useAuth();
-  
+
   // 1. Khởi tạo state từ dữ liệu props (đã có isFollowed từ API search)
   const [isFollowing, setIsFollowing] = useState(user.isFollowed || false);
-  const [followerCount, setFollowerCount] = useState(user._count?.followers || 0);
+  const [followerCount, setFollowerCount] = useState(
+    user._count?.followers || 0
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   const isMe = currentUser?.id === user.id;
 
+  const authModal = useAuthModal();
   const handleToggleFollow = async (e: React.MouseEvent) => {
     e.preventDefault(); // Ngăn click vào thẻ cha (Link)
     e.stopPropagation();
 
     if (!currentUser) {
-      return toast.error("Vui lòng đăng nhập để theo dõi.");
+      authModal.onOpen();
+      return;
     }
 
     if (isMe) return;
 
     setIsLoading(true);
-    
+
     // 2. Optimistic Update: Cập nhật UI ngay lập tức trước khi gọi API
     const previousIsFollowing = isFollowing;
     const newIsFollowing = !isFollowing;
@@ -81,9 +86,11 @@ export function SearchPeopleCard({ user }: SearchPeopleCardProps) {
 
   return (
     <div className="group relative flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-800">
-      
       {/* --- PHẦN TRÁI: AVATAR & INFO --- */}
-      <Link href={`/artist/${user.id}`} className="flex items-center gap-4 flex-1 min-w-0">
+      <Link
+        href={`/artist/${user.id}`}
+        className="flex items-center gap-4 flex-1 min-w-0"
+      >
         {/* Avatar Hình Tròn */}
         <div className="relative w-16 h-16 shrink-0">
           <Image
@@ -99,7 +106,7 @@ export function SearchPeopleCard({ user }: SearchPeopleCardProps) {
           <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-orange-500 transition-colors">
             {user.name || "Unknown User"}
           </h3>
-          
+
           <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
             {/* Địa điểm */}
             {user.location && (
@@ -108,7 +115,7 @@ export function SearchPeopleCard({ user }: SearchPeopleCardProps) {
                 {user.location}
               </span>
             )}
-            
+
             {/* Số người theo dõi */}
             <span className="flex items-center gap-1 shrink-0">
               <Users className="w-3 h-3" />
@@ -117,9 +124,9 @@ export function SearchPeopleCard({ user }: SearchPeopleCardProps) {
 
             {/* Số bài hát */}
             {user._count?.tracks !== undefined && user._count.tracks > 0 && (
-                <span className="hidden sm:flex items-center gap-1 shrink-0 before:content-['•'] before:mr-2 before:text-gray-300 dark:before:text-gray-600">
-                    {user._count.tracks} tracks
-                </span>
+              <span className="hidden sm:flex items-center gap-1 shrink-0 before:content-['•'] before:mr-2 before:text-gray-300 dark:before:text-gray-600">
+                {user._count.tracks} tracks
+              </span>
             )}
           </div>
         </div>

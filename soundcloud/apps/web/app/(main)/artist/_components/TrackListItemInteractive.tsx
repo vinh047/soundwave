@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { Prisma } from "@repo/database"; // Đảm bảo đường dẫn này đúng với project của bạn
 import { TrackCoverPlaceholder } from "@/components/placeholders/TrackCover";
+import { useAuthModal } from "@/hooks/use-auth-modal";
+import { useAddToPlaylistModal } from "@/store/useAddToPlaylistModal";
 
 // --- TYPES FIX ---
 // Sửa lại cú pháp Prisma GetPayload cho đúng chuẩn
@@ -85,7 +87,7 @@ export function TrackListItemInteractive({
   // --- HANDLERS ---
   const handleToggleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!currentUserId) return toast.error("Vui lòng đăng nhập để thực hiện.");
+    if (!currentUserId) return authModal.onOpen();
 
     const previousState = isLiked;
     setIsLiked(!isLiked);
@@ -104,9 +106,11 @@ export function TrackListItemInteractive({
     }
   };
 
+  const authModal = useAuthModal();
+
   const handleToggleRepost = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!currentUserId) return toast.error("Vui lòng đăng nhập.");
+    if (!currentUserId) return authModal.onOpen();
 
     const previousState = isReposted;
     setIsReposted(!isReposted);
@@ -351,10 +355,19 @@ function MoreMenu({ track }: { track: TrackData }) {
     toast.success("Added to Next up");
   };
 
+  const authModal = useAuthModal();
+  const { user } = useAuth();
+
+  const uploadModal = useAddToPlaylistModal();
+
   const handleAddToPlaylist = (e: React.MouseEvent) => {
-    e.stopPropagation();
     setIsOpen(false);
-    toast.info("Open Playlist Modal...");
+    setIsOpen(false);
+    if (!user) {
+      authModal.onOpen();
+    } else {
+      uploadModal.onOpen(track.id);
+    }
   };
 
   return (

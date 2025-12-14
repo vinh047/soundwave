@@ -11,6 +11,7 @@ import trackApi from "@/lib/api/trackApi";
 import { toast } from "sonner";
 import { useAuth } from "@/app/contexts/AuthContext";
 import MoreMenu, { ActionButton } from "../common/MoreMenu";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 
 // --- TYPES ---
 interface TrackData {
@@ -67,10 +68,12 @@ export function SearchTrackCard({ track }: SearchTrackCardProps) {
     setRepostCount(track._count?.reposts || 0);
   }, [track]);
 
+  const authModal = useAuthModal();
+
   // --- HANDLERS ---
   const handleToggleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!currentUserId) return toast.error("Vui lòng đăng nhập để thực hiện.");
+    if (!currentUserId) return authModal.onOpen();
 
     const previousState = isLiked;
     setIsLiked(!isLiked);
@@ -91,7 +94,7 @@ export function SearchTrackCard({ track }: SearchTrackCardProps) {
 
   const handleToggleRepost = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!currentUserId) return toast.error("Vui lòng đăng nhập.");
+    if (!currentUserId) return authModal.onOpen();
 
     const previousState = isReposted;
     setIsReposted(!isReposted);

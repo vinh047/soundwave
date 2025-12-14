@@ -30,6 +30,7 @@ import {
 import { User } from "@repo/database";
 import authApi from "@/lib/api/authApi";
 import { useAuthModal } from "@/hooks/use-auth-modal";
+import ProtectedLink from "@/components/common/ProtectedLink";
 
 const NavLink = ({
   href,
@@ -390,9 +391,19 @@ export function Navbar() {
 
             <div className="hidden md:flex items-center h-full">
               <NavLink href="/home">Home</NavLink>
-              <NavLink href="/feed">Feed</NavLink>
-              <NavLink href="/library">Library</NavLink>
-              <NavLink href="/upload">Upload</NavLink>
+              <ProtectedLink href="/feed">
+                Feed
+              </ProtectedLink>
+
+              {/* 3. LIBRARY: Cần bảo vệ */}
+              <ProtectedLink href="/library">
+                Library
+              </ProtectedLink>
+
+              {/* 4. UPLOAD: Cần bảo vệ */}
+              <ProtectedLink href="/upload">
+                Upload
+              </ProtectedLink>
             </div>
           </div>
 

@@ -20,6 +20,9 @@ import { Avatar } from "@/components/ui2/Avatar";
 import Link from "next/link";
 import { usePlayerStore } from "@/store/playerStore";
 import ShareModal from "@/components/modals/ShareModal";
+import { useAuth } from "@/app/contexts/AuthContext";
+import { useAddToPlaylistModal } from "@/store/useAddToPlaylistModal";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 import ReportModal from "@/components/modals/ReportModal";
 
 type TrackWithInteractions = Track & {
@@ -93,9 +96,16 @@ export default function TrackInteraction({
     toast.success("Added to Next up");
   };
 
+  const authModal = useAuthModal();
+
+  const uploadModal = useAddToPlaylistModal();
+
   const handleAddToPlaylist = () => {
-    setIsMoreOpen(false);
-    toast.info("Open Playlist Modal...");
+    if (!user) {
+      authModal.onOpen();
+    } else {
+      uploadModal.onOpen(track.id);
+    }
   };
 
   const handleLike = async () => {
