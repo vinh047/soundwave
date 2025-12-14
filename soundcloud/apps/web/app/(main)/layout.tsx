@@ -1,6 +1,7 @@
 // app/home/layout.tsx
 import { GlobalPlayer } from "@/components/player/GlobalPlayer";
 import { Navbar } from "./home/_components/navbar";
+import { AddToPlaylistModal } from "@/components/playlist/AddToPlaylistModal";
 
 export default function HomeLayout({
   children,
@@ -13,6 +14,7 @@ export default function HomeLayout({
       <div className="flex flex-1 py-10">
         <main className="flex-1 w-full">{children}</main>
       </div>
+      <AddToPlaylistModal />
       <GlobalPlayer />
     </div>
   );

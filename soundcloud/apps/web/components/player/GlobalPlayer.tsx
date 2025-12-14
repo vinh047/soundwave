@@ -16,6 +16,7 @@ import { useAuthStore } from "@/store/authStore";
 import { AddToPlaylistModal } from "../playlist/AddToPlaylistModal";
 import { TrackCoverPlaceholder } from "../placeholders/TrackCover";
 import Link from "next/link";
+import { useAddToPlaylistModal } from "@/store/useAddToPlaylistModal";
 
 export function GlobalPlayer() {
   const {
@@ -295,7 +296,8 @@ export function GlobalPlayer() {
     };
 
     const handleEnded = () => {
-      const { autoplay, playNext, resetTime, repeatMode } = usePlayerStore.getState();
+      const { autoplay, playNext, resetTime, repeatMode } =
+        usePlayerStore.getState();
       const audio = audioRef.current;
 
       // Logic Repeat One: Tự động phát lại bài hiện tại khi hết
@@ -344,6 +346,8 @@ export function GlobalPlayer() {
     setCurrentTime(time);
   };
 
+  const uploadModal = useAddToPlaylistModal();
+
   if (!isMounted || !currentTrack) return null;
 
   return (
@@ -352,16 +356,16 @@ export function GlobalPlayer() {
       <div className="flex items-center gap-3 flex-1 min-w-0 w-full md:w-auto">
         <div className="relative w-10 h-10 shrink-0 group cursor-pointer">
           <Link href={`/tracks/${currentTrack.id}`}>
-          {currentTrack.imagePath ? (
-            <Image
-              src={currentTrack.imagePath || "/images/default-cover.jpg"}
-              alt={currentTrack.title}
-              fill
-              className="rounded-[3px] object-cover"
-            />
-          ) : (
-            <TrackCoverPlaceholder />
-          )}
+            {currentTrack.imagePath ? (
+              <Image
+                src={currentTrack.imagePath || "/images/default-cover.jpg"}
+                alt={currentTrack.title}
+                fill
+                className="rounded-[3px] object-cover"
+              />
+            ) : (
+              <TrackCoverPlaceholder />
+            )}
           </Link>
         </div>
 
@@ -414,17 +418,11 @@ export function GlobalPlayer() {
             </button>
           )}
 
-          <button className="p-2 cursor-pointer" onClick={() => setIsAddToPlaylistOpen(true)}>
+          <button className="p-2 cursor-pointer" onClick={() => uploadModal.onOpen()}>
             <ListPlus className="w-4 h-4" />
           </button>
         </div>
       </div>
-
-      <AddToPlaylistModal
-        isOpen={isAddToPlaylistOpen}
-        onClose={() => setIsAddToPlaylistOpen(false)}
-        trackId={currentTrack?.id || null}
-      />
 
       {/* --- CENTER: PROGRESS BAR --- */}
       <div className="flex-1 w-full max-w-xl px-2">
@@ -456,7 +454,9 @@ export function GlobalPlayer() {
         onClick={() => setShowQueue(!showQueue)}
         className={cn(
           "p-2 transition-colors relative",
-          showQueue ? "text-orange-500" : "text-gray-500 hover:text-orange-500 cursor-pointer"
+          showQueue
+            ? "text-orange-500"
+            : "text-gray-500 hover:text-orange-500 cursor-pointer"
         )}
       >
         <ListMusic className="w-4 h-4" />

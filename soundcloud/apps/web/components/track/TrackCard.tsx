@@ -14,6 +14,7 @@ import MoreMenu from "../common/MoreMenu";
 import trackApi from "@/lib/api/trackApi";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { toast } from "sonner";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 
 interface TrackCardProps {
   track: Prisma.TrackGetPayload<{ include: { user: true; likes: true } }>;
@@ -50,12 +51,14 @@ export function TrackCard({ track }: TrackCardProps) {
     }
   };
 
+  const authModal = useAuthModal();
+
   const handleLikeClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!user) {
-      toast.error("Please login to like tracks");
+      authModal.onOpen();
       return;
     }
 
@@ -89,48 +92,53 @@ export function TrackCard({ track }: TrackCardProps) {
         dark:border-gray-700
       `}
     >
-      <div className="relative w-full aspect-square overflow-hidden rounded">
-        <Link
-          href={`/tracks/${track.id}`}
-          className="absolute inset-0 z-0"
-          aria-label={`View track ${track.title}`}
-        />
-        {track.imagePath ? (
-          <Image
-            src={track.imagePath}
-            alt=""
-            fill
-            sizes="(max-width: 640px) 100vw, 400px"
-            className="object-cover"
+      {/* --- WRAPPER CHUNG CHO ẢNH VÀ NÚT (Tạo khung vuông) --- */}
+      <div className="relative w-full aspect-square rounded">
+        {/* 1. LỚP HÌNH ẢNH (Giữ overflow-hidden để làm hiệu ứng zoom ảnh) */}
+        <div className="absolute inset-0 overflow-hidden rounded z-0">
+          <Link
+            href={`/tracks/${track.id}`}
+            className="absolute inset-0 z-10" // Tăng z-index để link vẫn bấm được
+            aria-label={`View track ${track.title}`}
           />
-        ) : (
-          <TrackCoverPlaceholder />
-        )}
-
-        {/* Layer Play Button */}
-        <div
-          className={cn(
-            "absolute inset-0 transition-opacity flex items-center justify-center bg-black/20 dark:bg-black/40",
-            isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-            "pointer-events-none"
+          {track.imagePath ? (
+            <Image
+              src={track.imagePath}
+              alt=""
+              fill
+              sizes="(max-width: 640px) 100vw, 400px"
+              className="object-cover transition-transform duration-500 group-hover:scale-110" // Thêm effect zoom
+            />
+          ) : (
+            <TrackCoverPlaceholder />
           )}
-        >
-          <Button
-            size="lg"
-            className="h-14 w-14 rounded-full p-0 cursor-pointer transition-transform hover:scale-105 pointer-events-auto relative z-10"
-            onClick={handlePlayClick}
-          >
-            {isActive ? (
-              <Pause className="h-6 w-6 fill-current text-white" />
-            ) : (
-              <Play className="h-6 w-6 ml-1 fill-current text-white" />
+
+          {/* Layer Play Button (Vẫn nằm trong overflow để đè lên ảnh) */}
+          <div
+            className={cn(
+              "absolute inset-0 transition-opacity flex items-center justify-center bg-black/20 dark:bg-black/40 z-20 pointer-events-none",
+              isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
             )}
-          </Button>
+          >
+            {/* ... (Giữ nguyên code nút Play) ... */}
+            <Button
+              size="lg"
+              className="h-14 w-14 rounded-full p-0 cursor-pointer transition-transform hover:scale-105 pointer-events-auto relative z-10"
+              onClick={handlePlayClick}
+            >
+              {isActive ? (
+                <Pause className="h-6 w-6 fill-current text-white" />
+              ) : (
+                <Play className="h-6 w-6 ml-1 fill-current text-white" />
+              )}
+            </Button>
+          </div>
         </div>
 
-        {/* Layer Actions (Like + More) */}
+        {/* 2. LỚP ACTION (Đưa ra ngoài overflow-hidden, nhưng vẫn đè lên nhờ absolute) */}
+        {/* Lớp này không bị cắt (clip) nên Menu sẽ hiện đè lên tất cả */}
         <div
-          className="absolute bottom-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-auto"
+          className="absolute bottom-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-30 pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Nút Like */}
@@ -161,10 +169,11 @@ export function TrackCard({ track }: TrackCardProps) {
         </div>
       </div>
 
+      {/* --- PHẦN TEXT BÊN DƯỚI (Giữ nguyên) --- */}
       <h3 className="font-semibold mt-3 truncate text-gray-900 dark:text-white relative z-0 pointer-events-none">
         {track.title}
       </h3>
-
+      {/* ... (Các phần còn lại giữ nguyên) ... */}
       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 relative z-10 w-fit">
         <Link
           href={`/artist/${track.user.id}`}
