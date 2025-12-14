@@ -11,13 +11,7 @@ type CreateTrackPayload = Omit<
 type UpdateTrackPayload = Partial<CreateTrackPayload>;
 
 const trackApi = {
-  getTracks: (params: PaginationParams = {}) => {
-    return axiosClient.get<
-      PaginatedResult<Prisma.TrackGetPayload<{ include: { user: true } }>>
-    >("/tracks", {
-      params,
-    });
-  },
+  
 
   getTrackById: (id: string) =>
     axiosClient.get<
@@ -90,9 +84,11 @@ const trackApi = {
   // },
 
   getRecentTracks: () =>
-    axiosClient.get<Prisma.TrackGetPayload<{ include: { user: true } }>[]>(
-      `/tracks/recent`
-    ),
+    axiosClient.get<
+      Prisma.TrackGetPayload<{
+        include: { user: true; likes: true; reposts: true };
+      }>[]
+    >(`/tracks/recent`),
 
   likeTrack: (id: string) => axiosClient.post(`/tracks/${id}/like`),
   unlikeTrack: (id: string) => axiosClient.delete(`/tracks/${id}/like`),

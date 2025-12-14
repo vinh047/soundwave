@@ -83,7 +83,7 @@ export class AdminController {
 
     return {
       accessToken: result.accessToken,
-      user: result.user,
+      user: req.user,
     };
   }
 

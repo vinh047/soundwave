@@ -80,6 +80,9 @@ export class TracksController {
     const keyword = q || search;
     const userId = req.user?.id || null;
 
+    console.log("userId...............: ", req.user)
+
+
     return this.tracksService.findAll(
       page ? parseInt(page) : 1,
       limit ? parseInt(limit) : 10,
@@ -97,7 +100,6 @@ export class TracksController {
     @Req() req,
   ) {
     const userId = req.user?.id || null;
-    
 
     return this.tracksService.searchEverything(
       page ? parseInt(page) : 1,
@@ -116,9 +118,6 @@ export class TracksController {
     @Req() req,
   ) {
     const userId = req.user?.id || null;
-
-    console.log("userId:treding..... ", req.user)
-
 
     return this.tracksService.getTrendingTopN(userId, { days, limit });
   }

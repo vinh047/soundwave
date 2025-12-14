@@ -17,6 +17,7 @@ export default function AdminLayout({
   const [isAuthorized, setIsAuthorized] = useState(false);
   const { user } = useAuth();
 
+  console.log("user: ", user)
   useEffect(() => {
     if (!user) {
       router.push("/admin-login");

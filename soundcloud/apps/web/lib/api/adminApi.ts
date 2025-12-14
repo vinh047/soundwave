@@ -12,6 +12,7 @@ import {
   UpdateUserStatusPayload
 } from '../../type/AdminTypes';
 import { PaginationParams } from '../../type/PaginationParams';
+import { PublicUser } from "./authApi";
 
 const ADMIN_BASE_URL = "/admin";
 
@@ -114,15 +115,8 @@ export interface AdminLoginPayload {
 // 2. Định nghĩa kiểu dữ liệu trả về (Response)
 // Dựa vào this.authService.login(req.user) thường trả về access_token
 export interface LoginResponse {
-  access_token: string;
-  refresh_token?: string; // Tùy backend của bạn có trả về không
-  user: {
-    id: string;
-    email: string;
-    name?: string | null;
-    role: string; // Quan trọng: ADMIN
-    image?: string | null;
-  };
+  accessToken: string;
+  user: PublicUser
 }
 
 export const loginAdmin = async (data: AdminLoginPayload) => {
