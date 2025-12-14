@@ -7,6 +7,7 @@ import {
   HttpCode,
   Res,
   Req,
+  Get,
 } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service'; // Giả định AuthService được Export từ AuthModule
 import { LocalAuthGuard } from '../auth/passport/local-auth.guard'; // Giả định đường dẫn này
@@ -15,9 +16,20 @@ import { Role } from '@prisma/client';
 import { Public } from 'src/decorator/customize';
 import type { Response } from 'express';
 
+import { AdminService } from './admin.service';
+
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly adminService: AdminService,
+  ) { }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('stats')
+  async getStats() {
+    return this.adminService.getDashboardStats();
+  }
 
   // Cấu hình chung cho Cookie Access Token (ngắn hạn)
   private getAccessTokenCookieOptions() {

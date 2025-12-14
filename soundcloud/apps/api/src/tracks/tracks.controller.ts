@@ -18,13 +18,17 @@ import {
   BadRequestException,
   HttpCode,
   HttpStatus,
+  UploadedFile,
 } from '@nestjs/common';
 import { TracksService } from './tracks.service';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { Public } from 'src/decorator/customize';
 import { JwtAuthGuard } from 'src/auth/passport/jwt-auth.guard';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from '@nestjs/platform-express';
 
 @Controller('tracks')
 export class TracksController {
@@ -207,11 +211,27 @@ export class TracksController {
     return this.tracksService.findOne(id);
   }
 
-  @Patch(':id')
-  // @UseGuards(JwtAuthGuard) // <-- Cần bảo vệ
-  update(@Param('id') id: string, @Body() updateTrackDto: UpdateTrackDto) {
+  @Public()
+  @Get('user/:userId')
+  findTracksByUser(@Param('userId') userId: string) {
     // SỬA LỖI 1: Gỡ bỏ dấu '+'
-    return this.tracksService.update(id, updateTrackDto);
+    return this.tracksService.findTracksByOwner(userId);
+  }
+
+  @Patch(':id')
+  @UseInterceptors(FileInterceptor('cover'))
+  async updateTrack(
+    @Param('id') trackId: string,
+    @Req() req: any,
+    @Body() dto: UpdateTrackDto,
+    @UploadedFile() cover?: Express.Multer.File,
+  ) {
+    return this.tracksService.updateTrackByOwner(
+      trackId,
+      req.user.id,
+      dto,
+      cover,
+    );
   }
 
   @Delete(':id')

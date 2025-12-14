@@ -122,3 +122,14 @@ export interface LoginResponse {
 export const loginAdmin = async (data: AdminLoginPayload) => {
   return axiosClient.post<LoginResponse>("/admin/login", data);
 };
+
+export interface DashboardStats {
+  totalUsers: number;
+  totalTracks: number;
+  pendingReports: number;
+}
+
+export const getDashboardStats = async (): Promise<DashboardStats> => {
+  const response = await apiClient.get<DashboardStats>(`${ADMIN_BASE_URL}/stats`);
+  return response.data;
+};

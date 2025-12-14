@@ -7,6 +7,7 @@ import { RecentTracks } from "./_components/RecentTracks";
 import userApi from "@/lib/api/usersApi";
 import Link from "next/link";
 import { HorizontalTrackCard } from "@/components/track/HorizontalTrackCard";
+import { UserAvatarPlaceholder } from "@/components/placeholders/UserAvatar";
 import { trackApiServer } from "@/lib/api/trackApi.server";
 
 export default async function HomePage({
@@ -94,16 +95,22 @@ export default async function HomePage({
                     {/* Dùng Link để click vào xem profile */}
                     <Link
                       href={`/artist/${artist.id}`}
-                      className="flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-md transition-colors"
+                      className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                     >
-                      <Image
-                        // Fallback nếu artist chưa có avatar
-                        src={artist.image || "/placeholder-avatar.png"}
-                        width={40}
-                        height={40}
-                        alt={artist.name || "Artist"}
-                        className="w-10 h-10 rounded-full object-cover border border-gray-200 dark:border-gray-700"
-                      />
+                      {/* AVATAR WRAPPER */}
+                      <div className="relative w-10 h-10 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 shrink-0">
+                        {artist.image ? (
+                          <Image
+                            src={artist.image}
+                            alt={artist.name || "Artist"}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <UserAvatarPlaceholder />
+                        )}
+                      </div>
+
                       <span className="text-gray-900 dark:text-white font-medium truncate">
                         {artist.name || "Unknown Artist"}
                       </span>

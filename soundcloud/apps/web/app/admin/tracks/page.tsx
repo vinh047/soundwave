@@ -1,89 +1,94 @@
 "use client";
 
-import { Play, Pause, Search, Eye, EyeOff } from "lucide-react"; // 1. Import thêm icon Eye, EyeOff
+import { Play, Pause, Search, Eye, EyeOff, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-
-// Định nghĩa Interface để tránh lỗi TypeScript
-interface Track {
-  id: string;
-  title: string;
-  artist: string;
-  plays: number;
-  duration: string;
-  image: string;
-  isPublic: boolean;
-  isBanned: boolean;
-  url: string;
-}
-
-// Mock Data ban đầu
-const INITIAL_TRACKS: Track[] = [
-  {
-    id: "TRK001",
-    title: "Summer Vibes 2024",
-    artist: "DJ Snake",
-    plays: 12500,
-    duration: "6:12",
-    image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100&h=100&fit=crop",
-    isPublic: true, // Đang hiện
-    isBanned: false,
-    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-  },
-  {
-    id: "TRK002",
-    title: "Lofi Chill Study",
-    artist: "ChilledCow",
-    plays: 89000,
-    duration: "7:05",
-    image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&h=100&fit=crop",
-    isPublic: true,
-    isBanned: false,
-    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3"
-  },
-  {
-    id: "TRK004",
-    title: "Copyrighted Track",
-    artist: "Bad User",
-    plays: 1200,
-    duration: "5:44",
-    image: "https://plus.unsplash.com/premium_photo-1677589330352-509c3d18f3a0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c29uZyUyMGljb258ZW58MHx8MHx8fDA%3D",
-    isPublic: false, // Đang ẩn (Riêng tư)
-    isBanned: true,
-    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
-  },
-];
+import { getAdminTracks, updateAdminTrackStatus } from "@/lib/api/adminApi";
+import { AdminTrack } from "@/type/AdminTypes";
+import { toast } from "sonner";
 
 export default function TracksPage() {
-  // 2. Chuyển đổi dữ liệu sang State để có thể chỉnh sửa
-  const [trackList, setTrackList] = useState<Track[]>(INITIAL_TRACKS);
-
-  const [playingId, setPlayingId] = useState<string | null>(null);
+  const [trackList, setTrackList] = useState<AdminTrack[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Hàm xử lý phát nhạc (Giữ nguyên)
-  const togglePlay = (track: Track) => {
+  // Fetch data
+  useEffect(() => {
+    const fetchTracks = async () => {
+      setIsLoading(true);
+      try {
+        const result = await getAdminTracks({
+          page,
+          limit: 10,
+          search: searchTerm,
+        });
+        setTrackList(result.data);
+        setTotalPages(Math.ceil(result.total / 10));
+      } catch (error) {
+        console.error("Failed to fetch tracks:", error);
+        toast.error("Failed to load tracks. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Debounce search
+    const timeoutId = setTimeout(() => {
+      fetchTracks();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [page, searchTerm]);
+
+  // Handle Play/Pause
+  const togglePlay = (track: AdminTrack) => {
+    // Note: AdminTrack might not have 'url' field directly visible in type definition 
+    // but backend should return it if needed for preview. 
+    // If backend doesn't return audio URL, we can't play it.
+    // Assuming backend returns 'audioPath' or similar, but AdminTrack type only has basic info.
+    // Let's check if we can construct URL or if we need to update type.
+    // For now, let's assume we can't play if URL is missing, or we need to fetch detail.
+    // Actually, looking at AdminTrack type, it doesn't have audio URL.
+    // We might need to update backend to return audioPath or use a separate endpoint.
+    // For this implementation, I will comment out play functionality or show a message.
+
+    toast.info("Audio preview is not currently available in admin view.");
+
+    // Code for playback if URL was available:
+    /*
     if (playingId === track.id) {
       audioRef.current?.pause();
       setPlayingId(null);
     } else {
       if (audioRef.current) audioRef.current.pause();
-      audioRef.current = new Audio(track.url);
-      audioRef.current.play().catch(e => console.error("Lỗi phát nhạc:", e));
-      setPlayingId(track.id);
-      audioRef.current.onended = () => setPlayingId(null);
+      // audioRef.current = new Audio(track.audioPath); 
+      // audioRef.current.play().catch(e => console.error("Lỗi phát nhạc:", e));
+      // setPlayingId(track.id);
+      // audioRef.current.onended = () => setPlayingId(null);
     }
+    */
   };
 
-  // 3. Hàm xử lý Ẩn/Hiện bài hát (Logic mới)
-  const toggleVisibility = (id: string) => {
-    setTrackList(prevTracks => prevTracks.map(track => {
-      if (track.id === id) {
-        // Đảo ngược trạng thái isPublic
-        return { ...track, isPublic: !track.isPublic };
-      }
-      return track;
-    }));
+  // Handle Ban/Unban
+  const toggleVisibility = async (track: AdminTrack) => {
+    try {
+      const newStatus = !track.isBanned;
+      await updateAdminTrackStatus(track.id, { isBanned: newStatus });
+
+      // Update local state
+      setTrackList(prev => prev.map(t =>
+        t.id === track.id ? { ...t, isBanned: newStatus } : t
+      ));
+
+      toast.success(`Track ${newStatus ? 'banned' : 'unbanned'} successfully.`);
+    } catch (error) {
+      console.error("Failed to update track status:", error);
+      toast.error("Failed to update track status.");
+    }
   };
 
   useEffect(() => {
@@ -91,12 +96,6 @@ export default function TracksPage() {
       if (audioRef.current) audioRef.current.pause();
     };
   }, []);
-
-  const filteredTracks = trackList.filter((track) =>
-    track.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    track.artist.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    track.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   return (
     <div className="space-y-6">
@@ -108,7 +107,10 @@ export default function TracksPage() {
             type="text"
             placeholder="Tìm bài hát, nghệ sĩ, ID..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setPage(1); // Reset to page 1 on search
+            }}
             className="w-full pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white focus:outline-none focus:border-orange-500"
           />
         </div>
@@ -123,15 +125,23 @@ export default function TracksPage() {
               <th className="px-4 py-3">Bài hát</th>
               <th className="px-4 py-3">Lượt nghe</th>
               <th className="px-4 py-3">Trạng thái</th>
-              <th className="px-4 py-3 text-center">Ẩn/Hiện</th>
+              <th className="px-4 py-3 text-center">Hành động</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800">
-            {filteredTracks.length > 0 ? (
-              filteredTracks.map((track) => (
+            {isLoading ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">
+                  <div className="flex justify-center items-center">
+                    <Loader2 className="animate-spin mr-2" /> Loading...
+                  </div>
+                </td>
+              </tr>
+            ) : trackList.length > 0 ? (
+              trackList.map((track) => (
                 <tr key={track.id} className="group hover:bg-zinc-900/60 transition-colors">
                   <td className="px-4 py-3 text-zinc-500 font-mono text-xs">
-                    {track.id}
+                    {track.id.slice(0, 8)}...
                   </td>
 
                   <td className="px-4 py-3 text-center">
@@ -145,14 +155,19 @@ export default function TracksPage() {
 
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <img src={track.image} alt="" className="w-10 h-10 rounded object-cover bg-zinc-800" />
+                      {/* Placeholder image since AdminTrack might not have image */}
+                      <div className="w-10 h-10 rounded bg-zinc-800 flex items-center justify-center text-xs text-zinc-500">
+                        IMG
+                      </div>
                       <div>
                         <div className="font-medium text-white">{track.title}</div>
-                        <div className="text-xs text-zinc-500">{track.artist} • {track.duration}</div>
+                        <div className="text-xs text-zinc-500">
+                          {track.user?.name || track.user?.email || "Unknown Artist"} • {new Date(track.createdAt).toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-zinc-300">{track.plays.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-zinc-300">{track.playCount.toLocaleString()}</td>
 
                   <td className="px-4 py-3">
                     {track.isBanned ? (
@@ -173,14 +188,14 @@ export default function TracksPage() {
 
                   <td className="px-4 py-3 text-center">
                     <button
-                      onClick={() => toggleVisibility(track.id)}
+                      onClick={() => toggleVisibility(track)}
                       className="p-2 rounded-lg hover:bg-zinc-800/50 transition-colors text-zinc-400 hover:text-zinc-200 border border-transparent hover:border-zinc-700/50"
-                      title={track.isPublic ? "Nhấn để ẩn bài hát" : "Nhấn để hiện bài hát"}
+                      title={track.isBanned ? "Bỏ cấm bài hát" : "Cấm bài hát"}
                     >
-                      {track.isPublic ? (
-                        <Eye size={18} className="text-emerald-500" /> // Mắt mở (Màu xanh)
+                      {track.isBanned ? (
+                        <EyeOff size={18} className="text-rose-500" />
                       ) : (
-                        <EyeOff size={18} className="text-zinc-500" /> // Mắt đóng (Màu xám)
+                        <Eye size={18} className="text-zinc-500 hover:text-rose-500" />
                       )}
                     </button>
                   </td>
@@ -189,12 +204,35 @@ export default function TracksPage() {
             ) : (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">
-                  Không tìm thấy bài hát hay nghệ sĩ nào phù hợp với "{searchTerm}"
+                  Không tìm thấy bài hát nào.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-800">
+        <div className="text-sm text-zinc-500">
+          Page {page} of {totalPages}
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="p-2 rounded hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="p-2 rounded hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -269,6 +273,40 @@ export class TracksService {
     } catch {
       throw new NotFoundException(`Track with ID "${id}" not found to update`);
     }
+  }
+
+  async updateTrackByOwner(
+    trackId: string,
+    userId: string,
+    dto: UpdateTrackDto,
+    cover?: Express.Multer.File,
+  ) {
+    const track = await this.prisma.track.findUnique({
+      where: { id: trackId },
+    });
+
+    if (!track) {
+      throw new NotFoundException('Track không tồn tại');
+    }
+
+    if (track.userId !== userId) {
+      throw new ForbiddenException('Bạn không có quyền sửa track này');
+    }
+
+    let imagePath = track.imagePath;
+
+    if (cover) {
+      const uploadResult = await this.cloudinaryService.uploadFile(cover);
+      imagePath = uploadResult.secure_url;
+    }
+
+    return this.prisma.track.update({
+      where: { id: trackId },
+      data: {
+        ...dto,
+        imagePath,
+      },
+    });
   }
 
   async remove(id: string): Promise<Track> {
@@ -584,5 +622,33 @@ export class TracksService {
     });
 
     return { isLiked: !!like }; // Trả về true nếu tìm thấy, false nếu null
+  }
+
+  async findTracksByOwner(userId: string): Promise<TrackWithDetails[]> {
+    return this.prisma.track.findMany({
+      where: {
+        userId: userId,
+        // tuỳ bạn:
+        // isBanned: false, // thường artist KHÔNG thấy track bị ban
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        user: true,
+
+        // Owner thì không cần lọc like/repost theo viewer
+        likes: true,
+        reposts: true,
+
+        _count: {
+          select: {
+            likes: true,
+            reposts: true,
+            comments: true,
+          },
+        },
+      },
+    });
   }
 }
