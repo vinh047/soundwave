@@ -9,6 +9,7 @@ const tabs = [
   { name: "Playlists", href: "/library/playlists" },
   { name: "Following", href: "/library/following" },
   { name: "History", href: "/library/history" },
+  { name: "Uploads", href: "/library/uploads" },
 ];
 
 export function LibraryTabs() {
@@ -19,19 +20,18 @@ export function LibraryTabs() {
       <h1 className="mb-6 text-4xl font-bold">Library</h1>
       <div className="flex w-full justify-start gap-8 bg-transparent p-0">
         {tabs.map((tab) => {
-          const isActive = tab.href === "/library" 
-            ? pathname === "/library" 
+          const isActive = tab.href === "/library"
+            ? pathname === "/library"
             : pathname.startsWith(tab.href);
 
           return (
             <Link
               key={tab.name}
               href={tab.href}
-              className={`border-b-2 px-0 pb-4 pt-0 text-lg font-semibold transition-colors ${
-                isActive
+              className={`border-b-2 px-0 pb-4 pt-0 text-lg font-semibold transition-colors ${isActive
                   ? "border-orange-500 text-orange-500"
                   : "border-transparent text-gray-500 hover:text-gray-300"
-              }`}
+                }`}
             >
               {tab.name}
             </Link>

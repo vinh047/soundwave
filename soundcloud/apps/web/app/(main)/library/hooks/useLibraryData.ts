@@ -17,11 +17,12 @@ export type UserWithProfile = Prisma.UserGetPayload<{}>;
 
 export function useLibraryData() {
     const { user, isLoggedIn, isLoading: authLoading } = useAuth();
-    
+
     const [recentTracks, setRecentTracks] = useState<TrackWithUser[]>([]);
     const [likedTracks, setLikedTracks] = useState<TrackWithUser[]>([]);
     const [playlists, setPlaylists] = useState<PlaylistWithTracks[]>([]);
     const [following, setFollowing] = useState<UserWithProfile[]>([]);
+    const [uploadedTracks, setUploadedTracks] = useState<TrackWithUser[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -34,7 +35,7 @@ export function useLibraryData() {
                 const recentRes = await trackApi.getRecentTracks();
                 setRecentTracks(recentRes.data);
 
-                // 2. User Data (Likes, Following)
+                // 2. User Data (Likes, Following, Uploads)
                 const userDetailsRes = await userApi.getUserById(user.id);
                 const userDetails = userDetailsRes.data;
 
@@ -52,6 +53,11 @@ export function useLibraryData() {
                         setFollowing(followedUsers);
                     }
                 }
+
+                // 3. Uploaded Tracks
+                const uploadedRes = await userApi.getAllTracksByUserId(user.id);
+                setUploadedTracks(uploadedRes.data.data);
+
             } catch (error) {
                 console.error("Error fetching library data:", error);
             } finally {
@@ -74,6 +80,7 @@ export function useLibraryData() {
         recentTracks,
         likedTracks,
         playlists,
-        following
+        following,
+        uploadedTracks
     };
 }

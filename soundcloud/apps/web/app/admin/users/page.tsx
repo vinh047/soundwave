@@ -31,7 +31,8 @@ export default function UsersPage() {
     try {
       const data = await getAdminUsers({ page, limit: 10 });
       setUserList(data.data);
-      setTotalPages(data.meta.lastPage);
+      // Fix: Calculate totalPages from total and limit
+      setTotalPages(Math.ceil(data.total / 10));
     } catch (error) {
       console.error("Failed to fetch users:", error);
       showToast("Lỗi: Không thể tải danh sách người dùng", "error");

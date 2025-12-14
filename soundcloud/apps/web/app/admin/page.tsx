@@ -1,27 +1,49 @@
+"use client";
+
 import { Users, Music, AlertTriangle, Activity } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getDashboardStats, DashboardStats } from "@/lib/api/adminApi";
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await getDashboardStats();
+        setStats(data);
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-white">Tổng quan</h2>
-      
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard 
-          title="Tổng người dùng" 
-          value="12,345" 
-          icon={Users} 
+        <StatCard
+          title="Tổng người dùng"
+          value={loading ? "..." : stats?.totalUsers.toLocaleString() || "0"}
+          icon={Users}
         />
-        <StatCard 
-          title="Tổng bài hát" 
-          value="45,678" 
-          icon={Music} 
+        <StatCard
+          title="Tổng bài hát"
+          value={loading ? "..." : stats?.totalTracks.toLocaleString() || "0"}
+          icon={Music}
         />
-        <StatCard 
-          title="Báo cáo chờ xử lý" 
-          value="23" 
-          icon={AlertTriangle} 
-          urgent 
+        <StatCard
+          title="Báo cáo chờ xử lý"
+          value={loading ? "..." : stats?.pendingReports.toLocaleString() || "0"}
+          icon={AlertTriangle}
+          urgent={stats?.pendingReports ? stats.pendingReports > 0 : false}
         />
         {/* <StatCard 
           title="Đang truy cập" 
@@ -30,7 +52,7 @@ export default function AdminDashboard() {
           trend="Live" 
         /> */}
       </div>
-      
+
     </div>
   );
 }
