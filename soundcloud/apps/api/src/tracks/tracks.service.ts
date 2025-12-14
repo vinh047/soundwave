@@ -60,34 +60,41 @@ export class TracksService {
     const take = Math.max(1, limit);
     const skip = (Math.max(1, page) - 1) * take;
 
+    // Logic tìm kiếm
     const whereCondition: Prisma.TrackWhereInput = {
       isPublic: true,
       isBanned: false,
+      ...(search
+        ? {
+            title: { contains: search, mode: 'insensitive' },
+          }
+        : {}),
     };
 
-    if (search) {
-      whereCondition.title = {
-        contains: search,
-        mode: 'insensitive',
-      };
-    }
-
-    const total = await this.prisma.track.count({
-      where: whereCondition,
-    });
+    const total = await this.prisma.track.count({ where: whereCondition });
 
     const tracks = await this.prisma.track.findMany({
       skip,
       take,
-      where: {
-        isPublic: true,
-        isBanned: false,
-        title: search ? { contains: search, mode: 'insensitive' } : undefined,
-      },
+      where: whereCondition,
       include: {
-        user: true,
-        likes: userId ? { where: { userId: userId } } : false,
-        reposts: userId ? { where: { userId: userId } } : false,
+        user: true, // Lấy thông tin Artist (người đăng bài)
+
+        likes: userId
+          ? {
+              where: { userId: userId },
+              select: { userId: true }, // Chỉ cần lấy userId để check độ dài mảng là đủ
+            }
+          : false, // Nếu không đăng nhập (Guest) thì không lấy field này (trả về null/undefined)
+
+        reposts: userId
+          ? {
+              where: { userId: userId },
+              select: { userId: true },
+            }
+          : false,
+
+        // Vẫn lấy tổng số lượng để hiển thị (VD: 100 likes, 50 reposts)
         _count: {
           select: {
             likes: true,
@@ -97,14 +104,8 @@ export class TracksService {
         },
       },
       orderBy: search
-        ? {
-            _relevance: {
-              fields: ['title'], // Chọn trường để chấm điểm
-              search: search, // Từ khóa
-              sort: 'desc', // Điểm cao (giống nhất) lên đầu
-            },
-          }
-        : { createdAt: 'desc' }, // Mặc định thì xếp theo ngày
+        ? { _relevance: { fields: ['title'], search: search, sort: 'desc' } }
+        : { createdAt: 'desc' },
     });
 
     return {
@@ -477,19 +478,21 @@ export class TracksService {
     return { success: true };
   }
 
-  async getUserRecentTracks(
-    userId: string,
-    limit = 20,
-  ): Promise<
-    Prisma.RecentListenGetPayload<{
-      include: { track: { include: { user: true } } };
-    }>[]
-  > {
+  async getUserRecentTracks(userId: string, limit = 20) {
     return this.prisma.recentListen.findMany({
-      where: { userId },
+      where: { userId }, // Lấy lịch sử nghe của user này
       orderBy: { lastPlayedAt: 'desc' },
       take: limit,
-      include: { track: { include: { user: true } } },
+      include: {
+        track: {
+          include: {
+            user: true, // Lấy thông tin Artist (người upload track)
+
+            likes: true,
+            reposts: true,
+          },
+        },
+      },
     });
   }
 
