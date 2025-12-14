@@ -21,6 +21,7 @@ import trackApi from "@/lib/api/trackApi";
 import { toast } from "sonner";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { Prisma } from "@repo/database"; // Đảm bảo đường dẫn này đúng với project của bạn
+import { TrackCoverPlaceholder } from "@/components/placeholders/TrackCover";
 
 // --- TYPES FIX ---
 // Sửa lại cú pháp Prisma GetPayload cho đúng chuẩn
@@ -156,24 +157,30 @@ export function TrackListItemInteractive({
         href={`/tracks/${track.id}`}
         className="relative w-40 h-40 shrink-0 cursor-pointer block group/image"
       >
-        <Image
-          src={track.imagePath || "/images/default-cover.jpg"}
-          alt={track.title}
-          fill
-          className="object-cover shadow-sm rounded-sm hover:opacity-90 transition-opacity"
-        />
+        {track.imagePath ? (
+          <Image
+            src={track.imagePath || "/images/default-cover.jpg"}
+            alt={track.title}
+            fill
+            className="object-cover shadow-sm rounded-sm hover:opacity-90 transition-opacity"
+          />
+        ) : (
+          <TrackCoverPlaceholder />
+        )}
         {/* Optional: Overlay khi hover vào ảnh để play nhanh */}
         <div
-          onClick={(e) => {
-            e.preventDefault(); // Ngăn Link navigatition
-            handlePlay(e);
-          }}
           className={cn(
             "absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover/image:opacity-100 transition-opacity",
             isActive && "opacity-100 bg-black/40"
           )}
         >
-          <button className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-white shadow-lg transform scale-90 hover:scale-100 transition-transform">
+          <button
+            className="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-white shadow-lg transform scale-90 hover:scale-100 transition-transform"
+            onClick={(e) => {
+              e.preventDefault(); // Ngăn Link navigatition
+              handlePlay(e);
+            }}
+          >
             {isActive && isPlaying ? (
               <Pause className="w-6 h-6 fill-current" />
             ) : (
@@ -191,8 +198,7 @@ export function TrackListItemInteractive({
             <button
               onClick={handlePlay}
               className={cn(
-                "w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white hover:bg-orange-600 transition-all shrink-0 shadow-md",
-                isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                "w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white hover:bg-orange-600 transition-all shrink-0 shadow-md"
               )}
             >
               {isActive && isPlaying ? (

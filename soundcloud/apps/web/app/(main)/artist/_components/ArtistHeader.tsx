@@ -7,6 +7,7 @@ import { Prisma } from "@repo/database";
 import EditProfileModal from "@/components/modals/EditProfileModal";
 import { useAuth } from "@/app/contexts/AuthContext";
 import ShareModal from "@/components/modals/ShareModal";
+import { UserAvatarPlaceholder } from "@/components/placeholders/UserAvatar";
 
 interface ArtistHeaderProps {
   user: Prisma.UserGetPayload<{
@@ -104,12 +105,17 @@ export default function ArtistHeader({ user }: ArtistHeaderProps) {
             >
               <div className="relative w-32 h-32 md:w-48 md:h-48 bg-white p-1 shadow-xl rounded-md group/avatar">
                 <div className="relative w-full h-full bg-gray-200 rounded-xs overflow-hidden">
-                  <Image
-                    src={user.image || "/images/default-avatar.png"}
-                    alt={user.name || "Artist"}
-                    fill
-                    className="object-cover"
-                  />
+                  {user.image ? (
+                    <Image
+                      src={user.image || "/images/default-avatar.png"}
+                      alt={user.name || "Artist"}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <UserAvatarPlaceholder />
+                  )}
+
                   {/* Overlay Edit Avatar */}
                   {isOwner && (
                     <div className="absolute inset-0 bg-black/40 hidden group-hover/avatar:flex items-center justify-center text-white font-medium text-xs">
@@ -128,7 +134,10 @@ export default function ArtistHeader({ user }: ArtistHeaderProps) {
                   {user.name || "Unknown Artist"}
                 </h1>
                 {/* Verification Badge */}
-                <div className="bg-white rounded-full p-0.5 shadow-sm" title="Verified Artist">
+                <div
+                  className="bg-white rounded-full p-0.5 shadow-sm"
+                  title="Verified Artist"
+                >
                   <BadgeCheck size={24} className="text-blue-500 fill-white" />
                 </div>
               </div>

@@ -18,9 +18,6 @@ import {
   List,
   Shield,
   Search,
-  Bell,
-  MessageSquare,
-  MoreHorizontal,
   Home,
   Rss,
   Library,
@@ -31,11 +28,8 @@ import {
 } from "lucide-react";
 
 import { User } from "@repo/database";
-import authApi from "@/lib/api/authApi"; // ✅ Đã dùng authApi thay cho userApi
+import authApi from "@/lib/api/authApi";
 import { useAuthModal } from "@/hooks/use-auth-modal";
-import { useAuth } from "@/app/contexts/AuthContext";
-
-// --- 1. COMPONENTS PHỤ (NavLink, BaseButton, BaseInput) ---
 
 const NavLink = ({
   href,
@@ -53,9 +47,10 @@ const NavLink = ({
       className={`
         flex items-center h-16 px-3 text-sm font-medium
         border-b-2 transition-all
-        ${isActive
-          ? "border-orange-500 text-gray-900 dark:text-white"
-          : "border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+        ${
+          isActive
+            ? "border-orange-500 text-gray-900 dark:text-white"
+            : "border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
         }
       `}
     >
@@ -138,8 +133,6 @@ const BaseInput = ({
   />
 );
 
-// --- 2. COMPONENT USER DROPDOWN (Đã fix Avatar & Logout) ---
-
 interface UserDropdownProps {
   user: User;
   userInitials: string;
@@ -155,13 +148,12 @@ const UserDropdown = ({
 }: UserDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // ✅ Hàm Logout chuẩn: Gọi API -> Xóa Cookie -> Refresh trang
   const handleLogout = async () => {
     try {
       await authApi.logout();
       setIsOpen(false);
       router.push("/");
-      router.refresh(); // F5 lại trạng thái Server Component
+      router.refresh();
     } catch (error) {
       console.error("Đăng xuất thất bại:", error);
       router.push("/");
@@ -201,7 +193,6 @@ const UserDropdown = ({
             <Image
               src={user.image}
               alt={user?.name || "User"}
-              // ✅ Fix Next.js Image: Thêm width/height và object-cover
               width={40}
               height={40}
               className="h-full w-full object-cover"
@@ -221,7 +212,7 @@ const UserDropdown = ({
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 origin-top-right animate-in fade-in-0 zoom-in-95 dark:bg-[#1a1a1a] dark:ring-gray-800 dark:border dark:border-gray-800">
+          <div className="absolute right-0 mt-2 w-56 rounded-md  bg-white z-50 origin-top-right animate-in fade-in-0 zoom-in-95 dark:bg-[#1a1a1a] dark:ring-gray-800 ">
             <div className="py-1">
               <div className="px-4 py-2">
                 <p className="text-sm font-medium leading-none text-gray-900 dark:text-white truncate">
@@ -242,6 +233,16 @@ const UserDropdown = ({
               >
                 Profile
               </DropdownItem>
+              <DropdownItem
+                onClick={() => {
+                  router.push("/tracks");
+                  setIsOpen(false);
+                }}
+                icon={<Music className="h-4 w-4" />}
+              >
+                Studio
+              </DropdownItem>
+
               <DropdownItem
                 onClick={() => {
                   router.push("/library/playlists");
@@ -306,9 +307,10 @@ const MobileNavLink = ({
       className={`
         flex items-center w-full px-3 py-2 rounded-md text-base font-medium
         transition-colors
-        ${isActive
-          ? "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white"
-          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+        ${
+          isActive
+            ? "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white"
+            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
         }
       `}
     >
@@ -317,8 +319,6 @@ const MobileNavLink = ({
     </Link>
   );
 };
-
-// --- 3. NAVBAR CHÍNH ---
 
 export function Navbar() {
   const router = useRouter();
@@ -335,12 +335,10 @@ export function Navbar() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // Gọi API lấy thông tin người dùng hiện tại (dựa trên Cookie)
         const res = await authApi.getProfile();
-        // Ép kiểu dữ liệu trả về cho khớp với State
+
         setUser(res.data as unknown as User);
       } catch (error) {
-        // Nếu lỗi (401 Unauthorized), coi như chưa đăng nhập
         setUser(null);
       }
     };
@@ -352,22 +350,19 @@ export function Navbar() {
     e.preventDefault();
     const q = search.trim();
     if (!q) return;
-    // navigate to /search?q=...
+
     router.push(`/search?q=${encodeURIComponent(q)}`);
-    // optional: clear input or keep it (here chúng ta giữ nội dung)
-    // setSearch("");
   };
 
-  const isAdmin = user?.email === "demo@soundcloud.com"; // Logic admin tạm thời
+  const isAdmin = user?.email === "demo@soundcloud.com";
 
-  // Tạo ký tự đầu tên cho Avatar fallback
   const userInitials = user?.name
     ? user.name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2)
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2)
     : "SC";
 
   const toggleMobileMenu = () => setIsMobileMenuOpen((prev) => !prev);
@@ -486,7 +481,7 @@ export function Navbar() {
                   const q = search.trim();
                   if (!q) return;
                   router.push(`/search?q=${encodeURIComponent(q)}`);
-                  // đóng menu nếu muốn:
+
                   closeMobileMenu();
                 }}
               >

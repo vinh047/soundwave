@@ -8,7 +8,8 @@ import { formatPlayCount, timeAgo } from "@/lib/format";
 import { usePlayerStore } from "@/store/playerStore";
 import { Prisma } from "@repo/database";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"; // Giả sử bạn có hàm cn, nếu không dùng template string cũng được
+import { TrackCoverPlaceholder } from "../placeholders/TrackCover";
 import MoreMenu from "../common/MoreMenu";
 import trackApi from "@/lib/api/trackApi";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -88,21 +89,23 @@ export function TrackCard({ track }: TrackCardProps) {
         dark:border-gray-700
       `}
     >
-      <Link
-        href={`/tracks/${track.id}`}
-        className="absolute inset-0 z-0"
-        aria-label={`View track ${track.title}`}
-      />
-
-      {/* --- IMAGE AREA --- */}
-      <div className="relative group/image">
-        <Image
-          src={track.imagePath || "/placeholder.png"}
-          alt={track.title}
-          width={400}
-          height={400}
-          className="w-full aspect-square object-cover rounded"
+      <div className="relative w-full aspect-square overflow-hidden rounded">
+        <Link
+          href={`/tracks/${track.id}`}
+          className="absolute inset-0 z-0"
+          aria-label={`View track ${track.title}`}
         />
+        {track.imagePath ? (
+          <Image
+            src={track.imagePath}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, 400px"
+            className="object-cover"
+          />
+        ) : (
+          <TrackCoverPlaceholder />
+        )}
 
         {/* Layer Play Button */}
         <div
