@@ -23,6 +23,11 @@ enum Role {
   ADMIN
 }
 
+enum ReportStatus {
+  PENDING
+  PROCESSED
+}
+
 model User {
   id                 String    @id @default(cuid())
   name               String?
@@ -235,6 +240,7 @@ model Report {
   message   String?  @db.Text // Ghi chú thêm của người báo cáo
   createdAt DateTime @default(now())
 
+  status    ReportStatus @default(PENDING)
   // --- Mối quan hệ với ReportReason (Lý do là gì?) ---
   reportReasonId String
   reportReason   ReportReason @relation(fields: [reportReasonId], references: [id])
