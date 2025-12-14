@@ -10,6 +10,7 @@ import {
   Send,
   ListPlus,
   ListMusic,
+  Flag,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
@@ -19,6 +20,7 @@ import { Avatar } from "@/components/ui2/Avatar";
 import Link from "next/link";
 import { usePlayerStore } from "@/store/playerStore";
 import ShareModal from "@/components/modals/ShareModal";
+import ReportModal from "@/components/modals/ReportModal";
 
 type TrackWithInteractions = Track & {
   user: User;
@@ -64,6 +66,13 @@ export default function TrackInteraction({
 
   const isLiked = user ? likes.some((l) => l.userId === user.id) : false;
   const isReposted = user ? reposts.some((r) => r.userId === user.id) : false;
+
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
+  const handleReport = () => {
+    setIsMoreOpen(false); // Đóng menu More
+    setIsReportModalOpen(true); // Mở Report Modal
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -200,7 +209,7 @@ export default function TrackInteraction({
       icon: Share2,
       label: "Share",
       color: "hover:text-white",
-      onClick: () => { },
+      onClick: () => {},
       fill: false,
       isShare: true, // Mark as Share button
     },
@@ -267,6 +276,15 @@ export default function TrackInteraction({
                     >
                       <ListMusic className="w-4 h-4" />
                       Add to Playlist
+                    </button>
+
+                    <hr className="my-1 border-gray-100 dark:border-[#333]/50" />
+                    <button
+                      onClick={handleReport}
+                      className="w-full text-left px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 flex items-center gap-2 transition-colors"
+                    >
+                      <Flag className="w-4 h-4" />
+                      Report Track
                     </button>
                   </div>
                 )}
@@ -380,6 +398,12 @@ export default function TrackInteraction({
           )}
         </div>
       </div>
+      <ReportModal
+        trackId={track.id}
+        trackTitle={track.title}
+        isOpen={isReportModalOpen}
+        onOpenChange={setIsReportModalOpen}
+      />
     </div>
   );
 }

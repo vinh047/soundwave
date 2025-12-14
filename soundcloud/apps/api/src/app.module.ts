@@ -16,6 +16,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { WebsiteTypeModule } from './website-type/website-type.module';
 import { PlaylistsModule } from './playlists/playlists.module';
 import { AdminModule } from './admin/admin.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AdminModule } from './admin/admin.module';
     AuthModule,
     UserModule,
     TracksModule,
+    ReportsModule,
     CloudinaryModule,
     WebsiteTypeModule,
     AdminModule,

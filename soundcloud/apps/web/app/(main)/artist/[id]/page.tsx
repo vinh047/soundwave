@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 
 import userApi, { ArtistProfileData } from "@/lib/api/usersApi";
-import SpotlightSection from "../../_components/SpotlightSection";
+import SpotlightSection from "../_components/SpotlightSection";
 
-import PlaylistsTab from "../../_components/PlaylistsTab";
-import EmptyState from "../../_components/EmptyState";
-import { TrackListItemInteractive } from "../../_components/TrackListItemInteractive";
+import PlaylistsTab from "../_components/PlaylistsTab";
+import EmptyState from "../_components/EmptyState";
+import { TrackListItemInteractive } from "../_components/TrackListItemInteractive";
 
 const SectionTitle = ({ title }: { title: string }) => (
   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 border-l-2 border-[#ff5500] pl-2">

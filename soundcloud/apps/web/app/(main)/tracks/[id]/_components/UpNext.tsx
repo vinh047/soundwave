@@ -2,9 +2,9 @@
 
 import { List, Play } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
 import { usePlayerStore } from "@/store/playerStore";
 import { cn } from "@/lib/utils";
+import { TrackCoverPlaceholder } from "@/components/placeholders/TrackCover";
 
 function formatDuration(seconds: number) {
   if (!seconds) return "--:--";
@@ -14,8 +14,8 @@ function formatDuration(seconds: number) {
 }
 
 const PlayingIndicator = () => (
-  <div className="flex items-end gap-[2px] h-3 w-3 justify-center">
-    <div className="w-[3px] bg-orange-500 animate-[bounce_1s_infinite] h-full" />
+  <div className="flex items-end gap-0.5 h-3 w-3 justify-center">
+    <div className="w-[3px] bg-orange-500 animate-bounce h-full" />
     <div className="w-[3px] bg-orange-500 animate-[bounce_1.2s_infinite] h-[60%]" />
     <div className="w-[3px] bg-orange-500 animate-[bounce_0.8s_infinite] h-[80%]" />
   </div>
@@ -71,15 +71,19 @@ export default function UpNext() {
 
                 {/* Ảnh */}
                 <div className="relative w-10 h-10 shrink-0 rounded overflow-hidden bg-gray-200 dark:bg-gray-700 shadow-sm">
-                  <Image
-                    src={item.imagePath || "/images/default-cover.jpg"}
-                    alt={item.title}
-                    fill
-                    className={cn(
-                      "object-cover transition-opacity",
-                      isActive ? "opacity-100" : "group-hover:opacity-80"
-                    )}
-                  />
+                  {item.imagePath ? (
+                    <Image
+                      src={item.imagePath || "/images/default-cover.jpg"}
+                      alt={item.title}
+                      fill
+                      className={cn(
+                        "object-cover transition-opacity",
+                        isActive ? "opacity-100" : "group-hover:opacity-80"
+                      )}
+                    />
+                  ) : (
+                    <TrackCoverPlaceholder />
+                  )}
                 </div>
 
                 {/* Thông tin */}
