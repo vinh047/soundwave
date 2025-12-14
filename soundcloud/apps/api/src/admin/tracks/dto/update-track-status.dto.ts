@@ -4,5 +4,5 @@ import { IsBoolean, IsNotEmpty } from 'class-validator';
 export class UpdateTrackStatusDto {
   @IsBoolean()
   @IsNotEmpty()
-  isBanned: boolean; // true: Ẩn (Bị cấm), false: Hiện lại
+  isBanned!: boolean; // true: Ẩn (Bị cấm), false: Hiện lại
 }

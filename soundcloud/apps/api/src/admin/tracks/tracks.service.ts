@@ -1,12 +1,12 @@
 // src/admin/tracks/tracks.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { UpdateTrackStatusDto } from './dto/update-track-status.dto';
 import { PaginationDto } from '../users/dto/pagination.dto'; // Tái sử dụng DTO phân trang
 
 @Injectable()
 export class TracksService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /**
    * SD Step 3: Yêu cầu danh sách bài hát (Hệ thống)
@@ -17,9 +17,9 @@ export class TracksService {
     const search = query.search || '';
     const skip = (page - 1) * limit;
 
-    const where = search 
-        ? { title: { contains: search, mode: 'insensitive' } as any } 
-        : {};
+    const where = search
+      ? { title: { contains: search, mode: 'insensitive' } as any }
+      : {};
 
     const [tracks, total] = await this.prisma.$transaction([
       this.prisma.track.findMany({
@@ -52,7 +52,7 @@ export class TracksService {
     if (!track) {
       throw new NotFoundException(`Bài hát với ID: ${id} không tồn tại.`);
     }
-    
+
     // Cập nhật isBanned
     return this.prisma.track.update({
       where: { id },

@@ -16,11 +16,11 @@ import { EmailService } from 'src/email/email.service';
 
 type AuthResult =
   | {
-      action: 'LOGIN_SUCCESS';
-      accessToken: string;
-      refreshToken: string;
-      user: Omit<User, 'hashedPassword'>;
-    }
+    action: 'LOGIN_SUCCESS';
+    accessToken: string;
+    refreshToken: string;
+    user: Omit<User, 'hashedPassword'>;
+  }
   | { action: 'VERIFY_REQUIRED'; message: string; email: string };
 
 @Injectable()
@@ -31,7 +31,7 @@ export class AuthService {
     private jwtService: JwtService,
     private usersService: UsersService,
     private emailService: EmailService,
-  ) {}
+  ) { }
 
   async validateUser(
     email: string,
@@ -344,5 +344,11 @@ export class AuthService {
     // 3. Loại bỏ thông tin nhạy cảm trước khi trả về
     const { hashedPassword, hashedRefreshToken, ...safeUser } = user;
     return safeUser;
+  }
+
+  async logout(userId: string) {
+    // Xóa hashedRefreshToken trong DB để invalidate refresh token
+    await this.usersService.updateRefreshTokenHash(userId, '');
+    return { message: 'Đăng xuất thành công' };
   }
 }

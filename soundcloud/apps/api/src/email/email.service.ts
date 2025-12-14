@@ -3,7 +3,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class EmailService {
-  constructor(private mailerService: MailerService) {}
+  constructor(private mailerService: MailerService) { }
 
   async sendVerificationEmail(
     email: string,
@@ -17,6 +17,17 @@ export class EmailService {
       context: {
         name,
         verificationLink,
+      },
+    });
+  }
+
+  async sendWarning(email: string, trackTitle: string) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: 'Cảnh báo vi phạm bản quyền',
+      template: './warning',
+      context: {
+        trackTitle,
       },
     });
   }

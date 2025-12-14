@@ -1,12 +1,12 @@
 // src/admin/users/users.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { Role } from '@prisma/client';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   /**
    * SD Step 3: Yêu cầu danh sách tài khoản
@@ -25,7 +25,7 @@ export class UsersService {
           email: true,
           createdAt: true,
           role: true,
-          profile: { select: { isArtist: true } }, 
+          // profile: { select: { isArtist: true } }, // TODO: 'isArtist' does not exist on Profile model
         },
         orderBy: { createdAt: 'desc' },
       }),

@@ -1,23 +1,14 @@
-// src/email/email.service.ts (MOCK CLASS - CẦN CÓ ĐỂ CHẠY ĐƯỢC REPORTS SERVICE)
-export class EmailService {
-    async sendWarning(email: string, trackTitle: string) {
-        // Giả lập logic gửi email cảnh cáo (SD Step 10: Service -> User: Gửi thông báo)
-        console.log(`[EMAIL MOCK] Đã gửi cảnh cáo đến ${email}. Bài hát "${trackTitle}" đã bị ẩn.`);
-    }
-}
-
-// src/admin/reports/reports.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../prisma/prisma.service';
-import { AdminReportAction } from './dto/update-report-action.dto';
-import { EmailService } from '../../../email/email.service'; // Giả định đường dẫn
+import { PrismaService } from '../../prisma/prisma.service';
+import { AdminReportAction } from './dto/update-report-status.dto';
+import { EmailService } from '../../email/email.service';
 
 @Injectable()
 export class ReportsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly emailService: EmailService, 
-  ) {}
+    private readonly emailService: EmailService,
+  ) { }
 
   /**
    * SD Step 3: Yêu cầu danh sách báo cáo vi phạm
@@ -25,16 +16,16 @@ export class ReportsService {
   async findAll() {
     return this.prisma.report.findMany({
       include: {
-        reportReason: true, 
+        reportReason: true,
         reporter: { select: { id: true, email: true, name: true } },
-        track: { 
-            select: { 
-                id: true, 
-                title: true, 
-                userId: true, 
-                isBanned: true
-            } 
-        }, 
+        track: {
+          select: {
+            id: true,
+            title: true,
+            userId: true,
+            isBanned: true
+          }
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -46,8 +37,8 @@ export class ReportsService {
   async handleReportAction(reportId: string, action: AdminReportAction) {
     const report = await this.prisma.report.findUnique({
       where: { id: reportId },
-      include: { 
-        track: { select: { id: true, userId: true, title: true } } 
+      include: {
+        track: { select: { id: true, userId: true, title: true } }
       },
     });
 
@@ -60,17 +51,17 @@ export class ReportsService {
         // Cấm bài hát (isBanned = true)
         await this.prisma.track.update({
           where: { id: report.track.id },
-          data: { isBanned: true }, 
+          data: { isBanned: true },
         });
 
         // Xóa Report (tương đương với đóng báo cáo do thiếu trường status)
         await this.prisma.report.delete({ where: { id: reportId } });
-        
+
         // SD Step 10: Gửi thông báo kết quả xử lý báo cáo (UC_WarnUser)
         // Lấy email người dùng
         const user = await this.prisma.user.findUnique({ where: { id: report.track.userId } });
         if (user) {
-            this.emailService.sendWarning(user.email, report.track.title); 
+          this.emailService.sendWarning(user.email, report.track.title);
         }
 
         return {

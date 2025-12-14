@@ -9,5 +9,5 @@ export enum AdminReportAction {
 export class UpdateReportActionDto {
   @IsEnum(AdminReportAction)
   @IsNotEmpty()
-  action: AdminReportAction;
+  action!: AdminReportAction;
 }

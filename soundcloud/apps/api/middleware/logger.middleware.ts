@@ -8,12 +8,13 @@ export class LoggerMiddleware implements NestMiddleware {
 
   use(req: Request, res: Response, next: NextFunction) {
     const { method, originalUrl } = req;
-    
+
     // LOG QUAN TRỌNG: In ra xem có Authorization header không
     const authHeader = req.headers['authorization'];
-    
+
     this.logger.log(`Incoming Request: ${method} ${originalUrl}`);
     this.logger.debug(`Authorization Header: ${authHeader || 'NOT FOUND'}`);
+    this.logger.debug(`Cookies: ${JSON.stringify(req.cookies)}`);
 
     next();
   }

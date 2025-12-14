@@ -8,5 +8,5 @@ import { IsBoolean, IsNotEmpty } from 'class-validator';
 export class UpdateUserStatusDto {
   @IsBoolean()
   @IsNotEmpty()
-  isBanned: boolean; // true: khoá, false: mở khoá
+  isBanned!: boolean; // true: khoá, false: mở khoá
 }

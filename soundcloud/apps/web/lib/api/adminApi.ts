@@ -1,15 +1,15 @@
 // web/lib/api/adminApi.ts
 
-import { apiClient } from './apiClient';
-import { 
-    AdminUserList, 
-    ReportItem, 
-    AdminTrackList,
-    UpdateReportActionPayload,
-    UpdateTrackStatusPayload,
-    UpdateUserStatusPayload
-} from '../type/AdminTypes'; 
-import { PaginationParams } from '../type/PaginationParams';
+import apiClient from './apiClient';
+import {
+  AdminUserList,
+  ReportItem,
+  AdminTrackList,
+  UpdateReportActionPayload,
+  UpdateTrackStatusPayload,
+  UpdateUserStatusPayload
+} from '../../type/AdminTypes';
+import { PaginationParams } from '../../type/PaginationParams';
 
 const ADMIN_BASE_URL = '/admin';
 
@@ -45,8 +45,8 @@ export const updateAdminUserStatus = async (userId: string, payload: UpdateUserS
  * Lấy danh sách tất cả các báo cáo (GET /admin/reports)
  */
 export const getAdminReports = async (): Promise<ReportItem[]> => {
-    const response = await apiClient.get<ReportItem[]>(`${ADMIN_BASE_URL}/reports`);
-    return response.data;
+  const response = await apiClient.get<ReportItem[]>(`${ADMIN_BASE_URL}/reports`);
+  return response.data;
 };
 
 /**
@@ -69,19 +69,19 @@ export const handleReportAction = async (reportId: string, payload: UpdateReport
  * Lấy danh sách bài hát hệ thống (GET /admin/tracks)
  */
 export const getAdminTracks = async (params: PaginationParams): Promise<AdminTrackList> => {
-    const response = await apiClient.get<AdminTrackList>(`${ADMIN_BASE_URL}/tracks`, {
-        params: params,
-    });
-    return response.data;
+  const response = await apiClient.get<AdminTrackList>(`${ADMIN_BASE_URL}/tracks`, {
+    params: params,
+  });
+  return response.data;
 };
 
 /**
  * Cập nhật trạng thái bài hát (Ẩn/Hiện) (PATCH /admin/tracks/:id/status)
  */
 export const updateAdminTrackStatus = async (trackId: string, payload: UpdateTrackStatusPayload): Promise<{ success: boolean; message: string }> => {
-    const response = await apiClient.patch<{ success: boolean; message: string }>(
-        `${ADMIN_BASE_URL}/tracks/${trackId}/status`, 
-        payload
-    );
-    return response.data;
+  const response = await apiClient.patch<{ success: boolean; message: string }>(
+    `${ADMIN_BASE_URL}/tracks/${trackId}/status`,
+    payload
+  );
+  return response.data;
 };
