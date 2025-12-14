@@ -9,9 +9,9 @@ import {
   AdminTrackList,
   UpdateReportActionPayload,
   UpdateTrackStatusPayload,
-  UpdateUserStatusPayload,
-} from "../../type/AdminTypes";
-import { PaginationParams } from "../../type/PaginationParams";
+  UpdateUserStatusPayload
+} from '../../type/AdminTypes';
+import { PaginationParams } from '../../type/PaginationParams';
 
 const ADMIN_BASE_URL = "/admin";
 
@@ -22,15 +22,10 @@ const ADMIN_BASE_URL = "/admin";
 /**
  * Lấy danh sách người dùng (GET /admin/users)
  */
-export const getAdminUsers = async (
-  params: PaginationParams
-): Promise<AdminUserList> => {
-  const response = await apiClient.get<AdminUserList>(
-    `${ADMIN_BASE_URL}/users`,
-    {
-      params: params,
-    }
-  );
+export const getAdminUsers = async (params: PaginationParams): Promise<AdminUserList> => {
+  const response = await axiosClient.get<AdminUserList>(`${ADMIN_BASE_URL}/users`, {
+    params: params,
+  });
   return response.data;
 };
 

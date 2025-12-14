@@ -40,7 +40,7 @@ export default async function HomePage({
         <div className="w-[60vw] mx-auto  py-8">
           <div className="relative w-full h-[300px] rounded-xl overflow-hidden mb-12 shadow-2xl">
             <div className="absolute inset-0 bg-neutral-900">
-              <div className="absolute inset-0 opacity-50 bg-[url('https://images.unsplash.com/photo-1493225255756-d9584f8606e9')] bg-cover bg-center" />
+              <div className="absolute inset-0 opacity-50 bg-[url('/images/istockphoto-472328791-612x612.jpg')] bg-cover bg-center" />
             </div>
             <div className="relative z-10 h-full flex flex-col justify-center px-8 text-white">
               <h1 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-md">
