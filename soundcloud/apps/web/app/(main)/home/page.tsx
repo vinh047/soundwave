@@ -33,8 +33,6 @@ export default async function HomePage({
 
   const trendingArtists = trendingArtistsRes.data?.data || [];
 
-  console.log("trendingTracksRes: ", data)
-
   return (
     <div className="bg-white dark:bg-[#121212] transition-colors duration-300">
       <div className=" grid grid-cols-1 lg:grid-cols-[1fr_350px] px-4 md:px-20 gap-8 ">

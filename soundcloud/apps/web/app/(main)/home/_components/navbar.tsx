@@ -180,6 +180,8 @@ const UserDropdown = ({
     </div>
   );
 
+  const authModal = useAuthModal();
+
   return (
     <div className="relative">
       <BaseButton

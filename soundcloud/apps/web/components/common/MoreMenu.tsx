@@ -5,6 +5,9 @@ import { ListMusic, ListPlus, LucideIcon, MoreHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAuthModal } from "@/hooks/use-auth-modal";
+import { useAuth } from "@/app/contexts/AuthContext";
+import { useAddToPlaylistModal } from "@/store/useAddToPlaylistModal";
 
 export interface SimpleTrack {
   id: string;
@@ -52,10 +55,18 @@ export default function MoreMenu({
     toast.success("Added to Next up");
   };
 
+  const authModal = useAuthModal();
+  const { user } = useAuth();
+
+  const uploadModal = useAddToPlaylistModal();
+
   const handleAddToPlaylist = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsOpen(false);
-    toast.info("Open Playlist Modal...");
+    if (!user) {
+      authModal.onOpen();
+    }
+    else {
+      uploadModal.onOpen(track.id);
+    }
   };
 
   const toggleMenu = (e: React.MouseEvent) => {
