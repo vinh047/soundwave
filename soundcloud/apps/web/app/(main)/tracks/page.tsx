@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Metadata } from "next";
 import { TrackList } from "@/components/track/TrackList";
 import trackApi from "@/lib/api/trackApi";
+import { trackApiServer } from "@/lib/api/trackApi.server";
 
 export async function generateMetadata({
   searchParams,
@@ -49,7 +50,7 @@ export default async function TracksPage({
 
 async function TrackListFetcher({ page }: { page: number }) {
   try {
-    const response = await trackApi.getTracks({
+    const response = await trackApiServer.getTracks({
       page: page,
       limit: 10,
     });

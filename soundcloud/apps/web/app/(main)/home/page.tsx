@@ -19,7 +19,7 @@ export default async function HomePage({
 
   const [initTracksRes, trendingTracksRes, trendingArtistsRes] =
     await Promise.all([
-      trackApi.getTracks({
+      trackApiServer.getTracks({
         page: Number(api.page) || 1,
         limit: 10,
       }),
@@ -32,7 +32,7 @@ export default async function HomePage({
 
   const trendingArtists = trendingArtistsRes.data?.data || [];
 
-  console.log("trendingTracksRes: ", trendingTracksRes)
+  console.log("trendingTracksRes: ", data)
 
   return (
     <div className="bg-white dark:bg-[#121212] transition-colors duration-300">

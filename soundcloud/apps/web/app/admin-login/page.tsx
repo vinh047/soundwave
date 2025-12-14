@@ -6,6 +6,7 @@ import { Lock, Loader2, Eye, EyeOff, Mail } from "lucide-react";
 import { loginAdmin } from "@/lib/api/adminApi";
 import { toast } from "sonner";
 import { AxiosError } from "axios";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +15,8 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,8 +45,12 @@ export default function LoginPage() {
       // 3. Xử lý thành công
       // Admin thường login xong là vào luôn, ít khi verify email như user
       if (result) {
+        login({
+          accessToken: result.accessToken,
+          user: result.user,
+        });
         toast.success("Đăng nhập quản trị thành công!");
-        router.push("/admin");
+        router.push('/admin')
       }
     } catch (err) {
       // 4. Bắt lỗi theo đúng mẫu code bạn gửi
