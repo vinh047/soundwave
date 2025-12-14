@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Loader2, Eye, EyeOff, Mail } from "lucide-react"; 
+import { Lock, Loader2, Eye, EyeOff, Mail } from "lucide-react";
+import { loginAdmin } from "@/lib/api/adminApi";
+import { toast } from "sonner";
+import { AxiosError } from "axios";
 
 export default function LoginPage() {
   const router = useRouter();
-  
+
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -29,17 +32,38 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    // --- GIẢ LẬP GỌI API ---
-    setTimeout(() => {
-      if (formData.email === "admin@gmail.com" && formData.password === "123456") {
-        // --- THÊM DÒNG NÀY: Lưu "vé" vào túi ---
-        localStorage.setItem("adminToken", "true");
-        router.push("/admin"); 
-      } else {
-        setError("Email hoặc mật khẩu không chính xác!");
-        setIsLoading(false);
+    try {
+      // 2. Gọi API theo phong cách destructuring { data: result }
+      const { data: result } = await loginAdmin({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // 3. Xử lý thành công
+      // Admin thường login xong là vào luôn, ít khi verify email như user
+      if (result) {
+        toast.success("Đăng nhập quản trị thành công!");
+        router.push("/admin");
       }
-    }, 1500);
+    } catch (err) {
+      // 4. Bắt lỗi theo đúng mẫu code bạn gửi
+      console.error("Login failed:", err);
+
+      const axiosError = err as AxiosError<{ message: string | string[] }>;
+      const errorMessage = axiosError.response?.data?.message;
+
+      if (errorMessage) {
+        // Xử lý nếu backend trả về mảng lỗi (do class-validator) hoặc chuỗi đơn
+        const finalMessage = Array.isArray(errorMessage)
+          ? errorMessage[0]
+          : errorMessage;
+        setError(finalMessage || "Có lỗi xảy ra.");
+      } else {
+        setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -56,7 +80,9 @@ export default function LoginPage() {
             <Lock size={24} />
           </div>
           <h1 className="text-2xl font-bold text-white">Admin Portal</h1>
-          <p className="text-sm text-zinc-500 mt-2">Đăng nhập quyền quản trị viên</p>
+          <p className="text-sm text-zinc-500 mt-2">
+            Đăng nhập quyền quản trị viên
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -69,26 +95,38 @@ export default function LoginPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-zinc-400">Email</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+              <Mail
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                size={18}
+              />
               <input
                 type="email"
                 placeholder="admin@gmail.com"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
                 className="w-full bg-zinc-950 border border-zinc-800 text-white text-sm rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-red-500 transition-all placeholder:text-zinc-600"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-400">Mật khẩu</label>
+            <label className="text-sm font-medium text-zinc-400">
+              Mật khẩu
+            </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+              <Lock
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+                size={18}
+              />
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Nhập mật khẩu (123456)"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
                 className="w-full bg-zinc-950 border border-zinc-800 text-white text-sm rounded-lg pl-10 pr-10 py-2.5 focus:outline-none focus:border-red-500 transition-all placeholder:text-zinc-600"
               />
               <button
@@ -102,10 +140,11 @@ export default function LoginPage() {
           </div>
 
           {/* --- NÚT ĐĂNG NHẬP (THẺ HTML THUẦN) --- */}
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isLoading}
             className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-500/20"
+            onClick={handleSubmit}
           >
             {isLoading ? (
               <>
@@ -116,8 +155,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-
-       
       </div>
     </div>
   );

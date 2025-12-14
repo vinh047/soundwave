@@ -1,10 +1,12 @@
-"use client"; // Bắt buộc phải có vì dùng useEffect
+"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/Sidebar";
 import { AdminHeader } from "@/components/admin/Header";
 import { Loader2 } from "lucide-react"; // Icon loading
+import { useAuth } from "../contexts/AuthContext";
+import { toast } from "sonner";
 
 export default function AdminLayout({
   children,
@@ -13,27 +15,31 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
-    // 1. Kiểm tra "vé" đăng nhập
-    const token = localStorage.getItem("adminToken");
+    if (!user) {
+      router.push("/admin-login");
+      return;
+    }
 
-    if (!token) {
-      // 2. Nếu không có vé -> chuyển về trang login ngay lập tức
-      router.push("/admin-login"); 
+    if (user.role !== "ADMIN") {
+      toast.error("Bạn không có quyền truy cập trang này!");
+      router.push("/");
+      return;
     } else {
-      // 3. Có vé -> Cho phép hiển thị nội dung
       setIsAuthorized(true);
     }
   }, [router]);
 
-  // --- MÀN HÌNH CHỜ  ---
   if (!isAuthorized) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-zinc-950">
         <div className="flex flex-col items-center gap-2">
           <Loader2 className="animate-spin text-orange-500" size={40} />
-          <p className="text-zinc-500 text-sm">Đang kiểm tra quyền truy cập...</p>
+          <p className="text-zinc-500 text-sm">
+            Đang kiểm tra quyền truy cập...
+          </p>
         </div>
       </div>
     );
@@ -48,12 +54,10 @@ export default function AdminLayout({
       {/* Main Content Area */}
       <main className="ml-64 min-h-screen flex flex-col">
         {/* Header */}
-        <AdminHeader /> 
+        <AdminHeader />
 
         {/* Page Content */}
-        <div className="p-8 flex-1">
-          {children}
-        </div>
+        <div className="p-8 flex-1">{children}</div>
       </main>
     </div>
   );
