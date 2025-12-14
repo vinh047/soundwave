@@ -34,12 +34,37 @@ const trackApi = {
   uploadTrack: (data: FormData) =>
     axiosClient.post<TrackType>("/tracks", data, {
       headers: {
-        "Content-Type": "multipart/form-data", // Quan trọng khi upload file
+        "Content-Type": "multipart/form-data",
       },
     }),
 
   updateTrack: (id: string, data: UpdateTrackPayload) =>
     axiosClient.patch<TrackType>(`/tracks/${id}`, data),
+
+  updateTrackByOwner(trackId: string, data: FormData) {
+    return axiosClient.patch(`/tracks/${trackId}`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+
+  getTracksByUserId: (userId: string) =>
+    axiosClient.get< Prisma.TrackGetPayload<{
+    include: {
+      user: true;
+      likes: true;
+      reposts: true;
+      _count: {
+        select: { likes: true; reposts: true; comments: true };
+      };
+    };
+  }>[]>(`tracks/user/${userId}`),
+
+  updateTrackWithImage: (id: string, data: FormData) =>
+    axiosClient.patch<TrackType>(`/tracks/${id}`, data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
 
   deleteTrack: (id: string) => axiosClient.delete<void>(`/tracks/${id}`),
 
@@ -64,7 +89,6 @@ const trackApi = {
       `/tracks/recent`
     ),
 
-  // --- SOCIAL ---
   likeTrack: (id: string) => axiosClient.post(`/tracks/${id}/like`),
   unlikeTrack: (id: string) => axiosClient.delete(`/tracks/${id}/like`),
 

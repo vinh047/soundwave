@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { UserPlus } from "lucide-react";
+import FollowButton from "./FollowButton";
+import { UserAvatarPlaceholder } from "../placeholders/UserAvatar";
 
 interface FollowUserItemProps {
   user: {
@@ -19,7 +20,7 @@ export default function FollowUserItem({
   relationType,
 }: FollowUserItemProps) {
   const defaultAvatar = "/images/default-avatar.png";
-  
+
   const dateLabel = relationType === "follower" ? "Followed" : "Since";
 
   return (
@@ -28,12 +29,16 @@ export default function FollowUserItem({
       <Link href={`/artist/${user.id}`} className="relative mb-3">
         {/* Tạo hiệu ứng viền cam khi hover giống SoundCloud */}
         <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full relative overflow-hidden shadow-md group-hover:shadow-[0_4px_20px_rgba(255,85,0,0.3)] transition-all duration-300 ring-2 ring-transparent group-hover:ring-[#ff5500] bg-gray-100 dark:bg-zinc-800">
-          <Image
-            src={user.image || defaultAvatar}
-            alt={user.name || "User"}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-          />
+          {user.image ? (
+            <Image
+              src={user.image || defaultAvatar}
+              alt={user.name || "User"}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : (
+            <UserAvatarPlaceholder />
+          )}
         </div>
       </Link>
 
@@ -52,10 +57,7 @@ export default function FollowUserItem({
       </div>
 
       {/* 3. Action Button */}
-      <button className="flex items-center justify-center gap-1.5 text-xs font-semibold px-6 py-1.5 bg-transparent border border-gray-300 dark:border-white/20 text-gray-700 dark:text-gray-200 rounded-lg cursor-pointer hover:border-[#ff5500] hover:text-[#ff5500] transition-colors min-w-[100px]">
-        <UserPlus size={14} />
-        Follow
-      </button>
+      <FollowButton artistId={user.id} />
     </div>
   );
 }

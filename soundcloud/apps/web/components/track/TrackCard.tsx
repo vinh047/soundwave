@@ -8,6 +8,7 @@ import { usePlayerStore } from "@/store/playerStore";
 import { Prisma } from "@repo/database";
 import Link from "next/link";
 import { cn } from "@/lib/utils"; // Giả sử bạn có hàm cn, nếu không dùng template string cũng được
+import { TrackCoverPlaceholder } from "../placeholders/TrackCover";
 
 interface TrackCardProps {
   track: Prisma.TrackGetPayload<{ include: { user: true } }>;
@@ -43,14 +44,18 @@ export function TrackCard({ track }: TrackCardProps) {
         dark:border-gray-700
       `}
     >
-      <div className="relative">
-        <Image
-          src={track.imagePath || "/placeholder.png"}
-          alt=""
-          width={400}
-          height={400}
-          className="w-full aspect-square object-cover rounded"
-        />
+      <div className="relative w-full aspect-square overflow-hidden rounded">
+        {track.imagePath ? (
+          <Image
+            src={track.imagePath}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, 400px"
+            className="object-cover"
+          />
+        ) : (
+          <TrackCoverPlaceholder />
+        )}
 
         {/* overlay play button */}
         <div

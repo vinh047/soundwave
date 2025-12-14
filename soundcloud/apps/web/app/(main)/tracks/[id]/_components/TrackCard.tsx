@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import WaveformPlayer from "./WaveformPlayer";
 import { usePlayerStore, TrackWithUser } from "@/store/playerStore";
+import { TrackCoverPlaceholder } from "@/components/placeholders/TrackCover";
 
 export default function TrackCard({ track }: { track: TrackWithUser }) {
   const {
@@ -94,12 +95,16 @@ export default function TrackCard({ track }: { track: TrackWithUser }) {
         {/* Cover */}
         <div className="relative group shrink-0 self-center md:self-auto">
           <div className="relative w-48 h-48 md:w-64 md:h-64 overflow-hidden rounded-xl shadow-2xl dark:shadow-black/60 shadow-gray-200/50">
-            <Image
-              src={track.imagePath || "/images/default-cover.jpg"}
-              alt={track.title}
-              fill
-              className="object-cover transition-transform duration-700 group-hover:scale-110"
-            />
+            {track.imagePath ? (
+              <Image
+                src={track.imagePath || "/images/default-cover.jpg"}
+                alt={track.title}
+                fill
+                className="object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+            ) : (
+              <TrackCoverPlaceholder   />
+            )}
             <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors duration-500" />
           </div>
         </div>
@@ -126,7 +131,7 @@ export default function TrackCard({ track }: { track: TrackWithUser }) {
 
               <button
                 onClick={handlePlay}
-                className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-[#4ecdc4] hover:bg-[#3dbdb4] flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all text-white"
+                className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-orange-500 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all text-white"
               >
                 {isCurrent && isPlaying ? (
                   <Pause size={28} fill="currentColor" />

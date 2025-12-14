@@ -29,7 +29,7 @@ export default function UpNext() {
     <div
       className="p-5 h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-white/10 rounded-xl border shadow-sm
       bg-white border-gray-200
-      dark:bg-white/5 dark:border-white/5 dark:shadow-none dark:backdrop-blur-xl"
+      dark:bg-white/5 dark:border-white/5 dark:shadow-none dark:backdrop-blur-xl scrollbar-none"
     >
       <h3 className="text-lg font-bold flex items-center gap-2 mb-4 text-gray-900 dark:text-white">
         <List size={20} /> Up Next
