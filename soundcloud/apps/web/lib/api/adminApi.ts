@@ -120,7 +120,7 @@ export interface LoginResponse {
 }
 
 export const loginAdmin = async (data: AdminLoginPayload) => {
-  return axiosClient.post<LoginResponse>("/admin-login", data);
+  return axiosClient.post<LoginResponse>("/admin/login", data);
 };
 
 export interface DashboardStats {
