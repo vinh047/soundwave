@@ -16,11 +16,11 @@ import { EmailService } from 'src/email/email.service';
 
 type AuthResult =
   | {
-    action: 'LOGIN_SUCCESS';
-    accessToken: string;
-    refreshToken: string;
-    user: Omit<User, 'hashedPassword'>;
-  }
+      action: 'LOGIN_SUCCESS';
+      accessToken: string;
+      refreshToken: string;
+      user: Omit<User, 'hashedPassword'>;
+    }
   | { action: 'VERIFY_REQUIRED'; message: string; email: string };
 
 @Injectable()
@@ -31,7 +31,7 @@ export class AuthService {
     private jwtService: JwtService,
     private usersService: UsersService,
     private emailService: EmailService,
-  ) { }
+  ) {}
 
   async validateUser(
     email: string,
@@ -51,7 +51,7 @@ export class AuthService {
   }
 
   async login(user: Omit<User, 'hashedPassword'>): Promise<any> {
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email, role: user.role };
     // access token (ngắn hạn)
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: this.configService.get('JWT_ACCESS_SECRET'),
@@ -211,7 +211,7 @@ export class AuthService {
   }
 
   async refreshTokens(refreshToken: string) {
-    let payload: { sub: string; email: string };
+    let payload: { sub: string; email: string, role: string };
     try {
       payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: this.configService.get('JWT_REFRESH_SECRET'),

@@ -38,24 +38,28 @@ axiosClient.interceptors.response.use(
 
     if (!error.response) return Promise.reject(error);
 
-    // ⚠️ QUAN TRỌNG: Kiểm tra xem URL bị lỗi có phải là endpoint refresh không
-    // Nếu chính là '/auth/refresh' đang bị lỗi 401 thì DỪNG LẠI NGAY (tránh loop)
+    // 1. Chặn loop vô hạn ở endpoint refresh (Code cũ của bạn)
     if (originalRequest.url?.includes("/auth/refresh")) {
-      // Có thể force logout tại đây nếu muốn
-      // window.location.href = '/login';
       return Promise.reject(error);
     }
 
-    // Nếu lỗi 401 và chưa retry
+    // 🔥 2. THÊM ĐOẠN NÀY: Chặn refresh khi đang Đăng nhập 🔥
+    // Nếu API bị lỗi có chứa chữ "login" (ví dụ: /auth/login, /admin/login)
+    // Thì đây là lỗi sai mật khẩu -> Trả lỗi luôn (reject), không đi refresh token.
+    if (originalRequest.url?.includes("login")) {
+      return Promise.reject(error);
+    }
+
+    // 3. Logic Refresh Token (Chỉ chạy khi token hết hạn ở các request lấy dữ liệu bình thường)
     if (error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
         await axiosClient.post("/auth/refresh");
-        // Gọi lại request gốc
+        // Gọi lại request gốc sau khi refresh thành công
         return axiosClient(originalRequest);
       } catch (refreshErr) {
-        // Nếu refresh thất bại thì reject luôn, không retry nữa
+        // Nếu refresh thất bại thì reject luôn
         return Promise.reject(refreshErr);
       }
     }

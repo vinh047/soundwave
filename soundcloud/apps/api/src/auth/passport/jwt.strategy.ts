@@ -7,6 +7,7 @@ import { Request } from 'express';
 interface UserPayload {
   id: string;
   email: string;
+  role: string;
 }
 
 @Injectable()
@@ -19,7 +20,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           let token = null;
           if (request && request.cookies) {
             token = request.cookies['access_token'];
-            console.log('JwtStrategy Extracted Token:', token ? 'FOUND' : 'MISSING');
           }
           return token;
         },
@@ -32,7 +32,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any): Promise<UserPayload> {
-    console.log('JwtStrategy Validate Payload:', payload);
-    return { id: payload.sub, email: payload.email };
+    return { id: payload.sub, email: payload.email, role: payload.role };
   }
 }
