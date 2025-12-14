@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import trackApi from "@/lib/api/trackApi";
 import { SearchTrackList } from "@/components/track/SearchTrackList";
-import { trackApiServer } from "@/lib/api/trackApi.server";
 
 export default function SearchTracksPage() {
   const searchParams = useSearchParams();
@@ -17,7 +16,7 @@ export default function SearchTracksPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await trackApiServer.getTracks({ search: q, limit: 20 });
+        const res = await trackApi.getTracks({ search: q, limit: 20 });
         setData(res.data);
       } catch (err) {
         console.error(err);

@@ -11,7 +11,17 @@ type CreateTrackPayload = Omit<
 type UpdateTrackPayload = Partial<CreateTrackPayload>;
 
 const trackApi = {
-  
+  getTracks: (params: PaginationParams = {}) => {
+    return axiosClient.get<
+      PaginatedResult<
+        Prisma.TrackGetPayload<{
+          include: { user: true; likes: true; reposts: true };
+        }>
+      >
+    >("/tracks", {
+      params,
+    });
+  },
 
   getTrackById: (id: string) =>
     axiosClient.get<

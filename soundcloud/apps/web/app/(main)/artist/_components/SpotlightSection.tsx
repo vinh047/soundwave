@@ -26,6 +26,8 @@ import trackApi from "@/lib/api/trackApi";
 import ShareModal from "@/components/modals/ShareModal";
 import { formatDistanceToNow } from "date-fns";
 import { TrackCoverPlaceholder } from "@/components/placeholders/TrackCover";
+import { useAuthModal } from "@/hooks/use-auth-modal";
+import { useAddToPlaylistModal } from "@/store/useAddToPlaylistModal";
 
 // --- TYPES CẬP NHẬT: Thêm _count cho thống kê nhanh ---
 type SpotlightTrack = Prisma.TrackGetPayload<{
@@ -112,10 +114,18 @@ function MoreMenu({ track }: { track: SpotlightTrack }) {
     toast.success("Added to Next up");
   };
 
+  const authModal = useAuthModal();
+  const { user } = useAuth();
+
+  const uploadModal = useAddToPlaylistModal();
+
   const handleAddToPlaylist = (e: React.MouseEvent) => {
-    e.stopPropagation();
     setIsOpen(false);
-    toast.info("Open Playlist Modal...");
+    if (!user) {
+      authModal.onOpen();
+    } else {
+      uploadModal.onOpen(track.id);
+    }
   };
 
   return (
@@ -197,9 +207,11 @@ export default function SpotlightSection({ track }: SpotlightSectionProps) {
     setRepostCount(track._count?.reposts || 0);
   }, [track, currentUserId, hasUserLikedInitial, hasUserRepostedInitial]);
 
+  const authModal = useAuthModal();
+
   const handleToggleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!currentUserId) return toast.error("Vui lòng đăng nhập để thực hiện.");
+    if (!currentUserId) return authModal.onOpen();
 
     const previousState = isLiked;
     setIsLiked(!isLiked);
@@ -220,7 +232,7 @@ export default function SpotlightSection({ track }: SpotlightSectionProps) {
 
   const handleToggleRepost = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!currentUserId) return toast.error("Vui lòng đăng nhập.");
+    if (!currentUserId) return authModal.onOpen();
 
     const previousState = isReposted;
     setIsReposted(!isReposted);

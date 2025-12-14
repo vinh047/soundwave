@@ -5,6 +5,7 @@ import { UserPlus, UserCheck, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import userApi from "@/lib/api/usersApi";
 import { useAuthStore } from "@/store/authStore";
+import { useAuthModal } from "@/hooks/use-auth-modal";
 
 interface FollowButtonProps {
   artistId: string;
@@ -12,10 +13,16 @@ interface FollowButtonProps {
   className?: string;
 }
 
-export default function FollowButton({ artistId, variant = "outline", className = "" }: FollowButtonProps) {
+export default function FollowButton({
+  artistId,
+  variant = "outline",
+  className = "",
+}: FollowButtonProps) {
   const { user } = useAuthStore();
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const authModal = useAuthModal();
 
   /* ================= check follow status ================= */
   useEffect(() => {
@@ -36,7 +43,7 @@ export default function FollowButton({ artistId, variant = "outline", className 
   /* ================= follow / unfollow ================= */
   const handleToggleFollow = async () => {
     if (!user) {
-      toast.error("Please login to follow artists");
+      authModal.onOpen();
       return;
     }
 
@@ -62,21 +69,24 @@ export default function FollowButton({ artistId, variant = "outline", className 
   if (user?.id === artistId) return null;
 
   /* ================= UI ================= */
-  const baseStyles = "flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed";
+  const baseStyles =
+    "flex items-center justify-center gap-1.5 text-xs font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed";
 
   const outlineStyles = `
     px-6 py-1.5 min-w-[100px] rounded-lg border
-    ${isFollowing
-      ? "border-[#ff5500] text-[#ff5500]"
-      : "border-gray-300 dark:border-white/20 text-gray-700 dark:text-gray-200 hover:border-[#ff5500] hover:text-[#ff5500]"
+    ${
+      isFollowing
+        ? "border-[#ff5500] text-[#ff5500]"
+        : "border-gray-300 dark:border-white/20 text-gray-700 dark:text-gray-200 hover:border-[#ff5500] hover:text-[#ff5500]"
     }
   `;
 
   const solidStyles = `
     px-4 py-2 rounded-[3px] text-sm font-bold shadow-md uppercase tracking-wide
-    ${isFollowing
-      ? "bg-white text-[#ff5500] border border-[#ff5500]"
-      : "bg-[#ff5500] hover:bg-[#e04b00] text-white"
+    ${
+      isFollowing
+        ? "bg-white text-[#ff5500] border border-[#ff5500]"
+        : "bg-[#ff5500] hover:bg-[#e04b00] text-white"
     }
   `;
 
@@ -91,12 +101,16 @@ export default function FollowButton({ artistId, variant = "outline", className 
       ) : isFollowing ? (
         <>
           <UserCheck size={18} />
-          <span className={variant === "solid" ? "hidden md:inline" : ""}>Following</span>
+          <span className={variant === "solid" ? "hidden md:inline" : ""}>
+            Following
+          </span>
         </>
       ) : (
         <>
           <UserPlus size={18} />
-          <span className={variant === "solid" ? "hidden md:inline" : ""}>Follow</span>
+          <span className={variant === "solid" ? "hidden md:inline" : ""}>
+            Follow
+          </span>
         </>
       )}
     </button>
