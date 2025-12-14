@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { UserPlus, MessageSquare, Pencil, BadgeCheck } from "lucide-react";
+import { MessageSquare, Pencil, BadgeCheck } from "lucide-react";
 import { Prisma } from "@repo/database";
 import EditProfileModal from "@/components/modals/EditProfileModal";
 import { useAuth } from "@/app/contexts/AuthContext";
 import ShareModal from "@/components/modals/ShareModal";
 import { UserAvatarPlaceholder } from "@/components/placeholders/UserAvatar";
+import FollowButton from "@/components/common/FollowButton";
 
 interface ArtistHeaderProps {
   user: Prisma.UserGetPayload<{
@@ -80,10 +81,7 @@ export default function ArtistHeader({ user }: ArtistHeaderProps) {
                 <span className="hidden md:inline">Edit</span>
               </button>
             ) : (
-              <button className="flex items-center gap-2 px-4 py-2 bg-[#ff5500] hover:bg-[#e04b00] text-white rounded-[3px] text-sm font-bold transition shadow-md uppercase tracking-wide">
-                <UserPlus size={18} />
-                <span className="hidden md:inline">Follow</span>
-              </button>
+              <FollowButton artistId={user.id} variant="solid" />
             )}
             {/* =========================== */}
 

@@ -11,9 +11,10 @@ import { TrackListItemInteractive } from "../../_components/TrackListItemInterac
 export default async function RepostsPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const userId = params.id;
+  const { id } = await params;
+  const userId = id;
 
   // 1. Fetch dữ liệu trực tiếp trên Server
   let reposts;

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import FollowButton from "./FollowButton";
 import { UserAvatarPlaceholder } from "../placeholders/UserAvatar";
+import { format } from "date-fns";
 
 interface FollowUserItemProps {
   user: {
@@ -13,15 +14,24 @@ interface FollowUserItemProps {
     createdAt: Date;
   };
   relationType: "follower" | "following";
+  followedAt?: Date; // Add this optional prop
 }
 
 export default function FollowUserItem({
   user,
   relationType,
+  followedAt, // Destructure it
 }: FollowUserItemProps) {
   const defaultAvatar = "/images/default-avatar.png";
 
   const dateLabel = relationType === "follower" ? "Followed" : "Since";
+
+  // Use followedAt if available, otherwise fallback to user.createdAt (or handle as needed)
+  // But for "Followed" context, followedAt is what we want.
+  // If relationType is "following", it means "User started following this person at..." -> followedAt
+  // If relationType is "follower", it means "This person started following User at..." -> followedAt
+
+  const displayDate = followedAt ? new Date(followedAt) : new Date(user.createdAt);
 
   return (
     <div className="group flex flex-col items-center p-4 rounded-xl transition-all duration-300">
@@ -52,7 +62,7 @@ export default function FollowUserItem({
           {user.name || "Unknown User"}
         </Link>
         <p className="text-xs text-gray-500 mt-1 font-medium">
-          {dateLabel} {new Date(user.createdAt).toLocaleDateString()}
+          {dateLabel} {format(displayDate, "dd/MM/yyyy")}
         </p>
       </div>
 

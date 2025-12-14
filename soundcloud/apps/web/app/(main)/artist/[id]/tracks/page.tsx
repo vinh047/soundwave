@@ -10,9 +10,10 @@ import { TrackListItemInteractive } from "../../_components/TrackListItemInterac
 export default async function TracksPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const userId = params.id;
+  const { id } = await params;
+  const userId = id;
 
   let tracks;
   try {

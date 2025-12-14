@@ -8,9 +8,10 @@ type FollowingData = Prisma.FollowGetPayload<{ include: { following: true } }>;
 export default async function FollowingPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const userId = params.id;
+  const { id } = await params;
+  const userId = id;
 
   let following: FollowingData[] = [];
   try {
@@ -31,6 +32,7 @@ export default async function FollowingPage({
           key={follow.followingId}
           user={follow.following}
           relationType="following"
+          followedAt={follow.createdAt} // Pass the follow timestamp
         />
       ))}
     </div>

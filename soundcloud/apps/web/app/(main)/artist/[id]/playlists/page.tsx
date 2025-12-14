@@ -6,9 +6,10 @@ import { PlaylistGridItem } from "../../_components/PlaylistGridItem";
 export default async function PlaylistsPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const userId = params.id;
+  const { id } = await params;
+  const userId = id;
   let playlists;
 
   try {

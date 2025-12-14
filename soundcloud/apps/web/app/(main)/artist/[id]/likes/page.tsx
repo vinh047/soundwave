@@ -22,9 +22,10 @@ type LikeData = Prisma.LikeGetPayload<{
 export default async function LikesPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const userId = params.id;
+  const { id } = await params;
+  const userId = id;
 
   let likedItems: LikeData = [];
 

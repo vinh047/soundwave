@@ -11,9 +11,10 @@ type FollowerData = Prisma.FollowGetPayload<{
 export default async function FollowersPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const userId = params.id;
+  const { id } = await params;
+  const userId = id;
 
   // Fetch theo server — KHÔNG dùng SWR trong server component
   const res = await userApi.getFollowersByUserId(userId);
@@ -30,6 +31,7 @@ export default async function FollowersPage({
           key={follow.followerId}
           user={follow.follower}
           relationType="follower"
+          followedAt={follow.createdAt} // Pass the follow timestamp
         />
       ))}
     </div>
