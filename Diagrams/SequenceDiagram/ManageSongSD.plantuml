@@ -32,10 +32,10 @@ activate Service
 Service --> Controller: Trả về kết quả cập nhật trạng thái bài hát
 deactivate Service
 alt Cập nhật trạng thái bài hát thành công
-Controller --> View: Thông báo "Cập nhật trạng thái thành công"
-View --> View: Cập nhật danh sách bài hát
+    Controller --> View: Thông báo "Cập nhật trạng thái thành công"
+    View --> View: Cập nhật danh sách bài hát
 else Cập nhật trạng thái bài hát thất bại
-Controller --> View: Thông báo "Cập nhật trạng thái thất bại, vui lòng thử lại"
+    Controller --> View: Thông báo "Cập nhật trạng thái thất bại, vui lòng thử lại"
 end
 deactivate Controller
 View --> User: Hiển thị thông báo

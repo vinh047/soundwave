@@ -15,6 +15,7 @@ import userApi from "@/lib/api/usersApi";
 import { useAuthStore } from "@/store/authStore";
 import { AddToPlaylistModal } from "../playlist/AddToPlaylistModal";
 import { TrackCoverPlaceholder } from "../placeholders/TrackCover";
+import Link from "next/link";
 
 export function GlobalPlayer() {
   const {
@@ -29,6 +30,10 @@ export function GlobalPlayer() {
     playPrev,
     queue,
     autoplay,
+    repeatMode,
+    isShuffle,
+    toggleRepeat,
+    toggleShuffle,
   } = usePlayerStore();
 
   // const { user } = useAuth();
@@ -290,8 +295,18 @@ export function GlobalPlayer() {
     };
 
     const handleEnded = () => {
-      const { autoplay, playNext, resetTime } = usePlayerStore.getState();
+      const { autoplay, playNext, resetTime, repeatMode } = usePlayerStore.getState();
       const audio = audioRef.current;
+
+      // Logic Repeat One: Tự động phát lại bài hiện tại khi hết
+      if (repeatMode === "one") {
+        if (audio) {
+          audio.currentTime = 0;
+          audio.play();
+        }
+        return;
+      }
+
       if (autoplay) {
         playNext();
       } else {
@@ -336,6 +351,7 @@ export function GlobalPlayer() {
       {/* --- LEFT: TRACK INFO --- */}
       <div className="flex items-center gap-3 flex-1 min-w-0 w-full md:w-auto">
         <div className="relative w-10 h-10 shrink-0 group cursor-pointer">
+          <Link href={`/tracks/${currentTrack.id}`}>
           {currentTrack.imagePath ? (
             <Image
               src={currentTrack.imagePath || "/images/default-cover.jpg"}
@@ -346,15 +362,21 @@ export function GlobalPlayer() {
           ) : (
             <TrackCoverPlaceholder />
           )}
+          </Link>
         </div>
 
         <div className="flex flex-col min-w-0 mr-2">
-          <h4 className="font-medium truncate text-sm leading-tight text-gray-900 dark:text-gray-100">
-            {currentTrack.title}
-          </h4>
-          <p className="text-xs text-gray-500 dark:text-gray-400 truncate hover:underline cursor-pointer">
-            {currentTrack.user.name}
-          </p>
+          <Link href={`/tracks/${currentTrack.id}`}>
+            <h4 className="font-medium truncate text-sm leading-tight text-gray-900 dark:text-gray-100">
+              {currentTrack.title}
+            </h4>
+          </Link>
+
+          <Link href={`/artist/${currentTrack.userId}`}>
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate hover:underline cursor-pointer">
+              {currentTrack.user.name}
+            </p>
+          </Link>
         </div>
 
         <div className="hidden lg:flex items-center gap-1 ml-2">
@@ -362,7 +384,7 @@ export function GlobalPlayer() {
           <button
             onClick={handleToggleLike}
             className={cn(
-              "rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-white/10",
+              "rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 cursor-pointer",
               isLiked
                 ? "text-orange-500"
                 : "text-gray-400 hover:text-orange-500"
@@ -377,7 +399,7 @@ export function GlobalPlayer() {
             <button
               onClick={handleToggleFollow}
               className={cn(
-                "rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-white/10",
+                "rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-white/10 cursor-pointer",
                 isFollowed
                   ? "text-orange-500"
                   : "text-gray-400 hover:text-orange-500"
@@ -392,7 +414,7 @@ export function GlobalPlayer() {
             </button>
           )}
 
-          <button className="p-2" onClick={() => setIsAddToPlaylistOpen(true)}>
+          <button className="p-2 cursor-pointer" onClick={() => setIsAddToPlaylistOpen(true)}>
             <ListPlus className="w-4 h-4" />
           </button>
         </div>
@@ -422,6 +444,10 @@ export function GlobalPlayer() {
           onNext={playNext} // Gắn hàm tới
           volume={volume}
           onVolumeChange={setVolume}
+          repeatMode={repeatMode}
+          isShuffle={isShuffle}
+          onToggleRepeat={toggleRepeat}
+          onToggleShuffle={toggleShuffle}
         />
       </div>
 
@@ -430,7 +456,7 @@ export function GlobalPlayer() {
         onClick={() => setShowQueue(!showQueue)}
         className={cn(
           "p-2 transition-colors relative",
-          showQueue ? "text-orange-500" : "text-gray-500 hover:text-orange-500"
+          showQueue ? "text-orange-500" : "text-gray-500 hover:text-orange-500 cursor-pointer"
         )}
       >
         <ListMusic className="w-4 h-4" />
@@ -442,7 +468,7 @@ export function GlobalPlayer() {
       {/* --- HIDDEN AUDIO --- */}
       <audio ref={audioRef} preload="metadata" />
 
-      {/* 👇 HIỂN THỊ DANH SÁCH CHỜ (POPUP) */}
+      {/* HIỂN THỊ DANH SÁCH CHỜ (POPUP) */}
       {showQueue && <NextUpList onClose={() => setShowQueue(false)} />}
     </div>
   );

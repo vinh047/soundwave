@@ -8,12 +8,14 @@ import userApi from "@/lib/api/usersApi";
 import Link from "next/link";
 import { HorizontalTrackCard } from "@/components/track/HorizontalTrackCard";
 import { UserAvatarPlaceholder } from "@/components/placeholders/UserAvatar";
+import { trackApiServer } from "@/lib/api/trackApi.server";
 
 export default async function HomePage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+
   const api = await searchParams;
 
   const [initTracksRes, trendingTracksRes, trendingArtistsRes] =
@@ -22,7 +24,7 @@ export default async function HomePage({
         page: Number(api.page) || 1,
         limit: 10,
       }),
-      trackApi.getTrendingTracks(10),
+      trackApiServer.getTrendingTracks(10),
       userApi.getTrendingArtists(5),
     ]);
 
@@ -31,13 +33,15 @@ export default async function HomePage({
 
   const trendingArtists = trendingArtistsRes.data?.data || [];
 
+  console.log("trendingTracksRes: ", trendingTracksRes)
+
   return (
     <div className="bg-white dark:bg-[#121212] transition-colors duration-300">
       <div className=" grid grid-cols-1 lg:grid-cols-[1fr_350px] px-4 md:px-20 gap-8 ">
         <div className="w-[60vw] mx-auto  py-8">
           <div className="relative w-full h-[300px] rounded-xl overflow-hidden mb-12 shadow-2xl">
             <div className="absolute inset-0 bg-neutral-900">
-              <div className="absolute inset-0 opacity-50 bg-[url('https://images.unsplash.com/photo-1493225255756-d9584f8606e9')] bg-cover bg-center" />
+              <div className="absolute inset-0 opacity-50 bg-[url('/images/istockphoto-472328791-612x612.jpg')] bg-cover bg-center" />
             </div>
             <div className="relative z-10 h-full flex flex-col justify-center px-8 text-white">
               <h1 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-md">

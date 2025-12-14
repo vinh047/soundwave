@@ -1,41 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
-import { Search, X, CheckCircle, AlertCircle } from "lucide-react";
-
-// Dữ liệu mẫu
-const INITIAL_USERS = [
-  { 
-    id: "USR001", 
-    name: "Nguyen Van A", 
-    email: "vana@example.com", 
-    status: "active", 
-    joinDate: "20/10/2023",
-    avatarColor: "bg-purple-500"
-  },
-  { 
-    id: "USR002", 
-    name: "Tran Thi B", 
-    email: "btran@example.com", 
-    status: "locked", 
-    joinDate: "05/11/2023",
-    avatarColor: "bg-blue-500"
-  },
-  { 
-    id: "USR003", 
-    name: "Le Van C", 
-    email: "c.le@example.com", 
-    status: "active", 
-    joinDate: "01/12/2023",
-    avatarColor: "bg-green-500"
-  },
-];
+import { Search, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { getAdminUsers, updateAdminUserStatus } from "@/lib/api/adminApi";
+import { AdminUser } from "@/type/AdminTypes";
+import { format } from "date-fns";
 
 export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [userList, setUserList] = useState(INITIAL_USERS);
-  
+  const [userList, setUserList] = useState<AdminUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   // 1. State quản lý thông báo (Toast)
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
@@ -47,33 +25,52 @@ export default function UsersPage() {
     }, 3000);
   };
 
-  // Logic xử lý Khóa/Mở khóa
-  const handleToggleStatus = (userId: string, currentStatus: string) => {
-    const isLocking = currentStatus === 'active';
-    const actionName = isLocking ? "Khoá" : "Mở khoá";
-
+  // Fetch users from API
+  const fetchUsers = async () => {
+    setIsLoading(true);
     try {
-      // Cập nhật danh sách user
-      const updatedList = userList.map(user => {
-        if (user.id === userId) {
-          return { ...user, status: isLocking ? 'locked' : 'active' };
-        }
-        return user;
-      });
-      setUserList(updatedList);
-
-      // Thay alert bằng showToast
-      showToast(`Thành công: Đã ${actionName} tài khoản ${userId}`, "success");
-      
+      const data = await getAdminUsers({ page, limit: 10 });
+      setUserList(data.data);
+      setTotalPages(data.meta.lastPage);
     } catch (error) {
-      showToast(`Lỗi: Không thể ${actionName} tài khoản này`, "error");
+      console.error("Failed to fetch users:", error);
+      showToast("Lỗi: Không thể tải danh sách người dùng", "error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const filteredUsers = userList.filter((user) => 
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  useEffect(() => {
+    fetchUsers();
+  }, [page]);
+
+  // Logic xử lý Khóa/Mở khóa (Hiện tại API updateAdminUserStatus chưa hoạt động hoàn hảo do BE hạn chế, nhưng vẫn tích hợp)
+  const handleToggleStatus = async (userId: string, currentStatus: string) => {
+    // Lưu ý: Logic này đang giả định status dựa trên role hoặc field nào đó, 
+    // nhưng AdminUser interface hiện tại chưa có field 'status' hay 'isBanned' rõ ràng ngoài role.
+    // Tạm thời ta sẽ giả định logic update sẽ gửi request lên server.
+
+    // const isLocking = currentStatus === 'active';
+    // const actionName = isLocking ? "Khoá" : "Mở khoá";
+
+    try {
+      // Gọi API update (cần BE hỗ trợ)
+      // await updateAdminUserStatus(userId, { isBanned: isLocking });
+
+      // Refresh list
+      // await fetchUsers();
+
+      showToast(`Tính năng cập nhật trạng thái đang được phát triển`, "success");
+
+    } catch (error) {
+      showToast(`Lỗi: Không thể cập nhật trạng thái`, "error");
+    }
+  };
+
+  const filteredUsers = userList.filter((user) =>
+    (user.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.id.toLowerCase().includes(searchTerm.toLowerCase()) 
+    user.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -81,9 +78,8 @@ export default function UsersPage() {
       {/* --- PHẦN TOAST NOTIFICATION --- */}
       {/* Chỉ hiện khi state toast có dữ liệu */}
       {toast && (
-        <div className={`fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 animate-in slide-in-from-bottom-5 ${
-          toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
-        }`}>
+        <div className={`fixed bottom-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 animate-in slide-in-from-bottom-5 ${toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'
+          }`}>
           {toast.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
           <span className="text-sm font-medium">{toast.message}</span>
           <button onClick={() => setToast(null)} className="ml-2 hover:bg-white/20 p-1 rounded-full">
@@ -95,12 +91,12 @@ export default function UsersPage() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h2 className="text-2xl font-bold text-white">Quản lý người dùng</h2>
-        
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-          <input 
-            type="text" 
-            placeholder="Tìm theo tên, email, ID..." 
+          <input
+            type="text"
+            placeholder="Tìm theo tên, email, ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white focus:outline-none focus:border-orange-500 w-full md:w-80"
@@ -114,66 +110,70 @@ export default function UsersPage() {
             <tr>
               <th className="px-6 py-4 w-24">ID</th>
               <th className="px-6 py-4">User</th>
-              <th className="px-6 py-4">Trạng thái</th>
+              <th className="px-6 py-4">Vai trò</th>
               <th className="px-6 py-4">Ngày tham gia</th>
               <th className="px-6 py-4 text-left">Hành động</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800">
-            {filteredUsers.length > 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-12 text-center text-zinc-500">
+                  <div className="flex justify-center items-center gap-2">
+                    <Loader2 className="animate-spin" size={20} />
+                    Đang tải dữ liệu...
+                  </div>
+                </td>
+              </tr>
+            ) : filteredUsers.length > 0 ? (
               filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-zinc-900/80 transition-colors">
                   <td className="px-6 py-4 text-zinc-500 font-mono text-xs">
-                    {user.id}
+                    {user.id.substring(0, 8)}...
                   </td>
 
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full ${user.avatarColor}`} />
+                      <div className={`w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300`}>
+                        {user.name ? user.name.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+                      </div>
                       <div>
-                        <div className="font-medium text-white">{user.name}</div>
+                        <div className="font-medium text-white">{user.name || "Chưa đặt tên"}</div>
                         <div className="text-xs text-zinc-500">{user.email}</div>
                       </div>
                     </div>
                   </td>
-                  
+
                   <td className="px-6 py-4">
-                    {user.status === 'active' ? (
-                      <span className="px-2 py-1 rounded-full text-xs bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                        Active
+                    {user.role === 'ADMIN' ? (
+                      <span className="px-2 py-1 rounded-full text-xs bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                        Admin
                       </span>
                     ) : (
-                      <span className="px-2 py-1 rounded-full text-xs bg-red-500/10 text-red-500 border border-red-500/20">
-                        Locked
+                      <span className="px-2 py-1 rounded-full text-xs bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                        User
                       </span>
                     )}
                   </td>
 
-                  <td className="px-6 py-4 text-zinc-400">{user.joinDate}</td>
-                  
+                  <td className="px-6 py-4 text-zinc-400">
+                    {format(new Date(user.createdAt), "dd/MM/yyyy")}
+                  </td>
+
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-start gap-2">
-                      <Button dark className="h-8 w-20 text-xs bg-zinc-800 hover:bg-zinc-700">
+                      <Button className="h-8 w-20 text-xs bg-zinc-800/50 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700/50">
                         Chi tiết
                       </Button>
 
-                      {user.status === 'active' ? (
-                        <Button 
-                          dark 
-                          className="h-8 w-20 text-xs bg-red-600 hover:bg-red-700 text-white border-none"
-                          onClick={() => handleToggleStatus(user.id, user.status)}
-                        >
-                          Khóa
-                        </Button>
-                      ) : (
-                        <Button 
-                          light 
-                          className="h-8 w-20 text-xs border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-white"
-                          onClick={() => handleToggleStatus(user.id, user.status)}
-                        >
-                          Mở khóa
-                        </Button>
-                      )}
+                      {/* Tạm thời disable nút khóa vì chưa có field status */}
+                      <Button
+                        className="h-8 w-20 text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 opacity-50 cursor-not-allowed"
+                        onClick={() => handleToggleStatus(user.id, 'active')}
+                        disabled
+                      >
+                        Khóa
+                      </Button>
                     </div>
                   </td>
                 </tr>

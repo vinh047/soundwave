@@ -7,10 +7,14 @@ import { PlaylistTrackList } from "@/components/playlist/PlaylistTrackList";
 import { Button } from "@/components/ui2/Button";
 import playlistApi from "@/lib/api/playlistApi";
 import { Prisma } from "@repo/database";
-import { Loader2, Share, Copy, Edit, Heart, ListFilter, Trash2 } from "lucide-react";
+import { Loader2, Share, Copy, Edit, Heart, ListPlus, Trash2 } from "lucide-react";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import DeletePlaylistModal from "@/components/modals/DeletePlaylistModal";
+import EditPlaylistModal from "@/components/modals/EditPlaylistModal";
+import { usePlayerStore } from "@/store/playerStore";
 
 type PlaylistWithDetails = Prisma.PlaylistGetPayload<{
     include: {
@@ -22,10 +26,14 @@ type PlaylistWithDetails = Prisma.PlaylistGetPayload<{
 
 export default function PlaylistPage() {
     const params = useParams();
+    const router = useRouter();
     const { user } = useAuth();
+    const { setQueue } = usePlayerStore();
     const [playlist, setPlaylist] = useState<PlaylistWithDetails | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [shareUrl, setShareUrl] = useState("");
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -48,6 +56,34 @@ export default function PlaylistPage() {
 
         fetchPlaylist();
     }, [params.id]);
+
+    const handleCopyLink = () => {
+        navigator.clipboard.writeText(shareUrl);
+        toast.success("Link copied to clipboard!");
+    };
+
+    const handleDeletePlaylist = async () => {
+        if (!playlist) return;
+        try {
+            await playlistApi.deletePlaylist(playlist.id);
+            toast.success("Playlist deleted successfully");
+            router.push("/library");
+        } catch (error) {
+            console.error("Failed to delete playlist:", error);
+            toast.error("Failed to delete playlist");
+        }
+    };
+
+    const handlePlayPlaylist = () => {
+        if (!playlist || !playlist.tracks || playlist.tracks.length === 0) {
+            toast.error("Playlist is empty");
+            return;
+        }
+
+        const tracksToPlay = playlist.tracks.map((pt) => pt.track);
+        setQueue(tracksToPlay);
+        toast.success("Playing playlist");
+    };
 
     if (isLoading) {
         return (
@@ -85,24 +121,65 @@ export default function PlaylistPage() {
                                 </Button>
                             }
                         />
-                        <Button variant="secondary" size="icon" className="h-10 w-10 rounded-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-zinc-800">
+                        <Button
+                            variant="secondary"
+                            size="icon"
+                            className="h-10 w-10 rounded-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-zinc-800"
+                            onClick={handleCopyLink}
+                        >
                             <Copy size={18} />
                         </Button>
                         {isOwner && (
-                            <Button variant="secondary" size="icon" className="h-10 w-10 rounded-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-zinc-800">
-                                <Edit size={18} />
-                            </Button>
+                            <>
+                                <Button
+                                    variant="secondary"
+                                    size="icon"
+                                    className="h-10 w-10 rounded-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-zinc-800"
+                                    onClick={() => setIsEditModalOpen(true)}
+                                >
+                                    <Edit size={18} />
+                                </Button>
+                                <EditPlaylistModal
+                                    isOpen={isEditModalOpen}
+                                    onOpenChange={setIsEditModalOpen}
+                                    playlist={playlist as any}
+                                    onUpdate={() => {
+                                        // Refresh playlist data
+                                        playlistApi.getPlaylistById(params.id as string).then((res) => {
+                                            setPlaylist(res.data as any);
+                                        });
+                                    }}
+                                />
+                            </>
                         )}
                         <Button variant="secondary" size="icon" className="h-10 w-10 rounded-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-zinc-800">
                             <Heart size={18} />
                         </Button>
-                        <Button variant="secondary" size="icon" className="h-10 w-10 rounded-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-zinc-800">
-                            <ListFilter size={18} />
+                        <Button
+                            variant="secondary"
+                            size="icon"
+                            className="h-10 w-10 rounded-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-zinc-800"
+                            onClick={handlePlayPlaylist}
+                        >
+                            <ListPlus size={18} />
                         </Button>
                         {isOwner && (
-                            <Button variant="secondary" size="icon" className="h-10 w-10 rounded-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-zinc-800">
-                                <Trash2 size={18} />
-                            </Button>
+                            <>
+                                <Button
+                                    variant="secondary"
+                                    size="icon"
+                                    className="h-10 w-10 rounded-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-zinc-800"
+                                    onClick={() => setIsDeleteModalOpen(true)}
+                                >
+                                    <Trash2 size={18} />
+                                </Button>
+                                <DeletePlaylistModal
+                                    isOpen={isDeleteModalOpen}
+                                    onOpenChange={setIsDeleteModalOpen}
+                                    onConfirm={handleDeletePlaylist}
+                                    playlistName={playlist.title}
+                                />
+                            </>
                         )}
                     </div>
                 </div>

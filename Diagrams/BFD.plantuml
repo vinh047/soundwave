@@ -10,6 +10,7 @@ title Sơ đồ phân rã chức năng (BFD) - Hệ thống nghe nhạc trực t
 **** Chia sẻ bài hát
 **** Đăng lại bài hát
 **** Nghe nhạc
+**** Báo cáo vi phạm
 *** Khám phá nghệ sĩ
 **** Xem và tìm kiếm danh sách nghệ sĩ
 **** Theo dõi Nghệ sĩ
@@ -42,17 +43,18 @@ title Sơ đồ phân rã chức năng (BFD) - Hệ thống nghe nhạc trực t
 **** Tải lên bài hát
 **** Sửa thông tin bài hát
 **** Ẩn bài hát
-*** Báo cáo vi phạm
 *** Cài đặt
 **** Sửa tài khoản cá nhân
 ** Chức năng Quản trị
+*** Xem tổng quan hệ thống
 *** Quản lý tài khoản người dùng
 **** Xem danh sách và tìm kiếm tài khoản người dùng
 **** Khoá/Mở tài khoản người dùng
 *** Quản lý bài hát hệ thống
 **** Xem danh sách và tìm kiếm bài hát
 **** Ẩn/Hiện bài hát
-*** Xử lý báo cáo vi phạm
+*** Quản lý báo cáo vi phạm
+**** Xem danh sách và tìm kiếm báo cáo vi phạm
 **** Ẩn bài hát vi phạm
 **** Gửi cảnh cáo người dùng
 **** Bỏ qua báo cáo

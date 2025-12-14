@@ -1,0 +1,29 @@
+@startuml Sơ Đồ Usecase Tổng Quát
+left to right direction
+
+' Actor
+actor "Quản trị viên" as Admin
+
+rectangle "Chức năng Quản trị viên" {
+    ' Use case cho Admin
+    (Xem tổng quan hệ thống) as UC_ViewSystemOverview
+    (Quản lý báo cáo vi phạm) as UC_HandleReport
+    (Quản lý tài khoản người dùng) as UC_ManageUserAccount
+    (Quản lý bài hát hệ thống) as UC_ManageSystemSongs
+    (Đăng nhập Admin) as UC_LoginAdmin
+
+    ' Use case cho tất cả
+    (Đăng xuất) as UC_Logout
+
+    ' -- Mối quan hệ --
+    ' Quan hệ <<include>>
+    UC_ViewSystemOverview ..> UC_LoginAdmin : <<include>>
+    UC_HandleReport ..> UC_LoginAdmin : <<include>>
+    UC_ManageUserAccount ..> UC_LoginAdmin : <<include>>
+    UC_ManageSystemSongs ..> UC_LoginAdmin : <<include>>
+
+    ' -- Gán các actor --
+    Admin --> UC_LoginAdmin
+    Admin --> UC_Logout
+}
+@enduml

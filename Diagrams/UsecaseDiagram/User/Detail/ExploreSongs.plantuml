@@ -1,0 +1,44 @@
+@startuml Sơ Đồ Usecase Chi Tiết User
+left to right direction
+
+' Actor
+actor "Người dùng" as User
+
+rectangle "Khám phá bài hát" {
+    ' Use Case cho mọi người (chưa đăng nhập)
+    (Khám phá bài hát) as UC_ExploreSongs
+    (Xem danh sách và tìm kiếm bài hát) as UC_ViewSearchSongs
+    (Nghe nhạc) as UC_Play
+    (Đăng nhập) as UC_Login
+
+    ' Use case cần đăng nhập (cho User và Artist)
+
+    (Thích bài hát) as UC_Like
+    (Bình luận bài hát) as UC_Comment
+    (Chia sẻ bài hát) as UC_Share
+    (Đăng lại bài hát) as UC_Repost
+    (Báo cáo vi phạm) as UC_Report
+
+    ' -- Mối quan hệ --
+    ' Quan hệ <<extend>>
+    UC_Like ..> UC_ExploreSongs: <<extend>>
+    UC_Comment ..> UC_ExploreSongs: <<extend>>
+    UC_Share ..> UC_ExploreSongs: <<extend>>
+    UC_Repost ..> UC_ExploreSongs: <<extend>>
+    UC_ViewSearchSongs ..> UC_ExploreSongs: <<extend>>
+    UC_Play ..> UC_ExploreSongs: <<extend>>
+    UC_Report ..> UC_ExploreSongs: <<extend>>
+
+    ' Quan hệ <<include>> (các chức năng cần đăng nhập)
+    UC_Report ..> UC_Login : <<include>>
+    UC_Like ..> UC_Login : <<include>>
+    UC_Comment ..> UC_Login : <<include>>
+    UC_Share ..> UC_Login : <<include>>
+    UC_Repost ..> UC_Login : <<include>>
+    UC_Report ..> UC_Login : <<include>>
+
+    ' -- Gán các actor --
+    ' Actor chưa đăng nhập cũng có thể xem và nghe
+    User --> UC_ExploreSongs
+    User --> UC_Login
+}

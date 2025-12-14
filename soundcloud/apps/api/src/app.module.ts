@@ -15,6 +15,7 @@ import { LoggerMiddleware } from 'middleware/logger.middleware';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { WebsiteTypeModule } from './website-type/website-type.module';
 import { PlaylistsModule } from './playlists/playlists.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { PlaylistsModule } from './playlists/playlists.module';
     TracksModule,
     CloudinaryModule,
     WebsiteTypeModule,
+    AdminModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

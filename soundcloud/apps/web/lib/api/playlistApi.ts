@@ -32,6 +32,14 @@ const playlistApi = {
   removeTrackFromPlaylist: (playlistId: string, trackId: string) => {
     return axiosClient.delete(`/playlists/${playlistId}/tracks/${trackId}`);
   },
+
+  deletePlaylist: (id: string) => {
+    return axiosClient.delete(`/playlists/${id}`);
+  },
+
+  updatePlaylist: (id: string, data: { title: string; isPublic?: boolean }) => {
+    return axiosClient.patch(`/playlists/${id}`, data);
+  },
 };
 
 export default playlistApi;

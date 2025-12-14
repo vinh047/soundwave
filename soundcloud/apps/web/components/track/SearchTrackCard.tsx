@@ -1,27 +1,16 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import {
-  Play,
-  Heart,
-  MessageSquare,
-  Repeat,
-  Share2,
-  MoreHorizontal,
-  Copy,
-  Pause,
-  LucideIcon,
-  ListPlus,
-  ListMusic,
-} from "lucide-react";
+import { Play, Heart, MessageSquare, Repeat, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePlayerStore } from "@/store/playerStore";
 import trackApi from "@/lib/api/trackApi";
 import { toast } from "sonner";
 import { useAuth } from "@/app/contexts/AuthContext";
+import MoreMenu, { ActionButton } from "../common/MoreMenu";
 
 // --- TYPES ---
 interface TrackData {
@@ -147,9 +136,8 @@ export function SearchTrackCard({ track }: SearchTrackCardProps) {
 
   return (
     <div className="flex gap-4 p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors rounded-lg group border border-transparent hover:border-gray-200 dark:hover:border-gray-800">
-      
       {/* --- SỬA ĐỔI Ở ĐÂY: Dùng Link bọc ảnh, bỏ overlay play --- */}
-      <Link 
+      <Link
         href={`/tracks/${track.id}`}
         className="relative w-40 h-40 shrink-0 cursor-pointer block"
       >
@@ -255,112 +243,6 @@ export function SearchTrackCard({ track }: SearchTrackCardProps) {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ... (Giữ nguyên phần Helper Component phía dưới không thay đổi)
-interface ActionButtonProps {
-  icon: LucideIcon;
-  label: string;
-  count?: number;
-  onClick?: (e: React.MouseEvent) => void;
-  active?: boolean;
-  activeColor?: string;
-}
-
-function ActionButton({
-  icon: Icon,
-  label,
-  count,
-  onClick,
-  active,
-  activeColor,
-}: ActionButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-1.5 px-2.5 py-1 border rounded-[3px] text-xs font-medium transition-colors bg-transparent",
-        active
-          ? cn(activeColor, "bg-gray-50 dark:bg-white/5")
-          : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500"
-      )}
-    >
-      <Icon className={cn("w-3.5 h-3.5", active && "fill-current")} />
-      <span className="hidden sm:inline">{label}</span>
-      {count !== undefined && count > 0 && (
-        <span className={cn(active ? "text-current" : "text-gray-400")}>
-          {count}
-        </span>
-      )}
-    </button>
-  );
-}
-
-function MoreMenu({ track }: { track: TrackData }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  const { addToQueue } = usePlayerStore();
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleNextUp = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    addToQueue(track as any);
-
-    setIsOpen(false);
-    toast.success("Added to Next up");
-  };
-
-  const handleAddToPlaylist = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsOpen(false);
-    toast.info("Open Playlist Modal...");
-  };
-
-  return (
-    <div className="relative" ref={menuRef}>
-      <ActionButton
-        icon={MoreHorizontal}
-        label="More"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-        }}
-        active={isOpen}
-        activeColor="border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-neutral-800"
-      />
-
-      {isOpen && (
-        <div className="absolute left-0 bottom-full mb-2 w-48 bg-white dark:bg-[#1f1f1f] border border-gray-200 dark:border-[#333] rounded-md shadow-xl z-50 py-1 animate-in fade-in zoom-in-95 duration-100 origin-bottom-left">
-          <button
-            onClick={handleNextUp}
-            className="w-full text-left px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#333] flex items-center gap-2 transition-colors"
-          >
-            <ListPlus className="w-4 h-4" />
-            Add to Next up
-          </button>
-
-          <button
-            onClick={handleAddToPlaylist}
-            className="w-full text-left px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#333] flex items-center gap-2 transition-colors"
-          >
-            <ListMusic className="w-4 h-4" />
-            Add to Playlist
-          </button>
-        </div>
-      )}
     </div>
   );
 }

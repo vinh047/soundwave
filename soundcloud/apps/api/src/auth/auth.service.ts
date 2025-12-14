@@ -51,7 +51,7 @@ export class AuthService {
   }
 
   async login(user: Omit<User, 'hashedPassword'>): Promise<any> {
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email, role: user.role };
     // access token (ngắn hạn)
     const accessToken = await this.jwtService.signAsync(payload, {
       secret: this.configService.get('JWT_ACCESS_SECRET'),
@@ -211,7 +211,7 @@ export class AuthService {
   }
 
   async refreshTokens(refreshToken: string) {
-    let payload: { sub: string; email: string };
+    let payload: { sub: string; email: string, role: string };
     try {
       payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
@@ -344,5 +344,11 @@ export class AuthService {
     // 3. Loại bỏ thông tin nhạy cảm trước khi trả về
     const { hashedPassword, hashedRefreshToken, ...safeUser } = user;
     return safeUser;
+  }
+
+  async logout(userId: string) {
+    // Xóa hashedRefreshToken trong DB để invalidate refresh token
+    await this.usersService.updateRefreshTokenHash(userId, '');
+    return { message: 'Đăng xuất thành công' };
   }
 }

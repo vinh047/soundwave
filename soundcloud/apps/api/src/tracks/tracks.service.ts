@@ -17,6 +17,8 @@ import toStream = require('streamifier');
 export type TrackWithStats = Prisma.TrackGetPayload<{
   include: {
     user: true;
+    likes: true;
+    reposts: true;
     _count: {
       select: {
         likes: true;
@@ -316,14 +318,13 @@ export class TracksService {
     }
   }
 
-  async getTrendingTopN({
-    days = 7,
-    limit = 20,
-  }: { days?: number; limit?: number } = {}): Promise<TrackWithStats[]> {
-    // <-- Đổi kiểu trả về
+  async getTrendingTopN(
+    userId: string | null,
+    { days = 7, limit = 20 }: { days?: number; limit?: number } = {},
+  ): Promise<TrackWithStats[]> {
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-    // 1) group likes (Lấy dữ liệu recent để tính điểm trending)
+    // 1) group likes
     const likes = await this.prisma.like.groupBy({
       by: ['trackId'],
       where: { createdAt: { gte: since } },
@@ -333,7 +334,7 @@ export class TracksService {
       likes.map((r) => [r.trackId, Number(r._count._all)]),
     );
 
-    // 2) group reposts (Lấy dữ liệu recent để tính điểm trending)
+    // 2) group reposts
     const reposts = await this.prisma.repost.groupBy({
       by: ['trackId'],
       where: { createdAt: { gte: since } },
@@ -351,9 +352,9 @@ export class TracksService {
       ]),
     );
 
-    // --- CẤU HÌNH INCLUDE CHUNG (QUAN TRỌNG) ---
-    // Lấy User và đếm tổng số Like/Repost/Comment
-    const commonInclude = {
+    // --- CẤU HÌNH INCLUDE CHUNG (ĐÃ SỬA) ---
+    // Khởi tạo include cơ bản
+    const commonInclude: any = {
       user: true,
       _count: {
         select: {
@@ -364,31 +365,46 @@ export class TracksService {
       },
     };
 
-    let tracks: TrackWithStats[]; // <-- Sử dụng type mới
+    // 2. LOGIC QUAN TRỌNG:
+    // Nếu có userId (đã đăng nhập), ta include thêm likes/reposts NHƯNG lọc theo userId đó.
+    // Kết quả trả về: track.likes sẽ là mảng.
+    // - Nếu mảng rỗng [] -> User chưa like.
+    // - Nếu mảng có phần tử [{ userId: '...' }] -> User đã like.
+    if (userId) {
+      commonInclude.likes = {
+        where: { userId: userId },
+        select: { userId: true }, // Chỉ cần lấy ID để FE check length > 0 là đủ
+      };
+      commonInclude.reposts = {
+        where: { userId: userId },
+        select: { userId: true },
+      };
+    }
+
+    let tracks: TrackWithStats[];
 
     if (candidateTrackIds.length > 0) {
-      tracks = await this.prisma.track.findMany({
+      tracks = (await this.prisma.track.findMany({
         where: {
           id: { in: candidateTrackIds },
           isPublic: true,
           isBanned: false,
         },
-        include: commonInclude, // <-- Thêm include vào đây
-      });
+        include: commonInclude, // Đã bao gồm logic check like/repost
+      })) as unknown as TrackWithStats[];
     } else {
       // fallback: use playCount
-      tracks = await this.prisma.track.findMany({
+      tracks = (await this.prisma.track.findMany({
         where: { isPublic: true, isBanned: false },
         orderBy: { playCount: 'desc' },
         take: limit,
-        include: commonInclude, // <-- Thêm include vào đây
-      });
+        include: commonInclude, // Đã bao gồm logic check like/repost
+      })) as unknown as TrackWithStats[];
     }
 
-    // 4) compute score (Logic tính điểm giữ nguyên)
+    // 4) compute score
     const now = new Date();
     const items = tracks.map((t) => {
-      // Dùng map để lấy recent activity cho việc xếp hạng
       const recentLikes = likesMap.get(t.id) || 0;
       const recentReposts = repostsMap.get(t.id) || 0;
 

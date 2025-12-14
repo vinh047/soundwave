@@ -4,6 +4,7 @@ import { Prisma } from "@repo/database";
 import { Play, Heart, MoreHorizontal } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePlayerStore } from "@/store/playerStore";
 
 type TrackWithUser = Prisma.TrackGetPayload<{ include: { user: true } }>;
 
@@ -12,9 +13,16 @@ interface PlaylistTrackListProps {
 }
 
 export function PlaylistTrackList({ tracks }: PlaylistTrackListProps) {
+    const { setQueue } = usePlayerStore();
+
     if (!tracks || tracks.length === 0) {
         return <div className="text-gray-500 py-8">No tracks in this playlist yet.</div>;
     }
+
+    const handlePlay = (trackId: string) => {
+        const allTracks = tracks.map((t) => t.track);
+        setQueue(allTracks, trackId);
+    };
 
     return (
         <div className="flex flex-col w-full">
@@ -23,6 +31,7 @@ export function PlaylistTrackList({ tracks }: PlaylistTrackListProps) {
                 return (
                     <div
                         key={track.id}
+                        onClick={() => handlePlay(track.id)}
                         className="group flex items-center gap-3 py-2 px-3 hover:bg-gray-100 dark:hover:bg-zinc-800/50 rounded-md transition-colors cursor-pointer"
                     >
                         {/* Image & Play Button Overlay */}
@@ -70,8 +79,7 @@ export function PlaylistTrackList({ tracks }: PlaylistTrackListProps) {
                         {/* Play Count */}
                         <div className="text-xs text-gray-500 flex items-center gap-1">
                             <Play size={10} />
-                            {/* Mock play count if not available */}
-                            {(Math.random() * 100).toFixed(1)}K
+                            {track.playCount?.toLocaleString() || 0}
                         </div>
                     </div>
                 );

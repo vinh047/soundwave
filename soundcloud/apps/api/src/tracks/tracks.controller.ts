@@ -97,6 +97,7 @@ export class TracksController {
     @Req() req,
   ) {
     const userId = req.user?.id || null;
+    
 
     return this.tracksService.searchEverything(
       page ? parseInt(page) : 1,
@@ -107,14 +108,19 @@ export class TracksController {
   }
 
   // GET /tracks/trending?limit=5
-  @Public() // Bỏ nếu bạn muốn route này cần login
+  @Public()
   @Get('trending')
   async getTrendingTopN(
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('days', new DefaultValuePipe(7), ParseIntPipe) days: number,
+    @Req() req,
   ) {
-    // Gọi service
-    return this.tracksService.getTrendingTopN({ days, limit });
+    const userId = req.user?.id || null;
+
+    console.log("userId:treding..... ", req.user)
+
+
+    return this.tracksService.getTrendingTopN(userId, { days, limit });
   }
 
   /**

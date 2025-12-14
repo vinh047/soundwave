@@ -1,0 +1,54 @@
+@startuml Sơ Đồ Usecase Chi Tiết Admin
+left to right direction
+
+' Actor
+actor "Quản trị viên" as Admin
+
+rectangle "Chức năng Quản trị viên" {
+    ' Use Case cho mọi người (chưa đăng nhập)
+    (Quản lý bài hát hệ thống) as UC_ManageSystemSongs
+    (Xem danh sách và tìm kiếm bài hát) as UC_ViewSearchSongs
+    (Ẩn/Hiện bài hát) as UC_ToggleSongVisibility
+    (Nghe nhạc) as UC_Play
+    (Đăng nhập) as UC_Login
+
+    ' Use case của Admin
+    (Xem tổng quan hệ thống) as UC_ViewSystemOverview
+
+    (Quản lý báo cáo vi phạm) as UC_ManageReport
+    (Xem danh sách và tìm kiếm báo cáo vi phạm) as UC_ViewSearchReports
+    (Ẩn bài hát vi phạm) as UC_HideReportedSongs
+    (Cảnh cáo người dùng) as UC_WarnUser
+    (Bỏ qua vi phạm) as UC_DismissReport
+
+    (Quản lý tài khoản người dùng) as UC_ManageUserAccount
+    (Xem danh sách và tìm kiếm tài khoản người dùng) as UC_ViewSearchUserAccount
+    (Khoá/Mở tài khoản người dùng) as UC_LockUserAccount
+
+    ' Use case cho tất cả Actor
+    (Đăng xuất) as UC_Logout
+
+    ' -- Mối quan hệ --
+    ' Quan hệ <<extend>>
+    ' Xử lý báo cáo vi phạm
+    UC_ViewSearchReports ..> UC_ManageReport: <<extend>>
+    UC_HideReportedSongs ..> UC_ManageReport: <<extend>>
+    UC_WarnUser ..> UC_ManageReport: <<extend>>
+    UC_DismissReport ..> UC_ManageReport: <<extend>>
+    ' Quản lý tài khoản người dùng
+    UC_ViewSearchUserAccount ..> UC_ManageUserAccount: <<extend>>
+    UC_LockUserAccount ..> UC_ManageUserAccount: <<extend>>
+
+    ' Quan hệ <<include>> (các chức năng cần đăng nhập)
+    UC_ViewSystemOverview ..> UC_Login : <<include>>
+    UC_ManageReport ..> UC_Login : <<include>>
+    UC_ManageUserAccount ..> UC_Login: <<include>>
+    UC_ManageSystemSongs ..> UC_Login: <<include>>
+
+    UC_ViewSearchSongs ..> UC_ManageSystemSongs: <<extend>>
+    UC_ToggleSongVisibility ..> UC_ManageSystemSongs: <<extend>>
+    UC_Play ..> UC_ManageSystemSongs: <<extend>>
+    ' Admin
+    Admin --> UC_Login
+    Admin --> UC_Logout
+}
