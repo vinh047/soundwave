@@ -43,21 +43,26 @@ const trackApi = {
 
   deleteTrack: (id: string) => axiosClient.delete<void>(`/tracks/${id}`),
 
-  getTrendingTracks: (limit: number) =>
-    axiosClient.get<
-      Prisma.TrackGetPayload<{
-        include: {
-          user: true;
-          _count: {
-            select: {
-              likes: true;
-              reposts: true;
-              comments: true;
-            };
-          };
-        };
-      }>[]
-    >(`/tracks/trending?limit=${limit}`),
+  // getTrendingTracks: async (limit: number) => {
+  //   // Thêm async
+  //   if (typeof window === "undefined") {
+  //     const { default: axiosServer } = await import("./axiosServer");
+
+  //     return axiosServer.get<
+  //       Prisma.TrackGetPayload<{
+  //         include: {
+  //           user: true;
+  //           likes: true;
+  //           reposts: true;
+  //           _count: { select: { likes: true; reposts: true; comments: true } };
+  //         };
+  //       }>[]
+  //     >(`/tracks/trending?limit=${limit}`);
+  //   }
+
+  //   // Ở Client thì dùng axiosClient bình thường
+  //   return axiosClient.get<any>(`/tracks/trending?limit=${limit}`);
+  // },
 
   getRecentTracks: () =>
     axiosClient.get<Prisma.TrackGetPayload<{ include: { user: true } }>[]>(
