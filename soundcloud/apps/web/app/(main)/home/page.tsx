@@ -7,12 +7,14 @@ import { RecentTracks } from "./_components/RecentTracks";
 import userApi from "@/lib/api/usersApi";
 import Link from "next/link";
 import { HorizontalTrackCard } from "@/components/track/HorizontalTrackCard";
+import { trackApiServer } from "@/lib/api/trackApi.server";
 
 export default async function HomePage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+
   const api = await searchParams;
 
   const [initTracksRes, trendingTracksRes, trendingArtistsRes] =
@@ -21,7 +23,7 @@ export default async function HomePage({
         page: Number(api.page) || 1,
         limit: 10,
       }),
-      trackApi.getTrendingTracks(10),
+      trackApiServer.getTrendingTracks(10),
       userApi.getTrendingArtists(5),
     ]);
 
@@ -29,6 +31,8 @@ export default async function HomePage({
   const trendingTracks = trendingTracksRes.data;
 
   const trendingArtists = trendingArtistsRes.data?.data || [];
+
+  console.log("trendingTracksRes: ", trendingTracksRes)
 
   return (
     <div className="bg-white dark:bg-[#121212] transition-colors duration-300">
