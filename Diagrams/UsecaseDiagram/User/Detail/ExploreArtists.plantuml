@@ -1,0 +1,28 @@
+@startuml Sơ Đồ Usecase Chi Tiết User
+left to right direction
+
+' Actor
+actor "Người dùng" as User
+
+rectangle "Khám phá nghệ sĩ" {
+    ' Use Case cho mọi người (chưa đăng nhập)
+    (Khám phá nghệ sĩ) as UC_ExploreArtists
+    (Xem danh sách và tìm kiếm nghệ sĩ) as UC_ViewSearchArtists
+    (Đăng nhập) as UC_Login
+
+    ' Use case cần đăng nhập (cho User và Artist)
+    (Theo dõi nghệ sĩ) as UC_Follow
+
+    ' -- Mối quan hệ --
+    ' Quan hệ <<extend>>
+    UC_ViewSearchArtists ..> UC_ExploreArtists: <<extend>>
+    UC_Follow ..> UC_ExploreArtists: <<extend>>
+
+    ' Quan hệ <<include>> (các chức năng cần đăng nhập)
+    UC_Follow ..> UC_Login : <<include>>
+
+    ' -- Gán các actor --
+    ' Actor chưa đăng nhập cũng có thể xem và nghe
+    User --> UC_ExploreArtists
+    User --> UC_Login
+}

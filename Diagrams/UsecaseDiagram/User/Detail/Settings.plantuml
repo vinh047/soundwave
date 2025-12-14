@@ -1,0 +1,26 @@
+@startuml Sơ Đồ Usecase Chi Tiết User
+left to right direction
+
+' Actor
+actor "Người dùng" as User
+
+rectangle "Chức năng Người dùng" {
+    ' Use Case cho mọi người (chưa đăng nhập)
+    (Đăng nhập) as UC_Login
+    (Cài đặt) as UC_Settings
+
+    ' Use case cần đăng nhập (cho User và Artist)
+    (Sửa tài khoản cá nhân) as UC_EditAccount
+
+    ' -- Mối quan hệ --
+    ' Quan hệ <<extend>>
+    UC_EditAccount ..> UC_Settings: <<extend>>
+
+    ' Quan hệ <<include>> (các chức năng cần đăng nhập)
+    UC_EditAccount ..> UC_Login : <<include>>
+
+    ' -- Gán các actor --
+    ' Actor chưa đăng nhập cũng có thể xem và nghe
+    User --> UC_Login
+    User --> UC_Settings
+}

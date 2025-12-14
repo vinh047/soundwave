@@ -19,7 +19,7 @@ Service --> Controller: Trả về danh sách bài hát
 deactivate Service
 Controller --> View: Trả về danh sách bài hát
 alt Lấy danh sách bài hát thành công
-    View --> View: Hiển thị danh sách bài hát và nút Ẩn bài hát
+    View --> View: Hiển thị danh sách bài hát và nút Ẩn/Hiện bài hát
 else Lấy danh sách bài hát thất bại
     View --> Admin: Hiển thị thông báo lỗi
 end

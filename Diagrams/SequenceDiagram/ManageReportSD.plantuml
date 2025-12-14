@@ -23,15 +23,23 @@ deactivate Controller
 View --> View: Hiển thị danh sách báo cáo vi phạm
 
 Admin -> View: Xem báo cáo vi phạm và chọn phương thức xử lý
-View -> Controller: Yêu cầu xử lý và cập nhật trạng thái báo cáo vi phạm
+View -> Controller: Yêu cầu xử lý báo cáo vi phạm
 activate Controller
-Controller -> Service: Yêu cầu xử lý và cập nhật trạng thái báo cáo
+Controller -> Service: Yêu cầu xử lý báo cáo vi phạm
 activate Service
-Service -> User: Gửi thông báo kết quả xử lý báo cáo
-Service --> Controller: Trả về kết quả xử lý và cập nhật trạng thái
-deactivate Service
-Controller --> View: Thông báo kết quả xử lý và cập nhật trạng thái báo cáo
-deactivate Controller
-View --> Admin: Hiển thị thông báo
+
+alt Xử lý thất bại
+    Service --> Controller: Trả về kết quả xử lý báo cáo thất bại
+    Controller --> View: Thông báo "Xử lý báo cáo thất bại, vui lòng thử lại"
+    View --> Admin: Hiển thị thông báo
+else Xử lý thành công
+    Service -> User: Gửi thông báo kết quả xử lý báo cáo
+    Service --> Controller: Trả về kết quả xử lý báo cáo thành công
+    deactivate Service
+    Controller --> View: Thông báo "Xử lý báo cáo thành công"
+    deactivate Controller
+    View --> View: Cập nhật danh sách báo cáo vi phạm
+    View --> Admin: Hiển thị thông báo
+end
 deactivate View
 @enduml

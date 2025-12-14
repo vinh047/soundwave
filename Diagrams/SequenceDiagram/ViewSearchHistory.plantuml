@@ -30,9 +30,9 @@ group Bỏ theo dõi
     Service --> Controller: Trả về kết quả xử lý Xoá bài hát khỏi lịch sử
     deactivate Service
     alt Xoá bài hát khỏi lịch sử thất bại
-        Controller --> View: Thông báo "Hành động thất bại, vui lòng thử lại"
+        Controller --> View: Thông báo "Xoá bài hát thất bại, vui lòng thử lại"
     else Xoá bài hát khỏi lịch sử thành công
-        Controller --> View: Thông báo "Hành động thành công"
+        Controller --> View: Thông báo "Xoá bài hát thành công"
     end
     deactivate Controller
     View --> User: Hiển thị thông báo
