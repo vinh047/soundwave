@@ -6,7 +6,7 @@ import {
   Link as LinkIcon,
   Facebook,
   X,
-  MessageSquare,
+  Instagram,
 } from "lucide-react";
 import React, { useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import { toast } from "sonner";
 interface ShareModalProps {
   shareUrl: string; // URL cần chia sẻ (ví dụ: link đến trang Artist)
   shareTitle: string; // Tiêu đề (ví dụ: Tên nghệ sĩ)
+  trigger?: React.ReactNode; // Nút bấm tùy chỉnh để mở modal
 }
 
 const SOCIAL_LINKS = [
@@ -31,18 +32,15 @@ const SOCIAL_LINKS = [
       `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
     color: "hover:bg-gray-100 dark:hover:bg-gray-700",
   },
-  // Lưu ý: Zalo không có API chia sẻ web trực tiếp, thường cần dùng QR code hoặc Deep Link.
-  // Ở đây dùng Deep Link cơ bản cho Mobile/App:
   {
-    name: "Zalo (App)",
-    icon: <MessageSquare size={18} className="text-blue-500" />,
-    url: (url: string, title: string) =>
-      `https://zalo.me/share/link?url=${encodeURIComponent(url)}&name=${encodeURIComponent(title)}`,
-    color: "hover:bg-blue-50/50",
+    name: "Instagram",
+    icon: <Instagram size={18} className="text-pink-600" />,
+    url: (url: string, title: string) => "https://www.instagram.com/",
+    color: "hover:bg-pink-50/50",
   },
 ];
 
-const ShareModal: React.FC<ShareModalProps> = ({ shareUrl, shareTitle }) => {
+const ShareModal: React.FC<ShareModalProps> = ({ shareUrl, shareTitle, trigger }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleCopy = async () => {
@@ -64,13 +62,15 @@ const ShareModal: React.FC<ShareModalProps> = ({ shareUrl, shareTitle }) => {
   return (
     <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
       <Popover.Trigger asChild>
-        <button
-          className="flex items-center justify-center w-9 h-9 md:w-auto md:h-auto md:px-3 md:py-2 bg-transparent border border-gray-400 hover:border-white text-white hover:bg-white/10 rounded-[3px] text-sm font-medium transition"
-          aria-label="Share profile"
-        >
-          <Share2 size={18} />
-          <span className="hidden md:inline ml-2">Share</span>
-        </button>
+        {trigger || (
+          <button
+            className="flex items-center justify-center w-9 h-9 md:w-auto md:h-auto md:px-3 md:py-2 bg-transparent border border-gray-400 hover:border-white text-white hover:bg-white/10 rounded-[3px] text-sm font-medium transition"
+            aria-label="Share profile"
+          >
+            <Share2 size={18} />
+            <span className="hidden md:inline ml-2">Share</span>
+          </button>
+        )}
       </Popover.Trigger>
 
       <Popover.Portal>

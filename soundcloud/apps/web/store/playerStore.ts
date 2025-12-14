@@ -17,7 +17,6 @@ interface PlayerState {
   queue: TrackWithUser[];
   currentIndex: number;
 
-  autoplay: boolean;
   play: (track: TrackWithUser) => void;
   toggle: () => void;
   setVolume: (volume: number) => void;
@@ -32,6 +31,12 @@ interface PlayerState {
   removeFromQueue: (index: number) => void;
 
   toggleAutoplay: () => void;
+  autoplay: boolean;
+  repeatMode: "off" | "all" | "one";
+  isShuffle: boolean;
+
+  toggleRepeat: () => void;
+  toggleShuffle: () => void;
 }
 
 export const usePlayerStore = create<PlayerState>()(
@@ -47,6 +52,8 @@ export const usePlayerStore = create<PlayerState>()(
       currentIndex: -1,
 
       autoplay: true,
+      repeatMode: "off",
+      isShuffle: false,
 
       play: (track) => {
         const { queue } = get();
@@ -104,10 +111,27 @@ export const usePlayerStore = create<PlayerState>()(
       resetTime: () => set({ currentTime: 0 }),
 
       playNext: () => {
-        const { queue, currentIndex } = get();
+        const { queue, currentIndex, repeatMode, isShuffle } = get();
         if (queue.length === 0) return;
 
-        const nextIndex = currentIndex + 1;
+        // Logic Repeat One -> Đã chuyển sang GlobalPlayer handleEnded
+        // if (repeatMode === "one") { ... }
+
+        let nextIndex = currentIndex + 1;
+
+        // Logic Shuffle
+        if (isShuffle) {
+          // Random index khác index hiện tại
+          if (queue.length > 1) {
+            let randomIndex;
+            do {
+              randomIndex = Math.floor(Math.random() * queue.length);
+            } while (randomIndex === currentIndex);
+            nextIndex = randomIndex;
+          } else {
+            nextIndex = 0;
+          }
+        }
 
         // Nếu chưa hết playlist
         if (nextIndex < queue.length) {
@@ -117,16 +141,51 @@ export const usePlayerStore = create<PlayerState>()(
             isPlaying: true,
           });
         } else {
-          // Hết playlist: Reset về đầu và dừng (hoặc loop tùy ý)
-          set({ isPlaying: false, currentIndex: 0, currentTrack: queue[0] });
+          // Hết playlist
+          if (repeatMode === "all") {
+            // Repeat All: Quay lại đầu (hoặc random nếu shuffle)
+            if (isShuffle) {
+              // Đã handle ở trên logic shuffle rồi, nhưng nếu nextIndex vượt quá length thì cần random lại
+              // Tuy nhiên logic shuffle ở trên luôn trả về valid index nếu queue > 1
+              // Trường hợp này chủ yếu cho normal mode
+              set({
+                currentTrack: queue[0],
+                currentIndex: 0,
+                isPlaying: true,
+              });
+            } else {
+              set({
+                currentTrack: queue[0],
+                currentIndex: 0,
+                isPlaying: true,
+              });
+            }
+          } else {
+            // Không repeat: Dừng hoặc reset về đầu
+            set({ isPlaying: false, currentIndex: 0, currentTrack: queue[0] });
+          }
         }
       },
-
       playPrev: () => {
-        const { queue, currentIndex } = get();
+        const { queue, currentIndex, repeatMode, isShuffle } = get();
         if (queue.length === 0) return;
 
-        const prevIndex = currentIndex - 1;
+        // Logic Repeat One -> Đã chuyển sang GlobalPlayer handleEnded
+        // if (repeatMode === "one") { ... }
+
+        let prevIndex = currentIndex - 1;
+
+        if (isShuffle) {
+          if (queue.length > 1) {
+            let randomIndex;
+            do {
+              randomIndex = Math.floor(Math.random() * queue.length);
+            } while (randomIndex === currentIndex);
+            prevIndex = randomIndex;
+          } else {
+            prevIndex = 0;
+          }
+        }
 
         if (prevIndex >= 0) {
           set({
@@ -135,8 +194,16 @@ export const usePlayerStore = create<PlayerState>()(
             isPlaying: true,
           });
         } else {
-          // Nếu đang ở bài đầu tiên, reset về 0
-          set({ currentIndex: 0, currentTrack: queue[0], isPlaying: true });
+          // Nếu đang ở bài đầu tiên
+          if (repeatMode === "all") {
+            set({
+              currentTrack: queue[queue.length - 1],
+              currentIndex: queue.length - 1,
+              isPlaying: true,
+            });
+          } else {
+            set({ currentIndex: 0, currentTrack: queue[0], isPlaying: true });
+          }
         }
       },
 
@@ -165,6 +232,25 @@ export const usePlayerStore = create<PlayerState>()(
         }
       },
       toggleAutoplay: () => set((state) => ({ autoplay: !state.autoplay })),
+
+      toggleRepeat: () => set((state) => {
+        // Chỉ lặp lại bài hiện tại hoặc tắt (theo yêu cầu mới)
+        const nextMode = state.repeatMode === "one" ? "off" : "one";
+        // Nếu bật Repeat -> Tắt Shuffle
+        return {
+          repeatMode: nextMode,
+          isShuffle: nextMode === "one" ? false : state.isShuffle
+        };
+      }),
+
+      toggleShuffle: () => set((state) => {
+        const newShuffleState = !state.isShuffle;
+        // Nếu bật Shuffle -> Tắt Repeat
+        return {
+          isShuffle: newShuffleState,
+          repeatMode: newShuffleState ? "off" : state.repeatMode
+        };
+      }),
     }),
 
     {
@@ -178,6 +264,8 @@ export const usePlayerStore = create<PlayerState>()(
         currentIndex: state.currentIndex,
         // currentTime: state.currentTime, // Có thể bỏ currentTime nếu muốn F5 nghe lại từ đầu bài
         autoplay: state.autoplay,
+        repeatMode: state.repeatMode,
+        isShuffle: state.isShuffle,
       }),
     }
   )

@@ -13,29 +13,42 @@ import {
 } from "lucide-react";
 
 import { usePlayerStore } from "@/store/playerStore";
-import { TrackWithUser } from "@/store/playerStore";
-import WaveformPlayer from "../../tracks/[id]/_components/WaveformPlayer"; // Đảm bảo đường dẫn đúng
-import React from "react";
+import { Prisma } from "@repo/database";
+import WaveformPlayer from "../../tracks/[id]/_components/WaveformPlayer";
+import React, { useState } from "react";
 import Link from "next/link";
+import ShareModal from "@/components/modals/ShareModal";
+
+type SpotlightTrack = Prisma.TrackGetPayload<{
+  include: {
+    user: true;
+    likes: true;
+    reposts: true;
+    comments: true;
+  };
+}>;
 
 interface SpotlightSectionProps {
-  track: TrackWithUser;
+  track: SpotlightTrack;
 }
 
 // Utility Component (Giữ nguyên)
 interface ActionBtnProps {
   icon: React.ReactNode;
-  label: string;
+  label: string | number;
   activeColor?: string;
+  onClick?: () => void;
 }
 
 function ActionBtn({
   icon,
   label,
   activeColor = "hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/10",
+  onClick,
 }: ActionBtnProps) {
   return (
     <button
+      onClick={onClick}
       className={`
             flex items-center gap-1.5 px-3 py-1.5 rounded-full 
             text-sm font-medium text-gray-600 dark:text-gray-300 
@@ -93,6 +106,13 @@ export default function SpotlightSection({ track }: SpotlightSectionProps) {
       // HỆ THỐNG PLAYER CONTROLLER bên ngoài sẽ nhận state này và xử lý tải/tua.
     }
   };
+
+  const shareUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/tracks/${track.id}`
+      : `https://yourdomain.com/tracks/${track.id}`;
+
+  const shareTitle = `Check out "${track.title}" by ${track.user.name} on SoundWave`;
 
   return (
     <div className="mb-10 group">
@@ -201,15 +221,24 @@ export default function SpotlightSection({ track }: SpotlightSectionProps) {
               <div className="flex items-center gap-2">
                 <ActionBtn
                   icon={<Heart size={18} />}
-                  label="154K"
+                  label={track.likes?.length || 0}
                   activeColor="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                 />
                 <ActionBtn
                   icon={<Repeat size={18} />}
-                  label="2.1K"
+                  label={track.reposts?.length || 0}
                   activeColor="text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20"
                 />
-                <ActionBtn icon={<Share2 size={18} />} label="Share" />
+                <ShareModal
+                  shareUrl={shareUrl}
+                  shareTitle={shareTitle}
+                  trigger={
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-gray-600 dark:text-gray-300 border border-transparent hover:border-gray-200 dark:hover:border-white/10 transition-all duration-200 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-500/10">
+                      <Share2 size={18} />
+                      <span>Share</span>
+                    </button>
+                  }
+                />
                 <button className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition rounded-full hover:bg-gray-100 dark:hover:bg-white/5">
                   <MoreHorizontal size={18} />
                 </button>
@@ -219,11 +248,11 @@ export default function SpotlightSection({ track }: SpotlightSectionProps) {
               <div className="flex items-center gap-4 text-xs font-semibold text-gray-400 uppercase tracking-wide">
                 <div className="flex items-center gap-1.5">
                   <Play size={14} />
-                  <span>5.2M Plays</span>
+                  <span>{track.playCount.toLocaleString()} Plays</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <MessageSquare size={14} />
-                  <span>842 Comments</span>
+                  <span>{track.comments?.length || 0} Comments</span>
                 </div>
               </div>
             </div>

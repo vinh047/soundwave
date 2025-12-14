@@ -1,0 +1,24 @@
+@startuml Sơ Đồ Usecase Chi Tiết Admin
+left to right direction
+
+' Actor
+actor "Quản trị viên" as Admin
+
+rectangle "Xem tổng quan hệ thống" {
+    ' Use Case cho mọi người (chưa đăng nhập)
+    (Đăng nhập) as UC_Login
+
+    ' Use case của Admin
+    (Xem tổng quan hệ thống) as UC_ViewSystemOverview
+
+    ' Use case cho tất cả Actor
+    (Đăng xuất) as UC_Logout
+
+    ' -- Mối quan hệ --
+    ' Quan hệ <<include>> (các chức năng cần đăng nhập)
+    UC_ViewSystemOverview ..> UC_Login : <<include>>
+
+    ' Admin
+    Admin --> UC_Login
+    Admin --> UC_Logout
+}

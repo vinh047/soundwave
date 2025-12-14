@@ -11,52 +11,29 @@ import {
   PlusCircle,
   Link as LinkIcon,
   Music,
+  Instagram,
 } from "lucide-react";
-import { toast } from "sonner";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Prisma } from "@repo/database";
-import userApi from "@/lib/api/usersApi";
+import { toast } from "sonner";
 import websiteTypeApi from "@/lib/api/websiteTypeApi";
-
-interface WebsiteType {
-  id: string;
-  type: string;
-  icon: string | null;
-}
-
-interface SocialLinkField {
-  id?: string;
-  url: string;
-  websiteTypeId: string;
-  isNew?: boolean;
-  isDeleted?: boolean;
-  websiteType?: WebsiteType;
-}
+import userApi from "@/lib/api/usersApi";
+import { WebsiteType } from "@repo/database";
 
 interface EditFormData {
   name: string;
   location: string;
   bio: string;
-  socialLinks: SocialLinkField[];
+  socialLinks: {
+    id?: string;
+    url: string;
+    websiteTypeId: string;
+    websiteType?: WebsiteType;
+  }[];
 }
 
-type UserProfileProps = Prisma.UserGetPayload<{
-  include: {
-    profile: {
-      include: {
-        websiteProfiles: {
-          include: {
-            websiteType: true;
-          };
-        };
-      };
-    };
-  };
-}>;
-
 interface EditProfileModalProps {
-  user: UserProfileProps;
+  user: any;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -66,39 +43,34 @@ const getSocialIcon = (typeCode: string = "", size: number = 18) => {
   switch (code) {
     case "YOUTUBE":
       return <Music size={size} />;
+    case "INSTAGRAM":
+      return <Instagram size={size} />;
     default:
       return <LinkIcon size={size} />;
   }
 };
 
-export default function EditProfileModal({
-  user,
-  isOpen,
-  onOpenChange,
-}: EditProfileModalProps) {
+export default function EditProfileModal({ user, isOpen, onOpenChange }: EditProfileModalProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [availableWebsiteTypes, setAvailableWebsiteTypes] = useState<WebsiteType[]>([]);
 
   const defaultAvatar = "/images/default-avatar.png";
   const defaultCover = "/images/default-cover.jpg";
 
-  const [avatarPreview, setAvatarPreview] = useState<string>(defaultAvatar);
-  const [coverPreview, setCoverPreview] = useState<string>(defaultCover);
+  const [avatarPreview, setAvatarPreview] = useState(user?.image || defaultAvatar);
+  const [coverPreview, setCoverPreview] = useState(user?.profile?.coverUrl || defaultCover);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [availableWebsiteTypes, setAvailableWebsiteTypes] = useState<
-    WebsiteType[]
-  >([]);
 
-  const { register, handleSubmit, reset, control, watch } =
-    useForm<EditFormData>({
-      defaultValues: {
-        name: "",
-        location: "",
-        bio: "",
-        socialLinks: [],
-      },
-    });
+  const { register, control, handleSubmit, reset, watch } = useForm<EditFormData>({
+    defaultValues: {
+      name: user?.name || "",
+      location: user?.profile?.location || "",
+      bio: user?.profile?.bio || "",
+      socialLinks: [],
+    },
+  });
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -107,7 +79,18 @@ export default function EditProfileModal({
 
   useEffect(() => {
     websiteTypeApi.getWebsiteTypes().then((res) => {
-      setAvailableWebsiteTypes(res.data.data);
+      const types = res.data.data;
+      // Ensure Instagram is available (Mock if DB doesn't have it yet)
+      if (!types.find((t: WebsiteType) => t.type === "INSTAGRAM")) {
+        types.push({
+          id: "instagram-mock",
+          type: "INSTAGRAM",
+          icon: "instagram",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as WebsiteType);
+      }
+      setAvailableWebsiteTypes(types);
     });
   }, []);
 
@@ -118,7 +101,7 @@ export default function EditProfileModal({
         location: user.profile?.location || "",
         bio: user.profile?.bio || "",
         socialLinks:
-          user.profile?.websiteProfiles.map((p) => ({
+          user.profile?.websiteProfiles.map((p: any) => ({
             id: p.id,
             url: p.url,
             websiteTypeId: p.websiteTypeId,
@@ -249,9 +232,8 @@ export default function EditProfileModal({
                   pattern: /^https?:\/\/.*/,
                 })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-[#ff5500] dark:text-white"
-                placeholder={`Enter ${
-                  selectedType?.type || "Website"
-                } URL (e.g., https://...)`}
+                placeholder={`Enter ${selectedType?.type || "Website"
+                  } URL (e.g., https://...)`}
               />
             </div>
 
@@ -317,7 +299,7 @@ export default function EditProfileModal({
             className="flex-1 overflow-y-auto"
           >
             <div className="p-6 space-y-8">
-              {/* 1. Images Section (Giữ nguyên) */}
+              {/* 1. Images Section */}
               <div className="flex gap-6 items-start">
                 {/* Avatar */}
                 <div className="shrink-0 relative group cursor-pointer">
@@ -379,7 +361,7 @@ export default function EditProfileModal({
                 </div>
               </div>
 
-              {/* 2. Text Fields (Giữ nguyên) */}
+              {/* 2. Text Fields */}
               <div className="space-y-5">
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">

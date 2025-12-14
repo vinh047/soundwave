@@ -8,6 +8,7 @@ const tabs = [
   { path: "tracks", label: "Tracks" },
   { path: "playlists", label: "Playlists" },
   { path: "reposts", label: "Reposts" },
+  { path: "likes", label: "Likes" },
   { path: "followers", label: "Followers" },
   { path: "following", label: "Following" },
 ];

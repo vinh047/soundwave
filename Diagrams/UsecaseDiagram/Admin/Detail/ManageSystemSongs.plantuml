@@ -1,0 +1,26 @@
+@startuml Sơ Đồ Usecase Chi Tiết Admin
+left to right direction
+
+' Actor
+actor "Quản trị viên" as Admin
+
+rectangle "Quản lý bài hát hệ thống" {
+    ' Use Case cho mọi người (chưa đăng nhập)
+    (Quản lý bài hát hệ thống) as UC_ManageSystemSongs
+    (Xem danh sách và tìm kiếm bài hát) as UC_ViewSearchSongs
+    (Ẩn/Hiện bài hát) as UC_ToggleSongVisibility
+    (Nghe nhạc) as UC_Play
+    (Đăng nhập) as UC_Login
+
+    ' -- Mối quan hệ --
+    ' Quan hệ <<extend>>
+    UC_ViewSearchSongs ..> UC_ManageSystemSongs: <<extend>>
+    UC_ToggleSongVisibility ..> UC_ManageSystemSongs: <<extend>>
+    UC_Play ..> UC_ManageSystemSongs: <<extend>>
+
+    ' Quan hệ <<include>> (các chức năng cần đăng nhập)
+    UC_ManageSystemSongs ..> UC_Login: <<include>>
+
+    ' Admin
+    Admin --> UC_Login
+}

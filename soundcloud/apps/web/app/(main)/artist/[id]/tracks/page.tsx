@@ -1,12 +1,7 @@
 import { Music } from "lucide-react";
-import { Prisma } from "@repo/database";
 import userApi from "@/lib/api/usersApi";
 import EmptyDisplay from "../../_components/EmptyDisplay";
-import TrackListItemInteractive from "../../_components/TrackListItemInteractive";
-
-type TrackWithRelations = Prisma.TrackGetPayload<{
-  include: { likes: true; reposts: true; user: true };
-}>;
+import { TrackListItemInteractive } from "../../_components/TrackListItemInteractive";
 
 /**
  * Trang hiển thị danh sách các bài hát đã tải lên của user.
@@ -19,7 +14,7 @@ export default async function TracksPage({
 }) {
   const userId = params.id;
 
-  let tracks: TrackWithRelations[] = [];
+  let tracks;
   try {
     const res = await userApi.getAllTracksByUserId(userId);
     tracks = res.data.data ?? [];
@@ -39,11 +34,7 @@ export default async function TracksPage({
   return (
     <div className="flex flex-col gap-3">
       {tracks.map((track) => (
-        <TrackListItemInteractive
-          key={track.id}
-          track={track}
-          artistName={track.user?.name || "Unknown Artist"}
-        />
+        <TrackListItemInteractive key={track.id} track={track} />
       ))}
     </div>
   );
