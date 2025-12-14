@@ -1,0 +1,30 @@
+@startuml Sơ Đồ Usecase Chi Tiết User
+left to right direction
+
+' Actor
+actor "Người dùng" as User
+
+rectangle "Chức năng Người dùng" {
+    ' Use Case cho mọi người (chưa đăng nhập)
+    (Đăng nhập) as UC_Login
+
+    ' Use case cần đăng nhập (cho User và Artist)
+    (Quản lý thư viện cá nhân) as UC_ManageLibrary
+    (Xem danh sách và tìm kiếm bài hát yêu thích) as UC_ViewSearchLikedSongs
+    (Xem danh sách và tìm kiếm Follower) as UC_ViewSearchFollowers
+    (Xem danh sách và tìm kiếm Following) as UC_ViewSearchFollowings
+    (Xem và tìm kiếm lịch sử nghe nhạc) as UC_ViewSearchHistory
+
+    ' -- Mối quan hệ --
+    ' Quan hệ <<extend>>    
+    UC_ViewSearchLikedSongs ..> UC_ManageLibrary: <<extend>>
+    UC_ViewSearchFollowers ..> UC_ManageLibrary: <<extend>>
+    UC_ViewSearchFollowings ..> UC_ManageLibrary: <<extend>>
+    UC_ViewSearchHistory ..> UC_ManageLibrary: <<extend>>
+
+    ' Quan hệ <<include>> (các chức năng cần đăng nhập)
+    UC_ManageLibrary ..> UC_Login : <<include>>
+    ' -- Gán các actor --
+    ' Actor chưa đăng nhập cũng có thể xem và nghe
+    User --> UC_Login
+}

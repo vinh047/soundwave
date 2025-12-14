@@ -30,9 +30,9 @@ group Bỏ theo dõi
     Service --> Controller: Trả về kết quả xử lý Bỏ theo dõi
     deactivate Service
     alt Bỏ theo dõi thất bại
-        Controller --> View: Thông báo "Hành động thất bại, vui lòng thử lại"
+        Controller --> View: Thông báo "Bỏ theo dõi thất bại, vui lòng thử lại"
     else Bỏ theo dõi thành công
-        Controller --> View: Thông báo "Hành động thành công"
+        Controller --> View: Thông báo "Bỏ theo dõi thành công"
     end
     deactivate Controller
     View --> User: Hiển thị thông báo

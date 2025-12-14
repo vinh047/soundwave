@@ -1,0 +1,40 @@
+@startuml Sơ Đồ Usecase Chi Tiết User
+left to right direction
+
+' Actor
+actor "Người dùng" as User
+
+rectangle "Quản lý Playlist cá nhân" {
+    ' Use Case cho mọi người (chưa đăng nhập)
+    (Đăng nhập) as UC_Login
+
+    ' Use case cần đăng nhập (cho User và Artist)    
+    (Quản lý Playlist cá nhân) as UC_ManagePlaylist
+    (Xem danh sách và tìm kiếm Playlist cá nhân) as UC_ViewSearchPlaylists
+    (Thêm Playlist cá nhân) as UC_AddPlaylist
+    (Xoá Playlist cá nhân) as UC_DeletePlaylist
+    (Quản lý chi tiết Playlist cá nhân) as UC_ManagePlaylistDetails
+    (Sửa thông tin Playlist) as UC_EditPlaylistInformation
+    (Xem danh sách bài hát trong Playlist) as UC_ViewSongsInPlaylist
+    (Thêm bài hát vào Playlist) as UC_AddSongsToPlaylist
+    (Xoá bài hát khỏi Playlist) as UC_RemoveSongsFromPlaylist
+
+    ' -- Mối quan hệ --
+    ' Quan hệ <<extend>>
+    UC_ViewSearchPlaylists ..> UC_ManagePlaylist: <<extend>>
+    UC_AddPlaylist ..> UC_ManagePlaylist: <<extend>>
+    UC_DeletePlaylist ..> UC_ManagePlaylist: <<extend>>
+    UC_ManagePlaylistDetails ..> UC_ManagePlaylist: <<extend>>
+
+    UC_ViewSongsInPlaylist ..> UC_ManagePlaylistDetails: <<extend>>
+    UC_AddSongsToPlaylist ..> UC_ManagePlaylistDetails: <<extend>>
+    UC_RemoveSongsFromPlaylist ..> UC_ManagePlaylistDetails: <<extend>>
+    UC_EditPlaylistInformation ..> UC_ManagePlaylistDetails: <<extend>>
+
+    ' Quan hệ <<include>> (các chức năng cần đăng nhập)
+    UC_ManagePlaylist ..> UC_Login: <<include>>
+
+    ' -- Gán các actor --
+    ' Actor chưa đăng nhập cũng có thể xem và nghe
+    User --> UC_Login
+}

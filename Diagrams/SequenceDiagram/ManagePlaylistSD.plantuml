@@ -32,9 +32,9 @@ activate Service
 Service --> Controller: Trả về kết quả xoá Playlist
 deactivate Service
 alt Xoá Playlist thành công
-Controller --> View: Thông báo "Xoá Playlist thành công"
+    Controller --> View: Thông báo "Xoá Playlist thành công"
 else Xoá Playlist thất bại
-Controller --> View: Thông báo "Xoá Playlist thất bại, vui lòng thử lại"
+    Controller --> View: Thông báo "Xoá Playlist thất bại, vui lòng thử lại"
 end
 deactivate Controller
 View --> User: Hiển thị thông báo

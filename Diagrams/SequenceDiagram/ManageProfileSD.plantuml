@@ -17,9 +17,14 @@ Controller -> Service: Yêu cầu hồ sơ cá nhân
 activate Service
 Service --> Controller: Trả về hồ sơ cá nhân
 deactivate Service
-Controller --> View: Trả về hồ sơ cá nhân
-deactivate Controller
-View --> View: Hiển thị hồ sơ cá nhân
+alt Lấy hồ sơ cá nhân thất bại
+    Controller --> View: Thông báo "Lấy hồ sơ cá nhân thất bại, vui lòng thử lại"
+    View --> User: Hiển thị thông báo
+else Lấy hồ sơ cá nhân thành công
+    Controller --> View: Trả về hồ sơ cá nhân
+    deactivate Controller
+    View --> View: Hiển thị hồ sơ cá nhân
+end
 
 User -> View: Chọn chức năng Sửa hồ sơ cá nhân (Chuyển sang Usecase Sửa hồ sơ cá nhân)
 User -> View: Chọn chức năng Xem danh sách bài hát đăng lại (Chuyển sang Usecase Xem danh sách và tìm kiếm bài hát đăng lại)

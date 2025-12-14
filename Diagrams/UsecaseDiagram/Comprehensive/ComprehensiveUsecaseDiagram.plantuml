@@ -1,0 +1,59 @@
+@startuml Sơ Đồ Usecase Tổng Quát
+left to right direction
+
+' Actor
+actor "Người dùng" as User
+actor "Quản trị viên" as Admin
+
+rectangle "Hệ thống nghe nhạc trực tuyến" {
+  ' Use Case cho Khách
+  (Khám phá bài hát) as UC_ExploreSongs
+  (Khám phá nghệ sĩ) as UC_ExploreArtists
+  (Đăng ký) as UC_Register
+  (Đăng nhập) as UC_Login
+  (Quên mật khẩu) as UC_ForgetPassword
+
+  ' Use case cho User
+  (Quản lý hồ sơ cá nhân) as UC_ManageProfile
+  (Quản lý thư viện cá nhân) as UC_ManageLibrary
+  (Quản lý Playlist cá nhân) as UC_ManagePlaylist
+  (Quản lý bài hát cá nhân) as UC_ManageSongs
+  (Cài đặt) as UC_Settings
+
+  ' Use case cho Admin
+  (Xem tổng quan hệ thống) as UC_ViewSystemOverview
+  (Quản lý báo cáo vi phạm) as UC_HandleReport
+  (Quản lý tài khoản người dùng) as UC_ManageUserAccount
+  (Quản lý bài hát hệ thống) as UC_ManageSystemSongs
+  (Đăng nhập Admin) as UC_LoginAdmin
+
+  ' Use case cho tất cả
+  (Đăng xuất) as UC_Logout
+
+  ' -- Mối quan hệ --
+  ' Quan hệ <<extends>>
+  UC_ForgetPassword ..> UC_Login : <<extend>>
+
+  ' Quan hệ <<include>>
+  UC_ManageProfile ..> UC_Login : <<include>>
+  UC_ManageLibrary ..> UC_Login : <<include>>
+  UC_ManagePlaylist ..> UC_Login: <<include>>>
+  UC_ManageSongs ..> UC_Login : <<include>>
+
+  UC_ViewSystemOverview ..> UC_LoginAdmin : <<include>>
+  UC_HandleReport ..> UC_LoginAdmin : <<include>>
+  UC_ManageUserAccount ..> UC_LoginAdmin : <<include>>
+  UC_ManageSystemSongs ..> UC_LoginAdmin : <<include>>
+
+  ' -- Gán các actor --
+  User --> UC_ExploreSongs
+  User --> UC_Register
+  User --> UC_Login
+  User --> UC_ExploreArtists
+  User --> UC_Logout
+  User --> UC_Settings
+
+  Admin --> UC_LoginAdmin
+  Admin --> UC_Logout
+}
+@enduml
