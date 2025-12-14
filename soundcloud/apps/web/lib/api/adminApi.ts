@@ -10,6 +10,7 @@ import {
   UpdateUserStatusPayload
 } from '../../type/AdminTypes';
 import { PaginationParams } from '../../type/PaginationParams';
+import axiosServer from './axiosServer';
 
 const ADMIN_BASE_URL = '/admin';
 
@@ -21,7 +22,7 @@ const ADMIN_BASE_URL = '/admin';
  * Lấy danh sách người dùng (GET /admin/users)
  */
 export const getAdminUsers = async (params: PaginationParams): Promise<AdminUserList> => {
-  const response = await apiClient.get<AdminUserList>(`${ADMIN_BASE_URL}/users`, {
+  const response = await axiosServer.get<AdminUserList>(`${ADMIN_BASE_URL}/users`, {
     params: params,
   });
   return response.data;
